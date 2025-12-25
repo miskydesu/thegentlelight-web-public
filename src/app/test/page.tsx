@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // NEXT_PUBLIC_API_BASE_URLの取得
 // Next.jsではクライアント側で使う環境変数にはNEXT_PUBLIC_プレフィックスが必要
@@ -49,6 +49,7 @@ export default function TestPage() {
   const [testData, setTestData] = useState<TestDataItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const formRef = useRef<HTMLFormElement>(null);
 
   // 画像一覧取得
   const fetchImages = async () => {
@@ -160,7 +161,10 @@ export default function TestPage() {
       if (data.success) {
         setMessage('データを挿入しました');
         fetchTestData();
-        e.currentTarget.reset();
+        // フォームのリセット（useRefを使用）
+        if (formRef.current) {
+          formRef.current.reset();
+        }
       } else {
         const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error || 'データ挿入に失敗しました';
         setMessage(errorMsg);
@@ -256,7 +260,7 @@ export default function TestPage() {
           </button>
         </div>
 
-        <form onSubmit={handleInsertData} style={{ marginBottom: '2rem' }}>
+        <form ref={formRef} onSubmit={handleInsertData} style={{ marginBottom: '2rem' }}>
           <h3>データ挿入</h3>
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem' }}>
