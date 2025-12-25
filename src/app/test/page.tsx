@@ -148,7 +148,7 @@ export default function TestPage() {
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1>基礎構築テスト</h1>
+      <h1>基礎構築テスト2</h1>
 
       {message && (
         <div style={{ 
