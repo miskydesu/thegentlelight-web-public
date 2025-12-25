@@ -70,11 +70,13 @@ export default function TestPage() {
         setMessage('画像をアップロードしました');
         fetchImages();
       } else {
-        setMessage('アップロードに失敗しました');
+        const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error || 'アップロードに失敗しました';
+        setMessage(errorMsg);
+        console.error('アップロードエラー:', data);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('アップロードエラー:', error);
-      setMessage('アップロードに失敗しました');
+      setMessage(`アップロードに失敗しました: ${error.message || String(error)}`);
     } finally {
       setLoading(false);
     }
@@ -90,10 +92,14 @@ export default function TestPage() {
       const data = await response.json();
       if (data.success) {
         setMessage('テーブルを作成しました');
+      } else {
+        const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error || 'テーブル作成に失敗しました';
+        setMessage(errorMsg);
+        console.error('テーブル作成エラー:', data);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('テーブル作成エラー:', error);
-      setMessage('テーブル作成に失敗しました');
+      setMessage(`テーブル作成に失敗しました: ${error.message || String(error)}`);
     } finally {
       setLoading(false);
     }
@@ -123,11 +129,13 @@ export default function TestPage() {
         fetchTestData();
         e.currentTarget.reset();
       } else {
-        setMessage('データ挿入に失敗しました');
+        const errorMsg = data.details ? `${data.error}: ${data.details}` : data.error || 'データ挿入に失敗しました';
+        setMessage(errorMsg);
+        console.error('データ挿入エラー:', data);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('データ挿入エラー:', error);
-      setMessage('データ挿入に失敗しました');
+      setMessage(`データ挿入に失敗しました: ${error.message || String(error)}`);
     } finally {
       setLoading(false);
     }
