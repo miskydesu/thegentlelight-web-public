@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 
+// API_BASE_URLはブラウザ側で使用するため、NEXT_PUBLIC_プレフィックスが必要
+// ステージング環境ではCloudflare Pagesの環境変数で設定される
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 interface ImageItem {
@@ -60,10 +62,17 @@ export default function TestPage() {
     formData.append('image', file);
 
     try {
+      console.log('アップロード開始:', { API_BASE_URL, url: `${API_BASE_URL}/api/images/upload` });
       const response = await fetch(`${API_BASE_URL}/api/images/upload`, {
         method: 'POST',
         body: formData,
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('APIエラーレスポンス:', { status: response.status, statusText: response.statusText, body: errorText });
+        throw new Error(`APIエラー: ${response.status} ${response.statusText}`);
+      }
 
       const data = await response.json();
       if (data.success) {
