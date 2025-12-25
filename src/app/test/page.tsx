@@ -2,9 +2,33 @@
 
 import { useState, useEffect } from 'react';
 
-// API_BASE_URLはブラウザ側で使用するため、NEXT_PUBLIC_プレフィックスが必要
-// ステージング環境ではCloudflare Pagesの環境変数で設定される
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+// NEXT_PUBLIC_API_BASE_URLの取得
+// Next.jsではクライアント側で使う環境変数にはNEXT_PUBLIC_プレフィックスが必要
+// 環境変数名はNEXT_PUBLIC_API_BASE_URLに統一（Cloudflare Pagesでも同じ名前で設定）
+const getApiBaseUrl = () => {
+  // 1. NEXT_PUBLIC_API_BASE_URLが設定されている場合はそれを使用
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+  
+  // 2. NEXT_PUBLIC_API_BASE_URLが未設定の場合、現在のホスト名から自動判定（フォールバック）
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:8080';
+    } else if (hostname === 'stg.thegentlelight.org') {
+      return 'https://api-stg.thegentlelight.org';
+    } else if (hostname === 'thegentlelight.org' || hostname === 'www.thegentlelight.org') {
+      return 'https://api.thegentlelight.org';
+    }
+  }
+  
+  // 3. デフォルト（ローカル開発）
+  return 'http://localhost:8080';
+};
+
+// NEXT_PUBLIC_API_BASE_URLから取得したAPIベースURL
+const API_BASE_URL = getApiBaseUrl();
 
 interface ImageItem {
   key: string;
@@ -62,7 +86,7 @@ export default function TestPage() {
     formData.append('image', file);
 
     try {
-      console.log('アップロード開始:', { API_BASE_URL, url: `${API_BASE_URL}/api/images/upload` });
+      console.log('アップロード開始:', { NEXT_PUBLIC_API_BASE_URL: API_BASE_URL, url: `${API_BASE_URL}/api/images/upload` });
       const response = await fetch(`${API_BASE_URL}/api/images/upload`, {
         method: 'POST',
         body: formData,
