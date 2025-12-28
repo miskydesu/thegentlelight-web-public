@@ -15,6 +15,15 @@ docker build --platform linux/amd64
   - `SENTRY_ORG`
   - `SENTRY_PROJECT`
 
+### Cloudflare Pages（stg/prod）でのソースマップアップロード
+
+Cloudflare Pages（next-on-pages）では、SentryのNext.js webpackプラグインが変換ステップで不具合になるケースがあるため、
+`next.config.js` 側で Cloudflare Pages ではプラグインを無効化し、**ビルドコマンド側で sourcemaps upload** を実行します。
+
+- Cloudflare Pages の Build command を `npm run build:cf` にする
+- Environment variables（Preview/Production）に以下を設定
+  - `SENTRY_AUTH_TOKEN` / `SENTRY_ORG` / `SENTRY_PROJECT`
+
 ### ローカルでの確認手順（最短）
 
 - `env.example` を参考に `.env.local` を作って DSN を入れる

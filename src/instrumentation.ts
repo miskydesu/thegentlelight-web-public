@@ -27,8 +27,8 @@ export async function register() {
     })
   }
 }
-
-// Next.js App Router のリクエストエラー捕捉（Sentry推奨）
-export const onRequestError = Sentry.captureRequestError
+// NOTE:
+// Cloudflare Pages（next-on-pages）環境では、`onRequestError` の export がバンドル時の衝突要因になることがあるため、
+// ここでは export しない運用にしています。必要になったら（OpenNext等へ移行後に）復活させてOKです。
 
 

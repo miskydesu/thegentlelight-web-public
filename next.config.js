@@ -1,16 +1,21 @@
-const { withSentryConfig } = require('@sentry/nextjs')
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
 }
 
-// NOTE:
-// - SENTRY_AUTH_TOKEN / SENTRY_ORG / SENTRY_PROJECT が設定されている場合、build 時にソースマップが自動アップロードされます。
-// - Auth Token は秘密情報なので、ローカル or CI のサーバ環境変数にのみ置いてください（クライアントに公開しない）。
-const sentryWebpackPluginOptions = {
-  silent: true,
-}
+// Cloudflare Pages（next-on-pages）では、SentryのNext.js webpackプラグイン有効時に
+// 変換ステップでエラーになるケースがあるため、Cloudflare Pagesでは無効化します。
+// その場合のソースマップアップロードは「ビルドコマンド側」で sentry-cli を実行する想定です。
+const isCloudflarePages =
+  Boolean(process.env.CF_PAGES) ||
+  Boolean(process.env.CF_PAGES_BRANCH) ||
+  Boolean(process.env.CF_PAGES_URL)
 
-module.exports = withSentryConfig(nextConfig, sentryWebpackPluginOptions)
+if (isCloudflarePages) {
+  module.exports = nextConfig
+} else {
+  const { withSentryConfig } = require('@sentry/nextjs')
+  const sentryWebpackPluginOptions = { silent: true }
+  module.exports = withSentryConfig(nextConfig, sentryWebpackPluginOptions)
+}
 

@@ -87,16 +87,13 @@ export default function TestPage() {
 
   // Sentry（Next.jsサーバ側）テスト送信
   const handleSentryServerTest = async () => {
-    setLoading(true);
     try {
-      // 500を返す想定（Route Handlerで throw）だが、Sentryにイベントが送られていればOK
-      await fetch('/api/sentry-test', { cache: 'no-store' });
-      setMessage('Sentryにサーバ側（Next.js Route Handler）のテスト送信を実行しました（Sentryで確認）');
+      // Cloudflare Pages（next-on-pages）では Route Handler(/api/...) がビルド変換で落ちることがあるため、
+      // サーバ側テストは「Edge実行のページ」を開いて例外を発生させる方式にする。
+      window.location.href = '/sentry-test';
     } catch (error: any) {
       console.error('Sentryサーバテスト呼び出しエラー:', error);
       setMessage(`Sentryサーバテスト呼び出しに失敗しました: ${error.message || String(error)}`);
-    } finally {
-      setLoading(false);
     }
   };
 
