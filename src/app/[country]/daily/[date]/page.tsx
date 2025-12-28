@@ -1,6 +1,16 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type DailyDetailResponse } from '../../../../lib/tglApi'
+import { canonicalUrl } from '../../../../lib/seo'
+
+export function generateMetadata({ params }: { params: { country: string; date: string } }) {
+  const { country, date } = params
+  return {
+    alternates: {
+      canonical: canonicalUrl(`/${country}/daily/${date}`),
+    },
+  }
+}
 
 export default async function DailyDetailPage({ params }: { params: { country: string; date: string } }) {
   const { country, date } = params

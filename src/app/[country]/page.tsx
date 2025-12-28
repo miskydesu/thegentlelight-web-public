@@ -1,6 +1,16 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { fetchJson, isCountry, type HomeResponse } from '../../lib/tglApi'
+import { canonicalUrl } from '../../lib/seo'
+
+export function generateMetadata({ params }: { params: { country: string } }) {
+  const country = params.country
+  return {
+    alternates: {
+      canonical: canonicalUrl(`/${country}`),
+    },
+  }
+}
 
 export default async function CountryHome({ params }: { params: { country: string } }) {
   const country = params.country

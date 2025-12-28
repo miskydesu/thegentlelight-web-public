@@ -1,6 +1,16 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type DailyListResponse } from '../../../lib/tglApi'
+import { canonicalUrl } from '../../../lib/seo'
+
+export function generateMetadata({ params }: { params: { country: string } }) {
+  const country = params.country
+  return {
+    alternates: {
+      canonical: canonicalUrl(`/${country}/daily`),
+    },
+  }
+}
 
 export default async function DailyIndex({ params }: { params: { country: string } }) {
   const country = params.country

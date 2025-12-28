@@ -1,6 +1,16 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type TopicDetailResponse } from '../../../../../lib/tglApi'
+import { canonicalUrl } from '../../../../../lib/seo'
+
+export function generateMetadata({ params }: { params: { country: string; topicId: string } }) {
+  const { country, topicId } = params
+  return {
+    alternates: {
+      canonical: canonicalUrl(`/${country}/news/n/${topicId}`),
+    },
+  }
+}
 
 export default async function TopicPage({ params }: { params: { country: string; topicId: string } }) {
   const { country, topicId } = params
