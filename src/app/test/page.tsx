@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import * as Sentry from '@sentry/nextjs';
 
 // NEXT_PUBLIC_API_BASE_URLの取得
 // Next.jsではクライアント側で使う環境変数にはNEXT_PUBLIC_プレフィックスが必要
@@ -74,6 +75,28 @@ export default function TestPage() {
       }
     } catch (error) {
       console.error('データ取得エラー:', error);
+    }
+  };
+
+  // Sentry（ブラウザ側）テスト送信
+  const handleSentryClientTest = () => {
+    const err = new Error('Sentry test (browser/client)');
+    Sentry.captureException(err);
+    setMessage('Sentryにブラウザ側のテストイベントを送信しました（数秒後にSentryで確認）');
+  };
+
+  // Sentry（Next.jsサーバ側）テスト送信
+  const handleSentryServerTest = async () => {
+    setLoading(true);
+    try {
+      // 500を返す想定（Route Handlerで throw）だが、Sentryにイベントが送られていればOK
+      await fetch('/api/sentry-test', { cache: 'no-store' });
+      setMessage('Sentryにサーバ側（Next.js Route Handler）のテスト送信を実行しました（Sentryで確認）');
+    } catch (error: any) {
+      console.error('Sentryサーバテスト呼び出しエラー:', error);
+      setMessage(`Sentryサーバテスト呼び出しに失敗しました: ${error.message || String(error)}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -199,6 +222,44 @@ export default function TestPage() {
           {message}
         </div>
       )}
+
+      {/* Sentry テスト */}
+      <section style={{ marginBottom: '3rem', padding: '1.5rem', border: '1px solid #ddd', borderRadius: '8px' }}>
+        <h2>③ Sentry送信テスト</h2>
+        <p style={{ color: '#666', marginTop: '0.5rem' }}>
+          ※ DSN未設定の場合は送信されません（ローカルは .env.local で設定してください）
+        </p>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+          <button
+            onClick={handleSentryClientTest}
+            disabled={loading}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#6f42c1',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            ブラウザ側イベント送信
+          </button>
+          <button
+            onClick={handleSentryServerTest}
+            disabled={loading}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: '#343a40',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+            }}
+          >
+            Next.jsサーバ側（Route Handler）送信
+          </button>
+        </div>
+      </section>
 
       {/* R2画像テスト */}
       <section style={{ marginBottom: '3rem', padding: '1.5rem', border: '1px solid #ddd', borderRadius: '8px' }}>
