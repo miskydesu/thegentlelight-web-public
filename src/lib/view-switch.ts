@@ -40,6 +40,17 @@ export function getViewFromUrl(url: string): View {
 }
 
 /**
+ * searchParamsからviewパラメータを取得（サーバーサイド用）
+ */
+export function getViewFromSearchParams(searchParams: { view?: string } | { [key: string]: string | string[] | undefined }): View {
+  const viewParam = typeof searchParams.view === 'string' ? searchParams.view : undefined
+  if (viewParam === 'soft' || viewParam === 'calm' || viewParam === 'near') {
+    return viewParam
+  }
+  return 'calm' // デフォルトはcalm
+}
+
+/**
  * localStorageから優しさ段階選択を取得
  */
 export function getPreferredView(): View | null {

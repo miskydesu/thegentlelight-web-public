@@ -5,13 +5,14 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { getViewFromSearchParams, type View } from '@/lib/view-switch'
 
 export function generateMetadata({
   params,
   searchParams,
 }: {
   params: { country: string; page: string }
-  searchParams: { lang?: string }
+  searchParams: { lang?: string; view?: string }
 }) {
   return {
     title: `Latest - Page ${params.page} - ${params.country.toUpperCase()}`,
@@ -23,19 +24,20 @@ export default async function LatestPagePage({
   searchParams,
 }: {
   params: { country: string; page: string }
-  searchParams: { lang?: string }
+  searchParams: { lang?: string; view?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : getLocaleForCountry(country)
+  const view: View = getViewFromSearchParams(searchParams)
   const pageNum = parseInt(params.page, 10)
   if (isNaN(pageNum) || pageNum < 2) return notFound()
   const t = useTranslations(country, lang)
 
   const cursor = (pageNum - 1) * 30
   const data = await fetchJson<LatestResponse>(
-    `/v1/${country}/latest?limit=30&cursor=${cursor}&lang=${lang}`,
+    `/v1/${country}/latest?limit=30&cursor=${cursor}&lang=${lang}&view=${view}`,
     { next: { revalidate: 30 } }
   )
   const isPartial = Boolean(data.meta?.is_partial)

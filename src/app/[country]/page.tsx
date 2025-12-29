@@ -1,20 +1,48 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { fetchJson, isCountry, type HomeResponse } from '../../lib/tglApi'
-import { canonicalUrl } from '../../lib/seo'
+import { canonicalUrl, getSiteBaseUrl } from '../../lib/seo'
 import { useTranslations, getLocaleForCountry, type Locale } from '../../lib/i18n'
 import { getLangFromUrl } from '../../lib/lang-switch'
+import { generateSEOMetadata, generateHreflang } from '../../lib/seo-helpers'
+import { getViewFromSearchParams, type View } from '../../lib/view-switch'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 
-export function generateMetadata({ params, searchParams }: { params: { country: string }; searchParams: { lang?: string } }) {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: { country: string }
+  searchParams: { lang?: string; view?: string }
+}) {
   const country = params.country
-  return {
-    alternates: {
-      canonical: canonicalUrl(`/${country}`),
-    },
-  }
+  if (!isCountry(country)) return {}
+
+  const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : getLocaleForCountry(country)
+  const base = getSiteBaseUrl()
+  const path = ''
+  const canonicalPath = lang === getLocaleForCountry(country) ? `/${country}` : `/${country}?lang=${lang}`
+
+  // 利用可能な言語（デフォルト言語は常に利用可能）
+  const availableLangs: Locale[] = [getLocaleForCountry(country)]
+  const hreflang = generateHreflang(country, path, availableLangs)
+
+  const countryName = country.toUpperCase()
+  const title = country === 'jp' ? `${countryName} ニュース` : `${countryName} News`
+  const description =
+    country === 'jp'
+      ? '優しく、静かに、世界のニュースを届けます'
+      : 'Gentle, calm news from around the world'
+
+  return generateSEOMetadata({
+    title,
+    description,
+    type: 'website',
+    canonical: `${base}${canonicalPath}`,
+    hreflang,
+  })
 }
 
 export default async function CountryHome({
@@ -22,15 +50,16 @@ export default async function CountryHome({
   searchParams,
 }: {
   params: { country: string }
-  searchParams: { lang?: string }
+  searchParams: { lang?: string; view?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
 
   const defaultLang = getLocaleForCountry(country)
   const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : defaultLang
+  const view: View = getViewFromSearchParams(searchParams)
 
-  const data = await fetchJson<HomeResponse>(`/v1/${country}/home?lang=${lang}`, { next: { revalidate: 30 } })
+  const data = await fetchJson<HomeResponse>(`/v1/${country}/home?lang=${lang}&view=${view}`, { next: { revalidate: 30 } })
   const isPartial = Boolean(data.meta?.is_partial)
   const t = useTranslations(country, lang)
 

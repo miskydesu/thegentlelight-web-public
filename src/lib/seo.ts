@@ -1,6 +1,8 @@
 export function getSiteBaseUrl(): string {
-  const v = process.env.SITE_BASE_URL || process.env.NEXT_PUBLIC_SITE_BASE_URL
+  // 環境変数: NEXT_PUBLIC_SITE_URL（prod/stg/devで設定）
+  const v = process.env.NEXT_PUBLIC_SITE_URL
   if (v) return v.replace(/\/$/, '')
+  // フォールバック（ローカル開発）
   return 'http://localhost:3000'
 }
 

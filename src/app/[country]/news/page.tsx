@@ -6,6 +6,7 @@ import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { NewsSearchForm } from '@/components/news/NewsSearchForm'
 import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { getViewFromSearchParams, type View } from '@/lib/view-switch'
 
 const CATEGORIES = [
   { code: 'world', label: 'World', labelJa: '世界' },
@@ -17,7 +18,7 @@ const CATEGORIES = [
   { code: 'science', label: 'Science', labelJa: '科学' },
 ]
 
-export function generateMetadata({ params, searchParams }: { params: { country: string }; searchParams: { q?: string; lang?: string } }) {
+export function generateMetadata({ params, searchParams }: { params: { country: string }; searchParams: { q?: string; lang?: string; view?: string } }) {
   const country = params.country
   const query = searchParams.q || ''
   const title = query ? (country === 'jp' ? `検索: ${query}` : `Search: ${query}`) : (country === 'jp' ? 'ニュース（棚）' : 'News')
@@ -31,17 +32,18 @@ export default async function NewsPage({
   searchParams,
 }: {
   params: { country: string }
-  searchParams: { q?: string; category?: string; lang?: string }
+  searchParams: { q?: string; category?: string; lang?: string; view?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : getLocaleForCountry(country)
+  const view: View = getViewFromSearchParams(searchParams)
   const query = searchParams.q || ''
   const category = searchParams.category || ''
   const t = useTranslations(country, lang)
 
-  const apiPath = `/v1/${country}/topics?limit=30&lang=${lang}${query ? `&q=${encodeURIComponent(query)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}`
+  const apiPath = `/v1/${country}/topics?limit=30&lang=${lang}&view=${view}${query ? `&q=${encodeURIComponent(query)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}`
   const data = await fetchJson<TopicsResponse>(apiPath, { next: { revalidate: 30 } })
   const isPartial = Boolean(data.meta?.is_partial)
 

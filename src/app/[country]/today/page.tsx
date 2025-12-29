@@ -5,8 +5,9 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { getViewFromSearchParams, type View } from '@/lib/view-switch'
 
-export function generateMetadata({ params, searchParams }: { params: { country: string }; searchParams: { lang?: string } }) {
+export function generateMetadata({ params, searchParams }: { params: { country: string }; searchParams: { lang?: string; view?: string } }) {
   return {
     title: `Today's Summary - ${params.country.toUpperCase()}`,
   }
@@ -17,13 +18,14 @@ export default async function TodayPage({
   searchParams,
 }: {
   params: { country: string }
-  searchParams: { lang?: string }
+  searchParams: { lang?: string; view?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : getLocaleForCountry(country)
-  const data = await fetchJson<TodayResponse>(`/v1/${country}/today?lang=${lang}`, { next: { revalidate: 30 } })
+  const view: View = getViewFromSearchParams(searchParams)
+  const data = await fetchJson<TodayResponse>(`/v1/${country}/today?lang=${lang}&view=${view}`, { next: { revalidate: 30 } })
   const isPartial = Boolean(data.meta?.is_partial)
   const t = useTranslations(country, lang)
 

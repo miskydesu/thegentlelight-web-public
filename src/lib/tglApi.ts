@@ -12,11 +12,12 @@ export function isCountry(s: string): s is Country {
 }
 
 export function getApiBaseUrl(): string {
-  // Client/server 両方で使う想定：NEXT_PUBLIC_ を採用
+  // 環境変数: NEXT_PUBLIC_API_BASE_URL（prod/stg/devで設定）
   const v = process.env.NEXT_PUBLIC_API_BASE_URL
   if (v) return v
 
-  // 互換フォールバック（基本は env を推奨）
+  // フォールバック（ローカル開発）
+  // クライアント側のみ: ホスト名から推測（互換性のため）
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname
     if (hostname === 'localhost' || hostname === '127.0.0.1') return 'http://localhost:8080'
