@@ -2,8 +2,9 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type TopicDetailResponse } from '../../../../../lib/tglApi'
 import { canonicalUrl } from '../../../../../lib/seo'
+import { getLocaleForCountry, type Locale } from '../../../../../lib/i18n'
 
-export function generateMetadata({ params }: { params: { country: string; topicId: string } }) {
+export function generateMetadata({ params, searchParams }: { params: { country: string; topicId: string }; searchParams: { lang?: string } }) {
   const { country, topicId } = params
   return {
     alternates: {
@@ -12,11 +13,18 @@ export function generateMetadata({ params }: { params: { country: string; topicI
   }
 }
 
-export default async function TopicPage({ params }: { params: { country: string; topicId: string } }) {
+export default async function TopicPage({
+  params,
+  searchParams,
+}: {
+  params: { country: string; topicId: string }
+  searchParams: { lang?: string }
+}) {
   const { country, topicId } = params
   if (!isCountry(country)) return notFound()
 
-  const data = await fetchJson<TopicDetailResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}`, { next: { revalidate: 30 } })
+  const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : getLocaleForCountry(country)
+  const data = await fetchJson<TopicDetailResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}?lang=${lang}`, { next: { revalidate: 30 } })
   const t = data.topic
 
   return (

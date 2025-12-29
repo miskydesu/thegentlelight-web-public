@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import Link from 'next/link'
-import { COUNTRIES, isCountry } from '../../lib/tglApi'
+import { isCountry } from '../../lib/tglApi'
+import { Header } from '../../components/layout/Header'
 
 export default function CountryLayout({
   children,
@@ -13,36 +13,8 @@ export default function CountryLayout({
 
   return (
     <>
-      <header className="tglHeader">
-        <div className="tglHeaderInner">
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <Link href="/" style={{ fontWeight: 800 }}>
-              The Gentle Light
-            </Link>
-            {country ? <span className="tglPill">{country.toUpperCase()}</span> : null}
-          </div>
-
-          <nav className="tglNav">
-            {country ? (
-              <>
-                <Link href={`/${country}`}>トップ</Link>
-                <Link href={`/${country}/news`}>ニュース</Link>
-                <Link href={`/${country}/daily`}>日報</Link>
-              </>
-            ) : null}
-            <span className="tglMuted" style={{ opacity: 0.6 }}>
-              |
-            </span>
-            {COUNTRIES.map((c) => (
-              <Link key={c.code} href={`/${c.code}`} className="tglMuted">
-                {c.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </header>
-
-      <div className="tglContainer">{children}</div>
+      <Header country={country} />
+      <div className="max-w-[1100px] mx-auto px-5 py-5">{children}</div>
     </>
   )
 }

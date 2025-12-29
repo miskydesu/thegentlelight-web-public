@@ -8,13 +8,16 @@ export default function AdminLayout({
       <header className="tglHeader">
         <div className="tglHeaderInner">
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <a href="/" style={{ fontWeight: 800 }}>
+            <a href="/admin" style={{ fontWeight: 800 }}>
               The Gentle Light
             </a>
             <span className="tglPill">Admin</span>
           </div>
           <nav className="tglNav">
+            <a href="/admin">Home</a>
             <a href="/admin/topics">Topics</a>
+            <a href="/admin/columns">Columns</a>
+            <a href="/admin/quotes">Quotes</a>
             <a href="/admin/login" className="tglMuted">
               Login
             </a>

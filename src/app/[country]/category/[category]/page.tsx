@@ -4,7 +4,6 @@ import { isCountry, fetchJson, type TopicsResponse } from '@/lib/tglApi'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
-import { NewsSearchForm } from '@/components/news/NewsSearchForm'
 import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
 
 const CATEGORIES = [
@@ -17,54 +16,53 @@ const CATEGORIES = [
   { code: 'science', label: 'Science', labelJa: '科学' },
 ]
 
-export function generateMetadata({ params, searchParams }: { params: { country: string }; searchParams: { q?: string; lang?: string } }) {
-  const country = params.country
-  const query = searchParams.q || ''
-  const title = query ? (country === 'jp' ? `検索: ${query}` : `Search: ${query}`) : (country === 'jp' ? 'ニュース（棚）' : 'News')
-  return {
-    title: `${title} - ${country.toUpperCase()}`,
-  }
-}
-
-export default async function NewsPage({
+export function generateMetadata({
   params,
   searchParams,
 }: {
-  params: { country: string }
-  searchParams: { q?: string; category?: string; lang?: string }
+  params: { country: string; category: string }
+  searchParams: { lang?: string }
+}) {
+  const category = CATEGORIES.find((c) => c.code === params.category)
+  return {
+    title: `${category?.labelJa || category?.label || params.category} - ${params.country.toUpperCase()}`,
+  }
+}
+
+export default async function CategoryPage({
+  params,
+  searchParams,
+}: {
+  params: { country: string; category: string }
+  searchParams: { lang?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : getLocaleForCountry(country)
-  const query = searchParams.q || ''
-  const category = searchParams.category || ''
+  const category = CATEGORIES.find((c) => c.code === params.category)
+  if (!category) return notFound()
   const t = useTranslations(country, lang)
 
-  const apiPath = `/v1/${country}/topics?limit=30&lang=${lang}${query ? `&q=${encodeURIComponent(query)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}`
-  const data = await fetchJson<TopicsResponse>(apiPath, { next: { revalidate: 30 } })
+  const data = await fetchJson<TopicsResponse>(
+    `/v1/${country}/topics?category=${encodeURIComponent(category.code)}&limit=30&lang=${lang}`,
+    { next: { revalidate: 30 } }
+  )
   const isPartial = Boolean(data.meta?.is_partial)
 
   return (
     <main>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
-        <h1 style={{ fontSize: '1.4rem' }}>{t.pages.news.title}</h1>
-        {isPartial && <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>}
+        <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? category.labelJa : category.label}</h1>
+        <Link
+          href={`/${country}/news`}
+          style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}
+        >
+          {t.pages.category.seeMore}
+        </Link>
       </div>
 
       <div style={{ height: 12 }} />
-
-      <NewsSearchForm country={country} initialQuery={query} />
-
-      <div style={{ height: 16 }} />
-
-      {query && (
-        <div style={{ marginBottom: '1rem' }}>
-          <p style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
-            {t.pages.news.searchResults}: 「{query}」 ({data.topics.length}{country === 'jp' ? '件' : ''})
-          </p>
-        </div>
-      )}
 
       {data.topics.length > 0 ? (
         <>
@@ -81,7 +79,6 @@ export default async function NewsPage({
                     </CardContent>
                   )}
                   <CardMeta style={{ marginTop: '0.5rem' }}>
-                    <span>{t.category}</span>
                     <span>{t.source_count} sources</span>
                     {t.last_source_published_at && (
                       <span>{new Date(t.last_source_published_at).toLocaleString()}</span>
@@ -96,15 +93,12 @@ export default async function NewsPage({
         </>
       ) : (
         <EmptyState
-          title={query ? t.empty.noSearchResults : t.empty.noTopics}
-          description={query ? t.empty.noSearchResultsDescription : t.empty.noTopicsDescription}
-          action={
-            query
-              ? { label: t.common.more, href: `/${country}/news` }
-              : { label: t.nav.top, href: `/${country}` }
-          }
+          title={t.empty.noCategoryResults}
+          description={t.empty.noCategoryResultsDescription}
+          action={{ label: t.pages.today.title, href: `/${country}/today` }}
         />
       )}
     </main>
   )
 }
+

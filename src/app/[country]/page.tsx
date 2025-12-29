@@ -2,8 +2,13 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { fetchJson, isCountry, type HomeResponse } from '../../lib/tglApi'
 import { canonicalUrl } from '../../lib/seo'
+import { useTranslations, getLocaleForCountry, type Locale } from '../../lib/i18n'
+import { getLangFromUrl } from '../../lib/lang-switch'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { PartialNotice } from '@/components/ui/PartialNotice'
+import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 
-export function generateMetadata({ params }: { params: { country: string } }) {
+export function generateMetadata({ params, searchParams }: { params: { country: string }; searchParams: { lang?: string } }) {
   const country = params.country
   return {
     alternates: {
@@ -12,63 +17,76 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   }
 }
 
-export default async function CountryHome({ params }: { params: { country: string } }) {
+export default async function CountryHome({
+  params,
+  searchParams,
+}: {
+  params: { country: string }
+  searchParams: { lang?: string }
+}) {
   const country = params.country
   if (!isCountry(country)) return notFound()
 
-  const data = await fetchJson<HomeResponse>(`/v1/${country}/home`, { next: { revalidate: 30 } })
+  const defaultLang = getLocaleForCountry(country)
+  const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : defaultLang
+
+  const data = await fetchJson<HomeResponse>(`/v1/${country}/home?lang=${lang}`, { next: { revalidate: 30 } })
   const isPartial = Boolean(data.meta?.is_partial)
+  const t = useTranslations(country, lang)
 
   return (
     <main>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
-        <h1 style={{ fontSize: '1.5rem' }}>{country.toUpperCase()} トップ</h1>
-        {isPartial ? <span className="tglPill">部分取得（partial）</span> : <span className="tglMuted">updated: {new Date(data.updatedAt).toLocaleString()}</span>}
+        <h1 style={{ fontSize: '1.5rem' }}>{country.toUpperCase()} {t.pages.home.title}</h1>
+        {isPartial ? (
+          <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>
+        ) : (
+          <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
+            updated: {new Date(data.updatedAt).toLocaleString()}
+          </span>
+        )}
       </div>
 
       <div style={{ height: 12 }} />
 
       <section>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem' }}>
-          <h2 style={{ fontSize: '1.1rem' }}>重要トピック</h2>
-          <Link className="tglMuted" href={`/${country}/news`}>
-            もっと見る →
+          <h2 style={{ fontSize: '1.1rem' }}>{t.pages.home.heroTopics}</h2>
+          <Link
+            href={`/${country}/news`}
+            style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}
+          >
+            {t.pages.home.seeMore}
           </Link>
         </div>
 
         <div style={{ height: 8 }} />
 
         {data.hero_topics?.length ? (
-          <div className="tglList">
+          <div style={{ display: 'grid', gap: '0.75rem' }}>
             {data.hero_topics.map((t) => (
-              <Link key={t.topic_id} href={`/${country}/news/n/${t.topic_id}`} className="tglRow">
-                <div className="tglRowTitle">{t.title}</div>
-                <div className="tglRowMeta">
-                  <span className="tglPill">{t.category}</span>
-                  <span>{t.source_count} sources</span>
-                  {t.high_arousal ? <span className="tglPill">high arousal</span> : null}
-                </div>
+              <Link key={t.topic_id} href={`/${country}/news/n/${t.topic_id}`}>
+                <Card clickable>
+                  <CardTitle>{t.title}</CardTitle>
+                  <CardMeta style={{ marginTop: '0.5rem' }}>
+                    <span>{t.category}</span>
+                    <span>{t.source_count} sources</span>
+                    {t.high_arousal ? <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>high arousal</span> : null}
+                  </CardMeta>
+                </Card>
               </Link>
             ))}
           </div>
         ) : (
-          <div className="tglRow">
-            <div className="tglRowTitle">まだトピックがありません</div>
-            <div className="tglRowMeta">
-              先にステージングのジョブ（NewsAPI）を実行して、topics を作成してください。
-            </div>
-          </div>
+          <EmptyState
+            title={t.empty.noTopics}
+            description={t.empty.noTopicsDescription}
+            action={{ label: t.common.more, href: `/${country}/news` }}
+          />
         )}
       </section>
 
-      <div style={{ height: 20 }} />
-
-      <section className="tglRow">
-        <div className="tglRowTitle">日報</div>
-        <div className="tglRowMeta">
-          <Link href={`/${country}/daily`}>日報一覧へ →</Link>
-        </div>
-      </section>
+      {isPartial && <PartialNotice country={country} />}
     </main>
   )
 }

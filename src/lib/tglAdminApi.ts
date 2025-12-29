@@ -101,4 +101,85 @@ export async function adminSplitTopics(country: Country, body: any) {
   })
 }
 
+export async function adminGetTopicOverride(country: Country, topicId: string) {
+  return adminFetchJson<any>(`/admin/v1/${country}/topics/${encodeURIComponent(topicId)}/override`)
+}
+
+export async function adminUpdateTopicOverride(country: Country, topicId: string, body: any) {
+  return adminFetchJson<any>(`/admin/v1/${country}/topics/${encodeURIComponent(topicId)}/override`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function adminRegenerateTopicSummary(country: Country, topicId: string) {
+  return adminFetchJson<any>(`/admin/v1/${country}/topics/${encodeURIComponent(topicId)}/regenerate-summary`, {
+    method: 'POST',
+  })
+}
+
+// Columns API
+export async function adminListColumns(lang?: string, q?: string, status?: string, tag?: string) {
+  const sp = new URLSearchParams()
+  if (lang) sp.set('lang', lang)
+  if (q) sp.set('q', q)
+  if (status) sp.set('status', status)
+  if (tag) sp.set('tag', tag)
+  sp.set('limit', '50')
+  sp.set('cursor', '0')
+  return adminFetchJson<{ columns: any[]; meta: any }>(`/admin/v1/columns?${sp.toString()}`)
+}
+
+export async function adminGetColumn(columnId: string, lang?: string) {
+  const sp = new URLSearchParams()
+  if (lang) sp.set('lang', lang)
+  return adminFetchJson<any>(`/admin/v1/columns/${encodeURIComponent(columnId)}?${sp.toString()}`)
+}
+
+export async function adminCreateColumn(body: any) {
+  return adminFetchJson<any>('/admin/v1/columns', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function adminUpdateColumn(columnId: string, body: any) {
+  return adminFetchJson<any>(`/admin/v1/columns/${encodeURIComponent(columnId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+// Quotes API
+export async function adminListQuotes(lang?: string, q?: string, isPublished?: boolean, tag?: string) {
+  const sp = new URLSearchParams()
+  if (lang) sp.set('lang', lang)
+  if (q) sp.set('q', q)
+  if (typeof isPublished === 'boolean') sp.set('is_published', String(isPublished))
+  if (tag) sp.set('tag', tag)
+  sp.set('limit', '50')
+  sp.set('cursor', '0')
+  return adminFetchJson<{ quotes: any[]; meta: any }>(`/admin/v1/quotes?${sp.toString()}`)
+}
+
+export async function adminGetQuote(quoteId: string, lang?: string) {
+  const sp = new URLSearchParams()
+  if (lang) sp.set('lang', lang)
+  return adminFetchJson<any>(`/admin/v1/quotes/${encodeURIComponent(quoteId)}?${sp.toString()}`)
+}
+
+export async function adminCreateQuote(body: any) {
+  return adminFetchJson<any>('/admin/v1/quotes', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function adminUpdateQuote(quoteId: string, body: any) {
+  return adminFetchJson<any>(`/admin/v1/quotes/${encodeURIComponent(quoteId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
 

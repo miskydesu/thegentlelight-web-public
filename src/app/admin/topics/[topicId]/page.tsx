@@ -1,10 +1,19 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams, useParams } from 'next/navigation'
 import { isCountry, type Country } from '../../../../lib/tglApi'
-import { adminGetTopic, adminMergeTopics, adminPatchTopic, adminSplitTopics, clearAdminToken } from '../../../../lib/tglAdminApi'
+import {
+  adminGetTopic,
+  adminMergeTopics,
+  adminPatchTopic,
+  adminSplitTopics,
+  adminGetTopicOverride,
+  adminUpdateTopicOverride,
+  adminRegenerateTopicSummary,
+  clearAdminToken,
+} from '../../../../lib/tglAdminApi'
 
 export default function AdminTopicDetailPage() {
   const router = useRouter()
@@ -29,6 +38,20 @@ export default function AdminTopicDetailPage() {
   const [mergeMoveSources, setMergeMoveSources] = useState(true)
   const [mergeResult, setMergeResult] = useState<any | null>(null)
 
+  const [overridePinnedRank, setOverridePinnedRank] = useState<number | null>(null)
+  const [overrideForceHidden, setOverrideForceHidden] = useState(false)
+  const [overrideManualBoost, setOverrideManualBoost] = useState(0)
+  const [overrideNote, setOverrideNote] = useState('')
+  const [overrideBusy, setOverrideBusy] = useState(false)
+
+  const [splitSourceIds, setSplitSourceIds] = useState<string[]>([])
+  const [splitNewTopicTitle, setSplitNewTopicTitle] = useState('')
+  const [splitNewTopicCategory, setSplitNewTopicCategory] = useState('world')
+  const [splitReason, setSplitReason] = useState('')
+  const [splitResult, setSplitResult] = useState<any | null>(null)
+
+  const [regenerateBusy, setRegenerateBusy] = useState(false)
+
   const load = async () => {
     setError(null)
     setBusy(true)
@@ -40,6 +63,20 @@ export default function AdminTopicDetailPage() {
       setSoft(t?.summaries?.soft ?? '')
       setCalm(t?.summaries?.calm ?? '')
       setNear(t?.summaries?.near ?? '')
+
+      // override情報を読み込む
+      const overrideData = res?.overrides || null
+      if (overrideData) {
+        setOverridePinnedRank(overrideData.pinned_rank ?? null)
+        setOverrideForceHidden(overrideData.force_hidden ?? false)
+        setOverrideManualBoost(overrideData.manual_importance_boost ?? 0)
+        setOverrideNote(overrideData.note ?? '')
+      } else {
+        setOverridePinnedRank(null)
+        setOverrideForceHidden(false)
+        setOverrideManualBoost(0)
+        setOverrideNote('')
+      }
     } catch (err: any) {
       const msg = err?.message || '取得に失敗しました'
       if (String(msg).includes(' 401 ') || String(msg).includes(' 403 ')) {
@@ -92,14 +129,67 @@ export default function AdminTopicDetailPage() {
   const doSplit = async () => {
     setError(null)
     setBusy(true)
+    setSplitResult(null)
     try {
-      await adminSplitTopics(country, {})
+      if (splitSourceIds.length === 0) {
+        setError('分割するsourceを1つ以上選択してください')
+        return
+      }
+      const res = await adminSplitTopics(country, {
+        topicId,
+        sourceIds: splitSourceIds,
+        newTopicSeed: splitNewTopicTitle
+          ? {
+              title: splitNewTopicTitle,
+              category: splitNewTopicCategory,
+            }
+          : null,
+        reason: splitReason.trim() || undefined,
+      })
+      setSplitResult(res)
+      await load()
     } catch (err: any) {
-      setError(err?.message || 'splitに失敗しました（未実装の可能性）')
+      setError(err?.message || 'splitに失敗しました')
     } finally {
       setBusy(false)
     }
   }
+
+  const updateOverride = async () => {
+    setError(null)
+    setOverrideBusy(true)
+    try {
+      await adminUpdateTopicOverride(country, topicId, {
+        pinned_rank: overridePinnedRank,
+        force_hidden: overrideForceHidden,
+        manual_importance_boost: overrideManualBoost,
+        note: overrideNote.trim() || null,
+      })
+      await load()
+    } catch (err: any) {
+      setError(err?.message || 'override更新に失敗しました')
+    } finally {
+      setOverrideBusy(false)
+    }
+  }
+
+  const regenerateSummary = async () => {
+    setError(null)
+    setRegenerateBusy(true)
+    try {
+      await adminRegenerateTopicSummary(country, topicId)
+      await load()
+    } catch (err: any) {
+      setError(err?.message || '要約再生成に失敗しました')
+    } finally {
+      setRegenerateBusy(false)
+    }
+  }
+
+  useEffect(() => {
+    void load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const title = useMemo(() => data?.topic?.title ?? '(loading)', [data])
   const sources = data?.sources || []
@@ -138,14 +228,6 @@ export default function AdminTopicDetailPage() {
             保存
           </button>
         </div>
-        {overrides ? (
-          <div className="tglRowMeta" style={{ marginTop: 8 }}>
-            <span className="tglMuted">override:</span>
-            {overrides.force_hidden ? <span className="tglPill">force_hidden</span> : null}
-            {overrides.pinned_rank ? <span className="tglPill">pinned_rank={overrides.pinned_rank}</span> : null}
-            {overrides.manual_importance_boost ? <span className="tglPill">boost={overrides.manual_importance_boost}</span> : null}
-          </div>
-        ) : null}
         {alias ? (
           <div className="tglRowMeta" style={{ marginTop: 8 }}>
             <span className="tglMuted">alias:</span>
@@ -154,6 +236,57 @@ export default function AdminTopicDetailPage() {
             </span>
           </div>
         ) : null}
+      </section>
+
+      <div style={{ height: 12 }} />
+
+      {/* Override編集UI */}
+      <section className="tglRow">
+        <div className="tglRowTitle">Override（手動調整）</div>
+        <div style={{ height: 8 }} />
+        <div className="tglRowMeta" style={{ display: 'grid', gap: 10 }}>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ minWidth: 120 }}>pinned_rank:</span>
+            <input
+              type="number"
+              value={overridePinnedRank ?? ''}
+              onChange={(e) => setOverridePinnedRank(e.target.value ? Number(e.target.value) : null)}
+              placeholder="null (未設定)"
+              style={{ width: 100 }}
+            />
+          </label>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ minWidth: 120 }}>force_hidden:</span>
+            <input
+              type="checkbox"
+              checked={overrideForceHidden}
+              onChange={(e) => setOverrideForceHidden(e.target.checked)}
+            />
+          </label>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ minWidth: 120 }}>manual_boost:</span>
+            <input
+              type="number"
+              value={overrideManualBoost}
+              onChange={(e) => setOverrideManualBoost(Number(e.target.value))}
+              style={{ width: 100 }}
+            />
+          </label>
+          <label>
+            <span style={{ minWidth: 120, display: 'inline-block' }}>note:</span>
+            <textarea
+              value={overrideNote}
+              onChange={(e) => setOverrideNote(e.target.value)}
+              rows={2}
+              style={{ width: '100%' }}
+              placeholder="メモ（任意）"
+            />
+          </label>
+        </div>
+        <div style={{ height: 10 }} />
+        <button className="tglButton" onClick={() => void updateOverride()} disabled={overrideBusy}>
+          {overrideBusy ? '保存中...' : 'Overrideを保存'}
+        </button>
       </section>
 
       <div style={{ height: 12 }} />
@@ -176,9 +309,19 @@ export default function AdminTopicDetailPage() {
           </label>
         </div>
         <div style={{ height: 10 }} />
-        <button className="tglButton" onClick={() => void patch()} disabled={busy}>
-          要約を保存
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="tglButton" onClick={() => void patch()} disabled={busy}>
+            要約を保存
+          </button>
+          <button
+            className="tglButton"
+            onClick={() => void regenerateSummary()}
+            disabled={regenerateBusy || busy}
+            style={{ background: '#f5f5f5', color: '#333' }}
+          >
+            {regenerateBusy ? '再生成中...' : '要約を再生成（LLM）'}
+          </button>
+        </div>
       </section>
 
       <div style={{ height: 12 }} />
@@ -189,13 +332,29 @@ export default function AdminTopicDetailPage() {
         {sources?.length ? (
           <div className="tglList">
             {sources.map((s: any) => (
-              <a key={s.source_id} className="tglRow" href={s.url} target="_blank" rel="noreferrer">
-                <div className="tglRowTitle">{s.title}</div>
-                <div className="tglRowMeta">
-                  {s.source_domain ? <span className="tglPill">{s.source_domain}</span> : null}
-                  {s.published_at ? <span className="tglMuted">{new Date(s.published_at).toLocaleString()}</span> : null}
-                </div>
-              </a>
+              <label
+                key={s.source_id}
+                style={{ display: 'flex', gap: 8, alignItems: 'flex-start', cursor: 'pointer' }}
+              >
+                <input
+                  type="checkbox"
+                  checked={splitSourceIds.includes(s.source_id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSplitSourceIds([...splitSourceIds, s.source_id])
+                    } else {
+                      setSplitSourceIds(splitSourceIds.filter((id) => id !== s.source_id))
+                    }
+                  }}
+                />
+                <a className="tglRow" href={s.url} target="_blank" rel="noreferrer" style={{ flex: 1 }}>
+                  <div className="tglRowTitle">{s.title}</div>
+                  <div className="tglRowMeta">
+                    {s.source_domain ? <span className="tglPill">{s.source_domain}</span> : null}
+                    {s.published_at ? <span className="tglMuted">{new Date(s.published_at).toLocaleString()}</span> : null}
+                  </div>
+                </a>
+              </label>
             ))}
           </div>
         ) : (
@@ -228,11 +387,45 @@ export default function AdminTopicDetailPage() {
           ) : null}
 
           <div className="tglMuted" style={{ marginTop: 6 }}>
-            split（MVPではAPI側が501）
+            split（選択したsourceを新topicへ移動）
           </div>
-          <button className="tglButton" onClick={() => void doSplit()} disabled={busy}>
-            split 実行（未実装）
+          <input
+            value={splitNewTopicTitle}
+            onChange={(e) => setSplitNewTopicTitle(e.target.value)}
+            placeholder="新topicのタイトル（省略可、sourceから推測）"
+            style={{ width: '100%' }}
+          />
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ minWidth: 100 }}>category:</span>
+            <select value={splitNewTopicCategory} onChange={(e) => setSplitNewTopicCategory(e.target.value)}>
+              <option value="world">world</option>
+              <option value="economy">economy</option>
+              <option value="tech">tech</option>
+              <option value="society">society</option>
+              <option value="culture">culture</option>
+              <option value="health">health</option>
+              <option value="science">science</option>
+            </select>
+          </label>
+          <input
+            value={splitReason}
+            onChange={(e) => setSplitReason(e.target.value)}
+            placeholder="reason（任意）"
+            style={{ width: '100%' }}
+          />
+          <button
+            className="tglButton"
+            onClick={() => void doSplit()}
+            disabled={busy || splitSourceIds.length === 0}
+            style={{ background: splitSourceIds.length === 0 ? '#f5f5f5' : undefined }}
+          >
+            split 実行（{splitSourceIds.length}件のsourceを移動）
           </button>
+          {splitResult ? (
+            <pre style={{ whiteSpace: 'pre-wrap', background: '#fafafa', padding: 10, borderRadius: 10, border: '1px solid rgba(0,0,0,0.08)' }}>
+              {JSON.stringify(splitResult, null, 2)}
+            </pre>
+          ) : null}
         </div>
       </section>
     </main>

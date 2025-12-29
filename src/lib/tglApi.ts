@@ -101,4 +101,24 @@ export type DailyDetailResponse = {
   meta: ApiMeta
 }
 
+export type LatestResponse = {
+  topics: TopicSummary[]
+  meta: ApiMeta
+}
+
+export type TodayResponse = {
+  date: string
+  daily: {
+    daily_id: string
+    country: Country
+    date_local: string
+    status: 'ready' | 'pending' | 'failed'
+    topic_count: number
+    generated_at: string | null
+    summary: string | null
+  } | null
+  topics: Array<TopicSummary & { rank: number }>
+  meta: ApiMeta
+}
+
 
