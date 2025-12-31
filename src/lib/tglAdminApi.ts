@@ -55,6 +55,9 @@ export type AdminTopicRow = {
   event_type: string | null
   title: string
   importance_score: number
+  ai_status?: string | null
+  ai_error?: string | null
+  ai_ready_at?: string | null
   source_count: number
   last_seen_at: string
   last_source_published_at: string | null
@@ -64,11 +67,12 @@ export type AdminTopicRow = {
   override?: any
 }
 
-export async function adminListTopics(country: Country, q: string, status: string, category: string) {
+export async function adminListTopics(country: Country, q: string, status: string, category: string, aiStatus?: string) {
   const sp = new URLSearchParams()
   if (q) sp.set('q', q)
   if (status) sp.set('status', status)
   if (category) sp.set('category', category)
+  if (aiStatus) sp.set('aiStatus', aiStatus)
   sp.set('limit', '50')
   sp.set('cursor', '0')
   sp.set('view', 'calm')
@@ -113,8 +117,15 @@ export async function adminUpdateTopicOverride(country: Country, topicId: string
 }
 
 export async function adminRegenerateTopicSummary(country: Country, topicId: string) {
-  return adminFetchJson<any>(`/admin/v1/${country}/topics/${encodeURIComponent(topicId)}/regenerate-summary`, {
+  // DEPRECATED: summarize単体は廃止（基本セットに統合）
+  // 互換のため残すが、内部的には basicセットの再実行を推奨。
+  return adminRunTopicAI(country, topicId, { force: true })
+}
+
+export async function adminRunTopicAI(country: Country, topicId: string, opts?: { force?: boolean }) {
+  return adminFetchJson<any>(`/admin/v1/${country}/topics/${encodeURIComponent(topicId)}/ai/run`, {
     method: 'POST',
+    body: JSON.stringify({ force: Boolean(opts?.force) }),
   })
 }
 

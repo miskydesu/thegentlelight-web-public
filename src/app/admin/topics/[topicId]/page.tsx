@@ -12,6 +12,7 @@ import {
   adminGetTopicOverride,
   adminUpdateTopicOverride,
   adminRegenerateTopicSummary,
+  adminRunTopicAI,
   clearAdminToken,
 } from '../../../../lib/tglAdminApi'
 
@@ -46,11 +47,13 @@ export default function AdminTopicDetailPage() {
 
   const [splitSourceIds, setSplitSourceIds] = useState<string[]>([])
   const [splitNewTopicTitle, setSplitNewTopicTitle] = useState('')
-  const [splitNewTopicCategory, setSplitNewTopicCategory] = useState('world')
+  const [splitNewTopicCategory, setSplitNewTopicCategory] = useState('politics')
   const [splitReason, setSplitReason] = useState('')
   const [splitResult, setSplitResult] = useState<any | null>(null)
 
-  const [regenerateBusy, setRegenerateBusy] = useState(false)
+  const [regenerateBusy, setRegenerateBusy] = useState(false) // DEPRECATED（互換で残す）
+  const [aiRunBusy, setAiRunBusy] = useState(false)
+  const [aiRunResult, setAiRunResult] = useState<any | null>(null)
 
   const load = async () => {
     setError(null)
@@ -174,15 +177,32 @@ export default function AdminTopicDetailPage() {
   }
 
   const regenerateSummary = async () => {
+    // DEPRECATED: summarize単体は廃止（基本セットに統合）
+    // 互換で残しているだけなので、AI再実行（force）を案内する。
     setError(null)
     setRegenerateBusy(true)
     try {
-      await adminRegenerateTopicSummary(country, topicId)
+      await adminRunTopicAI(country, topicId, { force: true })
       await load()
     } catch (err: any) {
-      setError(err?.message || '要約再生成に失敗しました')
+      setError(err?.message || 'AI再実行に失敗しました')
     } finally {
       setRegenerateBusy(false)
+    }
+  }
+
+  const runAI = async (force: boolean) => {
+    setError(null)
+    setAiRunBusy(true)
+    setAiRunResult(null)
+    try {
+      const res = await adminRunTopicAI(country, topicId, { force })
+      setAiRunResult(res)
+      await load()
+    } catch (err: any) {
+      setError(err?.message || 'AI再実行に失敗しました')
+    } finally {
+      setAiRunBusy(false)
     }
   }
 
@@ -217,6 +237,12 @@ export default function AdminTopicDetailPage() {
         <div className="tglRowMeta" style={{ alignItems: 'center' }}>
           <span className="tglMuted">country:</span> <span className="tglPill">{country.toUpperCase()}</span>
           <span className="tglMuted">topicId:</span> <span className="tglPill">{topicId}</span>
+          {data?.topic?.ai_status ? <span className="tglPill">ai:{data.topic.ai_status}</span> : null}
+          {data?.topic?.ai_status === 'failed' && data?.topic?.ai_error ? (
+            <span className="tglMuted" title={data.topic.ai_error} style={{ maxWidth: 520, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {data.topic.ai_error}
+            </span>
+          ) : null}
           <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <span className="tglMuted">status</span>
             <select value={status} onChange={(e) => setStatus(e.target.value)}>
@@ -227,6 +253,19 @@ export default function AdminTopicDetailPage() {
           <button className="tglButton" onClick={() => void patch()} disabled={busy}>
             保存
           </button>
+        </div>
+        <div className="tglRowMeta" style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="tglButton" onClick={() => void runAI(false)} disabled={aiRunBusy || busy}>
+            {aiRunBusy ? 'AI実行中…' : 'AI再実行（基本セット）'}
+          </button>
+          <button className="tglButton" onClick={() => void runAI(true)} disabled={aiRunBusy || busy} style={{ background: '#f5f5f5', color: '#333' }}>
+            {aiRunBusy ? 'AI実行中…' : 'AI再実行（force）'}
+          </button>
+          {aiRunResult ? (
+            <span className="tglMuted" style={{ whiteSpace: 'pre-wrap' }}>
+              result: {JSON.stringify(aiRunResult.result || aiRunResult, null, 0)}
+            </span>
+          ) : null}
         </div>
         {alias ? (
           <div className="tglRowMeta" style={{ marginTop: 8 }}>
@@ -313,14 +352,7 @@ export default function AdminTopicDetailPage() {
           <button className="tglButton" onClick={() => void patch()} disabled={busy}>
             要約を保存
           </button>
-          <button
-            className="tglButton"
-            onClick={() => void regenerateSummary()}
-            disabled={regenerateBusy || busy}
-            style={{ background: '#f5f5f5', color: '#333' }}
-          >
-            {regenerateBusy ? '再生成中...' : '要約を再生成（LLM）'}
-          </button>
+          {/* summarize単体は廃止（基本セットに統合）。詳細上部の「AI再実行」を使用してください。 */}
         </div>
       </section>
 

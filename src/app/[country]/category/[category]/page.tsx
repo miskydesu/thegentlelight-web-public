@@ -8,13 +8,12 @@ import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { getViewFromSearchParams, type View } from '@/lib/view-switch'
 
 const CATEGORIES = [
-  { code: 'world', label: 'World', labelJa: '世界' },
-  { code: 'economy', label: 'Economy', labelJa: '経済' },
-  { code: 'tech', label: 'Tech', labelJa: 'テック' },
-  { code: 'society', label: 'Society', labelJa: '社会' },
-  { code: 'culture', label: 'Culture', labelJa: '文化' },
+  { code: 'politics', label: 'Politics', labelJa: '政治' },
+  { code: 'business', label: 'Business', labelJa: 'ビジネス' },
+  { code: 'technology', label: 'Technology', labelJa: 'テクノロジー' },
   { code: 'health', label: 'Health', labelJa: '健康' },
-  { code: 'science', label: 'Science', labelJa: '科学' },
+  { code: 'science_earth', label: 'Science & Earth', labelJa: '科学と地球' },
+  { code: 'arts', label: 'Arts', labelJa: '文化' },
 ]
 
 export function generateMetadata({

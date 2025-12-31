@@ -8,15 +8,7 @@ import { NewsSearchForm } from '@/components/news/NewsSearchForm'
 import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { getViewFromSearchParams, type View } from '@/lib/view-switch'
 
-const CATEGORIES = [
-  { code: 'world', label: 'World', labelJa: '世界' },
-  { code: 'economy', label: 'Economy', labelJa: '経済' },
-  { code: 'tech', label: 'Tech', labelJa: 'テック' },
-  { code: 'society', label: 'Society', labelJa: '社会' },
-  { code: 'culture', label: 'Culture', labelJa: '文化' },
-  { code: 'health', label: 'Health', labelJa: '健康' },
-  { code: 'science', label: 'Science', labelJa: '科学' },
-]
+// Categories are handled by dedicated category pages (/category/[category]).
 
 export function generateMetadata({ params, searchParams }: { params: { country: string }; searchParams: { q?: string; lang?: string; view?: string } }) {
   const country = params.country

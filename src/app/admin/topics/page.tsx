@@ -12,6 +12,7 @@ export default function AdminTopicsPage() {
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('')
   const [category, setCategory] = useState('')
+  const [aiStatus, setAiStatus] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [rows, setRows] = useState<any[]>([])
@@ -20,7 +21,7 @@ export default function AdminTopicsPage() {
     setError(null)
     setBusy(true)
     try {
-      const res = await adminListTopics(country, q.trim(), status.trim(), category.trim())
+      const res = await adminListTopics(country, q.trim(), status.trim(), category.trim(), aiStatus.trim())
       setRows(res.topics || [])
     } catch (err: any) {
       const msg = err?.message || '取得に失敗しました'
@@ -80,6 +81,15 @@ export default function AdminTopicsPage() {
             <span className="tglMuted">category</span>{' '}
             <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="world/economy…" />
           </label>
+          <label>
+            <span className="tglMuted">ai_status</span>{' '}
+            <select value={aiStatus} onChange={(e) => setAiStatus(e.target.value)}>
+              <option value="">(all)</option>
+              <option value="ready">ready</option>
+              <option value="pending">pending</option>
+              <option value="failed">failed</option>
+            </select>
+          </label>
 
           <button className="tglButton" onClick={() => void load()} disabled={busy}>
             {busy ? '更新中…' : '更新'}
@@ -100,6 +110,12 @@ export default function AdminTopicsPage() {
               <div className="tglRowMeta">
                 <span className="tglPill">{t.category}</span>
                 <span className="tglPill">{t.status}</span>
+                {t.ai_status ? <span className="tglPill">ai:{t.ai_status}</span> : null}
+                {t.ai_status === 'failed' && t.ai_error ? (
+                  <span className="tglMuted" title={t.ai_error} style={{ maxWidth: 420, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {t.ai_error}
+                  </span>
+                ) : null}
                 <span>{t.source_count} sources</span>
                 {t.high_arousal ? <span className="tglPill">high arousal</span> : null}
                 {t.last_source_published_at ? <span className="tglMuted">updated {new Date(t.last_source_published_at).toLocaleString()}</span> : null}
