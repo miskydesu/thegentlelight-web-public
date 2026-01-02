@@ -5,7 +5,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
-import { getViewFromSearchParams, type View } from '@/lib/view-switch'
+// 表示はsoft一本（UX方針）
 
 const CATEGORIES = [
   { code: 'politics', label: 'Politics', labelJa: '政治' },
@@ -18,10 +18,8 @@ const CATEGORIES = [
 
 export function generateMetadata({
   params,
-  searchParams,
 }: {
   params: { country: string; category: string }
-  searchParams: { lang?: string; view?: string }
 }) {
   const category = CATEGORIES.find((c) => c.code === params.category)
   return {
@@ -31,22 +29,19 @@ export function generateMetadata({
 
 export default async function CategoryPage({
   params,
-  searchParams,
 }: {
   params: { country: string; category: string }
-  searchParams: { lang?: string; view?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
 
-  const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : getLocaleForCountry(country)
-  const view: View = getViewFromSearchParams(searchParams)
+  const lang: Locale = getLocaleForCountry(country)
   const category = CATEGORIES.find((c) => c.code === params.category)
   if (!category) return notFound()
   const t = useTranslations(country, lang)
 
   const data = await fetchJson<TopicsResponse>(
-    `/v1/${country}/topics?category=${encodeURIComponent(category.code)}&limit=30&lang=${lang}&view=${view}`,
+    `/v1/${country}/topics?category=${encodeURIComponent(category.code)}&limit=30`,
     { next: { revalidate: 30 } }
   )
   const isPartial = Boolean(data.meta?.is_partial)

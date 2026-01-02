@@ -1,22 +1,19 @@
-export type View = 'soft' | 'calm' | 'near'
+export type GentleMode = boolean
 
-const VIEW_STORAGE_KEY = 'tgl_preferred_view'
+const GENTLE_STORAGE_KEY = 'tgl_gentle_mode'
 
 /**
- * 優しさ段階切替ヘルパー関数
- * URLにviewクエリパラメータを付与する
+ * gentleモード切替ヘルパー関数
+ * URLに gentle クエリパラメータを付与する（gentle=1）
  */
-export function addViewToUrl(url: string, view: View | null): string {
-  if (!view) return url
-
+export function addGentleToUrl(url: string, gentle: GentleMode | null): string {
   const [path, query] = url.split('?')
   const params = new URLSearchParams(query || '')
-  
-  // デフォルト（calm）の場合はviewパラメータを削除（SEO canonicalのため）
-  if (view === 'calm') {
-    params.delete('view')
+
+  if (gentle) {
+    params.set('gentle', '1')
   } else {
-    params.set('view', view)
+    params.delete('gentle')
   }
 
   const queryString = params.toString()
@@ -24,42 +21,38 @@ export function addViewToUrl(url: string, view: View | null): string {
 }
 
 /**
- * URLから現在の優しさ段階を取得（クエリパラメータ or デフォルト）
+ * URLから現在のgentleモードを取得
  */
-export function getViewFromUrl(url: string): View {
+export function getGentleFromUrl(url: string): GentleMode {
   try {
     const urlObj = new URL(url, 'http://localhost')
-    const viewParam = urlObj.searchParams.get('view')
-    if (viewParam === 'soft' || viewParam === 'calm' || viewParam === 'near') {
-      return viewParam
-    }
+    const v = urlObj.searchParams.get('gentle')
+    return v === '1' || v === 'true'
   } catch {
     // URL解析失敗時はデフォルトを返す
   }
-  return 'calm' // デフォルトはcalm
+  return false
 }
 
 /**
- * searchParamsからviewパラメータを取得（サーバーサイド用）
+ * searchParamsからgentleパラメータを取得（サーバーサイド用）
  */
-export function getViewFromSearchParams(searchParams: { view?: string } | { [key: string]: string | string[] | undefined }): View {
-  const viewParam = typeof searchParams.view === 'string' ? searchParams.view : undefined
-  if (viewParam === 'soft' || viewParam === 'calm' || viewParam === 'near') {
-    return viewParam
-  }
-  return 'calm' // デフォルトはcalm
+export function getGentleFromSearchParams(
+  searchParams: { gentle?: string } | { [key: string]: string | string[] | undefined }
+): GentleMode {
+  const gentleParam = typeof (searchParams as any).gentle === 'string' ? (searchParams as any).gentle : undefined
+  return gentleParam === '1' || gentleParam === 'true'
 }
 
 /**
- * localStorageから優しさ段階選択を取得
+ * localStorageからgentleモード選択を取得
  */
-export function getPreferredView(): View | null {
+export function getPreferredGentle(): GentleMode | null {
   if (typeof window === 'undefined') return null
   try {
-    const stored = window.localStorage.getItem(VIEW_STORAGE_KEY)
-    if (stored === 'soft' || stored === 'calm' || stored === 'near') {
-      return stored
-    }
+    const stored = window.localStorage.getItem(GENTLE_STORAGE_KEY)
+    if (stored === '1' || stored === 'true') return true
+    if (stored === '0' || stored === 'false') return false
   } catch {
     // localStorageアクセス失敗時は無視
   }
@@ -67,31 +60,21 @@ export function getPreferredView(): View | null {
 }
 
 /**
- * localStorageに優しさ段階選択を保存
+ * localStorageにgentleモード選択を保存
  */
-export function setPreferredView(view: View): void {
+export function setPreferredGentle(gentle: GentleMode): void {
   if (typeof window === 'undefined') return
   try {
-    window.localStorage.setItem(VIEW_STORAGE_KEY, view)
+    window.localStorage.setItem(GENTLE_STORAGE_KEY, gentle ? '1' : '0')
   } catch {
     // localStorage保存失敗時は無視
   }
 }
 
 /**
- * 現在のURLに優しさ段階を適用した新しいURLを生成
+ * 現在のURLにgentleモードを適用した新しいURLを生成
  */
-export function getViewSwitchedUrl(currentPath: string, targetView: View): string {
-  // デフォルト（calm）の場合はviewパラメータを削除
-  if (targetView === 'calm') {
-    const [path, query] = currentPath.split('?')
-    const params = new URLSearchParams(query || '')
-    params.delete('view')
-    const queryString = params.toString()
-    return queryString ? `${path}?${queryString}` : path
-  }
-  
-  // 非デフォルトの場合はviewパラメータを追加/更新
-  return addViewToUrl(currentPath, targetView)
+export function getGentleSwitchedUrl(currentPath: string, gentle: GentleMode): string {
+  return addGentleToUrl(currentPath, gentle)
 }
 

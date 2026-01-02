@@ -55,6 +55,10 @@ export type AdminTopicRow = {
   event_type: string | null
   title: string
   importance_score: number
+  topic_importance_tier?: string | null
+  topic_confidence_tier?: string | null
+  gentle_light_score?: number | null
+  distress_score?: number | null
   ai_status?: string | null
   ai_error?: string | null
   ai_ready_at?: string | null
@@ -67,21 +71,21 @@ export type AdminTopicRow = {
   override?: any
 }
 
-export async function adminListTopics(country: Country, q: string, status: string, category: string, aiStatus?: string) {
+export async function adminListTopics(country: Country, q: string, status: string, category: string, aiStatus?: string, aiError?: string) {
   const sp = new URLSearchParams()
   if (q) sp.set('q', q)
   if (status) sp.set('status', status)
   if (category) sp.set('category', category)
   if (aiStatus) sp.set('aiStatus', aiStatus)
+  if (aiError) sp.set('aiError', aiError)
   sp.set('limit', '50')
   sp.set('cursor', '0')
-  sp.set('view', 'calm')
   return adminFetchJson<{ topics: AdminTopicRow[]; meta: any }>(`/admin/v1/${country}/topics?${sp.toString()}`)
 }
 
 export async function adminGetTopic(country: Country, topicId: string) {
   const include = encodeURIComponent('sources,overrides,alias')
-  return adminFetchJson<any>(`/admin/v1/${country}/topics/${encodeURIComponent(topicId)}?include=${include}&view=calm`)
+  return adminFetchJson<any>(`/admin/v1/${country}/topics/${encodeURIComponent(topicId)}?include=${include}`)
 }
 
 export async function adminPatchTopic(country: Country, topicId: string, body: any) {
@@ -127,6 +131,37 @@ export async function adminRunTopicAI(country: Country, topicId: string, opts?: 
     method: 'POST',
     body: JSON.stringify({ force: Boolean(opts?.force) }),
   })
+}
+
+export type AdminAiRunRow = {
+  run_id: string
+  country: Country | null
+  mode: string
+  requested_by: string | null
+  limit: number | null
+  force: boolean
+  lang: 'en' | 'ja' | null
+  status: string
+  started_at: string | null
+  finished_at: string | null
+  topics_processed: number
+  topics_succeeded: number
+  topics_failed: number
+  auto_marked_ready: number
+  llm_requests: number
+  prompt_tokens: number
+  completion_tokens: number
+  total_tokens: number
+  model: string | null
+  error_message: string | null
+  meta: any
+}
+
+export async function adminListAiRuns(opts?: { country?: Country; limit?: number }) {
+  const sp = new URLSearchParams()
+  if (opts?.country) sp.set('country', opts.country)
+  if (typeof opts?.limit === 'number') sp.set('limit', String(opts.limit))
+  return adminFetchJson<{ runs: AdminAiRunRow[] }>(`/admin/v1/ai/runs?${sp.toString()}`)
 }
 
 // Columns API

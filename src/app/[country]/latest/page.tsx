@@ -6,9 +6,9 @@ import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { BadgeGroup } from '@/components/ui/BadgeGroup'
 import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
-import { getViewFromSearchParams, type View } from '@/lib/view-switch'
+// 表示はsoft一本（UX方針）
 
-export function generateMetadata({ params, searchParams }: { params: { country: string }; searchParams: { lang?: string; view?: string } }) {
+export function generateMetadata({ params }: { params: { country: string } }) {
   return {
     title: `Latest - ${params.country.toUpperCase()}`,
   }
@@ -16,17 +16,14 @@ export function generateMetadata({ params, searchParams }: { params: { country: 
 
 export default async function LatestPage({
   params,
-  searchParams,
 }: {
   params: { country: string }
-  searchParams: { lang?: string; view?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
 
-  const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : getLocaleForCountry(country)
-  const view: View = getViewFromSearchParams(searchParams)
-  const data = await fetchJson<LatestResponse>(`/v1/${country}/latest?limit=30&lang=${lang}&view=${view}`, { next: { revalidate: 30 } })
+  const lang: Locale = getLocaleForCountry(country)
+  const data = await fetchJson<LatestResponse>(`/v1/${country}/latest?limit=30`, { next: { revalidate: 30 } })
   const isPartial = Boolean(data.meta?.is_partial)
   const t = useTranslations(country, lang)
 

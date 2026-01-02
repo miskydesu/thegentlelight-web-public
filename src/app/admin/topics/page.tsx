@@ -13,15 +13,27 @@ export default function AdminTopicsPage() {
   const [status, setStatus] = useState('')
   const [category, setCategory] = useState('')
   const [aiStatus, setAiStatus] = useState('')
+  const [aiError, setAiError] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [rows, setRows] = useState<any[]>([])
+
+  const formatAiError = (code: string | null | undefined): string => {
+    const c = String(code || '')
+    if (!c) return ''
+    if (c === 'not_summary_target_low_confidence') return '要約対象外（信頼度不足）'
+    if (c === 'not_summary_target_confidence_c') return '要約対象外（信頼度C）'
+    if (c === 'not_summary_target_confidence_unknown') return '要約対象外（信頼度不明）'
+    if (c === 'not_summary_target') return '要約対象外'
+    if (c === 'no_content_for_summary') return '要約不可（本文なし）'
+    return c
+  }
 
   const load = async () => {
     setError(null)
     setBusy(true)
     try {
-      const res = await adminListTopics(country, q.trim(), status.trim(), category.trim(), aiStatus.trim())
+      const res = await adminListTopics(country, q.trim(), status.trim(), category.trim(), aiStatus.trim(), aiError.trim())
       setRows(res.topics || [])
     } catch (err: any) {
       const msg = err?.message || '取得に失敗しました'
@@ -87,7 +99,19 @@ export default function AdminTopicsPage() {
               <option value="">(all)</option>
               <option value="ready">ready</option>
               <option value="pending">pending</option>
+              <option value="skipped">skipped</option>
               <option value="failed">failed</option>
+            </select>
+          </label>
+          <label>
+            <span className="tglMuted">ai_error</span>{' '}
+            <select value={aiError} onChange={(e) => setAiError(e.target.value)}>
+              <option value="">(all)</option>
+              <option value="not_summary_target_low_confidence">要約対象外（信頼度不足）</option>
+              <option value="not_summary_target_confidence_c">要約対象外（信頼度C）</option>
+              <option value="not_summary_target_confidence_unknown">要約対象外（信頼度不明）</option>
+              <option value="not_summary_target">要約対象外</option>
+              <option value="no_content_for_summary">要約不可（本文なし）</option>
             </select>
           </label>
 
@@ -111,9 +135,13 @@ export default function AdminTopicsPage() {
                 <span className="tglPill">{t.category}</span>
                 <span className="tglPill">{t.status}</span>
                 {t.ai_status ? <span className="tglPill">ai:{t.ai_status}</span> : null}
-                {t.ai_status === 'failed' && t.ai_error ? (
-                  <span className="tglMuted" title={t.ai_error} style={{ maxWidth: 420, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {t.ai_error}
+                {t.ai_error ? (
+                  <span
+                    className="tglMuted"
+                    title={t.ai_error}
+                    style={{ maxWidth: 420, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  >
+                    {formatAiError(t.ai_error)}
                   </span>
                 ) : null}
                 <span>{t.source_count} sources</span>

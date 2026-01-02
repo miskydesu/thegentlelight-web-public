@@ -3,27 +3,24 @@ import Link from 'next/link'
 import { fetchJson, isCountry, type HomeResponse } from '../../lib/tglApi'
 import { canonicalUrl, getSiteBaseUrl } from '../../lib/seo'
 import { useTranslations, getLocaleForCountry, type Locale } from '../../lib/i18n'
-import { getLangFromUrl } from '../../lib/lang-switch'
 import { generateSEOMetadata, generateHreflang } from '../../lib/seo-helpers'
-import { getViewFromSearchParams, type View } from '../../lib/view-switch'
+import { getGentleFromSearchParams } from '../../lib/view-switch'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 
 export async function generateMetadata({
   params,
-  searchParams,
 }: {
   params: { country: string }
-  searchParams: { lang?: string; view?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return {}
 
-  const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : getLocaleForCountry(country)
+  const lang: Locale = getLocaleForCountry(country)
   const base = getSiteBaseUrl()
   const path = ''
-  const canonicalPath = lang === getLocaleForCountry(country) ? `/${country}` : `/${country}?lang=${lang}`
+  const canonicalPath = `/${country}`
 
   // 利用可能な言語（デフォルト言語は常に利用可能）
   const availableLangs: Locale[] = [getLocaleForCountry(country)]
@@ -34,7 +31,7 @@ export async function generateMetadata({
   const description =
     country === 'jp'
       ? '優しく、静かに、世界のニュースを届けます'
-      : 'Gentle, calm news from around the world'
+      : 'Gentle news from around the world'
 
   return generateSEOMetadata({
     title,
@@ -50,16 +47,18 @@ export default async function CountryHome({
   searchParams,
 }: {
   params: { country: string }
-  searchParams: { lang?: string; view?: string }
+  searchParams: { gentle?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
 
-  const defaultLang = getLocaleForCountry(country)
-  const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : defaultLang
-  const view: View = getViewFromSearchParams(searchParams)
+  const lang: Locale = getLocaleForCountry(country)
+  const gentle = getGentleFromSearchParams(searchParams)
 
-  const data = await fetchJson<HomeResponse>(`/v1/${country}/home?lang=${lang}&view=${view}`, { next: { revalidate: 30 } })
+  const sp = new URLSearchParams()
+  if (gentle) sp.set('gentle', '1')
+  const qs = sp.toString()
+  const data = await fetchJson<HomeResponse>(`/v1/${country}/home${qs ? `?${qs}` : ''}`, { next: { revalidate: 30 } })
   const isPartial = Boolean(data.meta?.is_partial)
   const t = useTranslations(country, lang)
 

@@ -30,8 +30,7 @@ export default function AdminTopicDetailPage() {
   const [data, setData] = useState<any | null>(null)
 
   const [soft, setSoft] = useState('')
-  const [calm, setCalm] = useState('')
-  const [near, setNear] = useState('')
+  const [gentleMessage, setGentleMessage] = useState('')
   const [status, setStatus] = useState('active')
 
   const [mergeTo, setMergeTo] = useState('')
@@ -64,8 +63,7 @@ export default function AdminTopicDetailPage() {
       const t = res?.topic
       setStatus(t?.status || 'active')
       setSoft(t?.summaries?.soft ?? '')
-      setCalm(t?.summaries?.calm ?? '')
-      setNear(t?.summaries?.near ?? '')
+      setGentleMessage(t?.gentle_message?.soft ?? '')
 
       // override情報を読み込む
       const overrideData = res?.overrides || null
@@ -99,7 +97,8 @@ export default function AdminTopicDetailPage() {
     try {
       await adminPatchTopic(country, topicId, {
         status,
-        summaries: { soft, calm, near },
+        summaries: { soft },
+        gentle_message: { soft: gentleMessage },
       })
       await load()
     } catch (err: any) {
@@ -216,6 +215,26 @@ export default function AdminTopicDetailPage() {
   const overrides = data?.overrides || null
   const alias = data?.alias || null
 
+  const formatAiError = (code: string | null | undefined): string => {
+    const c = String(code || '')
+    if (!c) return ''
+    if (c === 'not_summary_target_low_confidence') return '要約対象外（信頼度不足）'
+    if (c === 'not_summary_target_confidence_c') return '要約対象外（信頼度C）'
+    if (c === 'not_summary_target_confidence_unknown') return '要約対象外（信頼度不明）'
+    if (c === 'not_summary_target') return '要約対象外'
+    if (c === 'no_content_for_summary') return '要約不可（本文なし）'
+    return c
+  }
+
+  const confidenceTier = (data?.topic as any)?.topic_confidence_tier ?? null
+  const confidenceReason = useMemo(() => {
+    if (confidenceTier) return null
+    if (!sources || sources.length === 0) return '信頼度: 不明（参照ソースなし）'
+    const tiers = sources.map((s: any) => String(s?.source_tier ?? s?.source_articles?.source_tier ?? '')).filter(Boolean)
+    if (tiers.length === 0) return '信頼度: 不明（source_tier 未設定）'
+    return '信頼度: 未計算（評価ジョブ未実行の可能性）'
+  }, [confidenceTier, sources])
+
   return (
     <main>
       <div className="tglMuted" style={{ marginBottom: 10, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -237,12 +256,19 @@ export default function AdminTopicDetailPage() {
         <div className="tglRowMeta" style={{ alignItems: 'center' }}>
           <span className="tglMuted">country:</span> <span className="tglPill">{country.toUpperCase()}</span>
           <span className="tglMuted">topicId:</span> <span className="tglPill">{topicId}</span>
+          {(data?.topic as any)?.topic_importance_tier ? <span className="tglPill">重要度:{(data?.topic as any).topic_importance_tier}</span> : null}
+          {confidenceTier ? <span className="tglPill">信頼度:{confidenceTier}</span> : <span className="tglPill">信頼度:?</span>}
           {data?.topic?.ai_status ? <span className="tglPill">ai:{data.topic.ai_status}</span> : null}
-          {data?.topic?.ai_status === 'failed' && data?.topic?.ai_error ? (
-            <span className="tglMuted" title={data.topic.ai_error} style={{ maxWidth: 520, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {data.topic.ai_error}
+          {data?.topic?.ai_error ? (
+            <span
+              className="tglMuted"
+              title={data.topic.ai_error}
+              style={{ maxWidth: 520, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            >
+              {formatAiError(data.topic.ai_error)}
             </span>
           ) : null}
+          {confidenceReason ? <span className="tglMuted">{confidenceReason}</span> : null}
           <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <span className="tglMuted">status</span>
             <select value={status} onChange={(e) => setStatus(e.target.value)}>
@@ -331,20 +357,16 @@ export default function AdminTopicDetailPage() {
       <div style={{ height: 12 }} />
 
       <section className="tglRow">
-        <div className="tglRowTitle">要約（3段階）</div>
+        <div className="tglRowTitle">要約</div>
         <div style={{ height: 8 }} />
         <div className="tglRowMeta" style={{ display: 'grid', gap: 10 }}>
           <label>
-            <div className="tglMuted">soft</div>
+            <div className="tglMuted">summary</div>
             <textarea value={soft} onChange={(e) => setSoft(e.target.value)} rows={4} style={{ width: '100%' }} />
           </label>
           <label>
-            <div className="tglMuted">calm</div>
-            <textarea value={calm} onChange={(e) => setCalm(e.target.value)} rows={4} style={{ width: '100%' }} />
-          </label>
-          <label>
-            <div className="tglMuted">near</div>
-            <textarea value={near} onChange={(e) => setNear(e.target.value)} rows={4} style={{ width: '100%' }} />
+            <div className="tglMuted">gentle_message（余韻の一言）</div>
+            <textarea value={gentleMessage} onChange={(e) => setGentleMessage(e.target.value)} rows={2} style={{ width: '100%' }} />
           </label>
         </div>
         <div style={{ height: 10 }} />

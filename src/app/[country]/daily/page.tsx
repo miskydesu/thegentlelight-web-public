@@ -7,7 +7,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 
-export function generateMetadata({ params, searchParams }: { params: { country: string }; searchParams: { lang?: string } }) {
+export function generateMetadata({ params }: { params: { country: string } }) {
   const country = params.country
   return {
     alternates: {
@@ -18,16 +18,14 @@ export function generateMetadata({ params, searchParams }: { params: { country: 
 
 export default async function DailyIndex({
   params,
-  searchParams,
 }: {
   params: { country: string }
-  searchParams: { lang?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
 
-  const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : getLocaleForCountry(country)
-  const data = await fetchJson<DailyListResponse>(`/v1/${country}/daily?lang=${lang}`, { next: { revalidate: 30 } })
+  const lang: Locale = getLocaleForCountry(country)
+  const data = await fetchJson<DailyListResponse>(`/v1/${country}/daily`, { next: { revalidate: 30 } })
   const isPartial = Boolean(data.meta?.is_partial)
   const t = useTranslations(country, lang)
 

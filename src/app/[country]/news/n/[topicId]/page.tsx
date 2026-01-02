@@ -5,31 +5,28 @@ import { canonicalUrl } from '../../../../../lib/seo'
 import { getLocaleForCountry, type Locale } from '../../../../../lib/i18n'
 import { generateSEOMetadata, generateArticleJSONLD, generateHreflang } from '../../../../../lib/seo-helpers'
 import { getSiteBaseUrl } from '../../../../../lib/seo'
-import { getViewFromSearchParams, type View } from '../../../../../lib/view-switch'
+// 表示はsoft一本（UX方針）
 
 export async function generateMetadata({
   params,
-  searchParams,
 }: {
   params: { country: string; topicId: string }
-  searchParams: { lang?: string; view?: string }
 }) {
   const { country, topicId } = params
   if (!isCountry(country)) return {}
 
-  const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : getLocaleForCountry(country)
-  const view: View = getViewFromSearchParams(searchParams)
+  const lang: Locale = getLocaleForCountry(country)
 
   try {
     // トピックデータを取得（metadata生成用）
-    const data = await fetchJson<TopicDetailResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}?lang=${lang}&view=${view}`, {
+    const data = await fetchJson<TopicDetailResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}`, {
       next: { revalidate: 300 }, // 5分キャッシュ
     })
     const t = data.topic
 
     const base = getSiteBaseUrl()
     const path = `/news/n/${topicId}`
-    const canonicalPath = lang === getLocaleForCountry(country) ? `/${country}${path}` : `/${country}${path}?lang=${lang}`
+    const canonicalPath = `/${country}${path}`
 
     // 利用可能な言語を判定（topic_localizationsから）
     // 注意: 現時点ではAPIレスポンスに言語情報が含まれていないため、デフォルト言語のみと仮定
@@ -58,22 +55,19 @@ export async function generateMetadata({
 
 export default async function TopicPage({
   params,
-  searchParams,
 }: {
   params: { country: string; topicId: string }
-  searchParams: { lang?: string; view?: string }
 }) {
   const { country, topicId } = params
   if (!isCountry(country)) return notFound()
 
-  const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : getLocaleForCountry(country)
-  const view: View = getViewFromSearchParams(searchParams)
-  const data = await fetchJson<TopicDetailResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}?lang=${lang}&view=${view}`, { next: { revalidate: 30 } })
+  const lang: Locale = getLocaleForCountry(country)
+  const data = await fetchJson<TopicDetailResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}`, { next: { revalidate: 30 } })
   const t = data.topic
 
   const base = getSiteBaseUrl()
   const path = `/news/n/${topicId}`
-  const canonicalPath = lang === getLocaleForCountry(country) ? `/${country}${path}` : `/${country}${path}?lang=${lang}`
+  const canonicalPath = `/${country}${path}`
   const articleJSONLD = generateArticleJSONLD({
     title: t.title || `${country.toUpperCase()} News`,
     description: t.summary || undefined,

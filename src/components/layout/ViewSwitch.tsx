@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { getViewFromUrl, getViewSwitchedUrl, setPreferredView, type View } from '@/lib/view-switch'
+import { getGentleFromUrl, getGentleSwitchedUrl, setPreferredGentle } from '@/lib/view-switch'
 import { cn } from '@/lib/cn'
 
 export interface ViewSwitchProps {
@@ -9,24 +9,23 @@ export interface ViewSwitchProps {
 }
 
 /**
- * ViewSwitch: 優しさ段階切替UI（クエリパラメータ方式）
- * soft / calm / near の3段階を切り替え
- * デフォルトはcalm（SEO canonicalもcalmを使用）
+ * ViewSwitch: gentleモード切替UI（クエリパラメータ方式）
+ * gentle=1 のとき「穏やかに読める範囲」を優先（トップは gentle_light_score>=50）
  */
 export function ViewSwitch({ className }: ViewSwitchProps) {
   const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
   
-  const currentView = getViewFromUrl(`${pathname}?${searchParams.toString()}`)
+  const gentle = getGentleFromUrl(`${pathname}?${searchParams.toString()}`)
   
-  const handleViewChange = (targetView: View) => {
-    if (targetView === currentView) return
+  const handleToggle = (nextGentle: boolean) => {
+    if (nextGentle === gentle) return
     
     const currentPath = `${pathname}?${searchParams.toString()}`
-    const newUrl = getViewSwitchedUrl(currentPath, targetView)
+    const newUrl = getGentleSwitchedUrl(currentPath, nextGentle)
     
-    setPreferredView(targetView)
+    setPreferredGentle(nextGentle)
     // window.location.hrefを使って完全にリロード
     // これによりサーバーコンポーネントが確実に再レンダリングされ、リストアップ基準も変わる
     window.location.href = newUrl
@@ -35,42 +34,29 @@ export function ViewSwitch({ className }: ViewSwitchProps) {
   return (
     <div className={cn('flex gap-2 items-center', className)}>
       <button
-        onClick={() => handleViewChange('soft')}
+        onClick={() => handleToggle(true)}
         className={cn(
           'text-sm transition-colors',
-          currentView === 'soft'
+          gentle
             ? 'text-[var(--text)] font-medium'
             : 'text-[var(--muted)] hover:text-[var(--text)]'
         )}
-        title="やわらかく"
+        title="gentleモード ON（トップはgentle_light_score>=50）"
       >
-        Soft
+        Gentle ON
       </button>
       <span className="text-[var(--muted)] opacity-60">|</span>
       <button
-        onClick={() => handleViewChange('calm')}
+        onClick={() => handleToggle(false)}
         className={cn(
           'text-sm transition-colors',
-          currentView === 'calm'
+          !gentle
             ? 'text-[var(--text)] font-medium'
             : 'text-[var(--muted)] hover:text-[var(--text)]'
         )}
-        title="静かに（デフォルト）"
+        title="gentleモード OFF（スコアに関係なく表示）"
       >
-        Calm
-      </button>
-      <span className="text-[var(--muted)] opacity-60">|</span>
-      <button
-        onClick={() => handleViewChange('near')}
-        className={cn(
-          'text-sm transition-colors',
-          currentView === 'near'
-            ? 'text-[var(--text)] font-medium'
-            : 'text-[var(--muted)] hover:text-[var(--text)]'
-        )}
-        title="原文に近く"
-      >
-        Near
+        Gentle OFF
       </button>
     </div>
   )

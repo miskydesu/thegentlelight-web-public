@@ -16,6 +16,7 @@ export default function AdminLayout({
           <nav className="tglNav">
             <a href="/admin">Home</a>
             <a href="/admin/topics">Topics</a>
+            <a href="/admin/ai-runs">AI Runs</a>
             <a href="/admin/columns">Columns</a>
             <a href="/admin/quotes">Quotes</a>
             <a href="/admin/login" className="tglMuted">

@@ -1,13 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
 import { COUNTRIES, isCountry, type Country } from '@/lib/tglApi'
 import { cn } from '@/lib/cn'
 import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
-import { getLangFromUrl, addLangToUrl } from '@/lib/lang-switch'
 import { CountrySwitch } from './CountrySwitch'
-import { LangSwitch } from './LangSwitch'
 import { ViewSwitch } from './ViewSwitch'
 
 export interface HeaderProps {
@@ -22,12 +19,8 @@ export interface HeaderProps {
  * - 右：国切替・言語切替
  */
 export function Header({ country, className }: HeaderProps) {
-  const searchParams = useSearchParams()
-  const lang: Locale | null = country 
-    ? (searchParams.get('lang') === 'en' || searchParams.get('lang') === 'ja' 
-        ? searchParams.get('lang') as Locale 
-        : getLocaleForCountry(country))
-    : null
+  // メイン言語固定（URLの ?lang= 切替は廃止）
+  const lang: Locale | null = country ? getLocaleForCountry(country) : null
   const t = country && lang ? useTranslations(country, lang) : null
 
   return (
@@ -61,25 +54,25 @@ export function Header({ country, className }: HeaderProps) {
           {country && t && lang ? (
             <>
               <Link
-                href={addLangToUrl(`/${country}`, lang === getLocaleForCountry(country) ? null : lang)}
+                href={`/${country}`}
                 className="text-sm hover:text-[var(--accent)] hover:underline underline-offset-4 transition-colors"
               >
                 {t.nav.top}
               </Link>
               <Link
-                href={addLangToUrl(`/${country}/today`, lang === getLocaleForCountry(country) ? null : lang)}
+                href={`/${country}/today`}
                 className="text-sm hover:text-[var(--accent)] hover:underline underline-offset-4 transition-colors"
               >
                 {t.nav.today}
               </Link>
               <Link
-                href={addLangToUrl(`/${country}/news`, lang === getLocaleForCountry(country) ? null : lang)}
+                href={`/${country}/news`}
                 className="text-sm hover:text-[var(--accent)] hover:underline underline-offset-4 transition-colors"
               >
                 {t.nav.news}
               </Link>
               <Link
-                href={addLangToUrl(`/${country}/daily`, lang === getLocaleForCountry(country) ? null : lang)}
+                href={`/${country}/daily`}
                 className="text-sm hover:text-[var(--accent)] hover:underline underline-offset-4 transition-colors"
               >
                 {t.nav.daily}
@@ -90,8 +83,6 @@ export function Header({ country, className }: HeaderProps) {
           {country ? (
             <>
               <CountrySwitch currentCountry={country} />
-              <span className="text-[var(--muted)] opacity-60">|</span>
-              <LangSwitch country={country} />
               <span className="text-[var(--muted)] opacity-60">|</span>
               <ViewSwitch />
             </>

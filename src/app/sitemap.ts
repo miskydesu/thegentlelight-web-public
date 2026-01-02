@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { COUNTRIES, getApiBaseUrl, fetchJson, type Country } from '../lib/tglApi'
+import { COUNTRIES, fetchJson } from '../lib/tglApi'
 
 function getSiteBaseUrl(): string {
   // 環境変数: NEXT_PUBLIC_SITE_URL（prod/stg/devで設定）
@@ -38,18 +38,8 @@ type DailyItem = {
  * - daily（日報、status=ready）
  * - ページングの安定URL（queryだらけを避ける）
  */
-// サーバーサイド用のAPIベースURL取得（windowを参照しない）
-function getApiBaseUrlServer(): string {
-  // 環境変数: NEXT_PUBLIC_API_BASE_URL（prod/stg/devで設定）
-  const v = process.env.NEXT_PUBLIC_API_BASE_URL
-  if (v) return v
-  // フォールバック（ローカル開発）
-  return 'http://localhost:8080'
-}
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteBaseUrl()
-  const apiBase = getApiBaseUrlServer()
   const now = new Date()
 
   const entries: MetadataRoute.Sitemap = []
@@ -83,7 +73,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     try {
       // 最新トピックを取得（過去30日以内、または上位5000件）
       const topicsResponse = await fetchJson<{ topics: TopicItem[]; meta: any }>(
-        `${apiBase}/v1/${c.code}/latest?limit=5000`,
+        `/v1/${c.code}/latest?limit=5000`,
         { next: { revalidate: 3600 } } // 1時間キャッシュ
       )
 
@@ -159,7 +149,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const month = today.getMonth() + 1
 
       const dailyResponse = await fetchJson<{ days: DailyItem[]; meta: any }>(
-        `${apiBase}/v1/${c.code}/daily?year=${year}&month=${month}`,
+        `/v1/${c.code}/daily?year=${year}&month=${month}`,
         { next: { revalidate: 3600 } } // 1時間キャッシュ
       )
 

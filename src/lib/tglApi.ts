@@ -27,7 +27,7 @@ export function getApiBaseUrl(): string {
   return 'http://localhost:8080'
 }
 
-export type ApiMeta = { is_partial?: boolean; next_cursor?: number }
+export type ApiMeta = { is_partial?: boolean; next_cursor?: number; gentle?: boolean }
 
 export async function fetchJson<T>(path: string, init?: RequestInit & { next?: { revalidate?: number } }): Promise<T> {
   const base = getApiBaseUrl().replace(/\/$/, '')
@@ -71,7 +71,7 @@ export type TopicsResponse = {
 
 export type TopicDetailResponse = {
   topic: TopicSummary & {
-    summaries?: { soft: string | null; calm: string | null; near: string | null }
+    summaries?: { soft: string | null }
     entities?: any
   }
   meta?: ApiMeta

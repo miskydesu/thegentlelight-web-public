@@ -1,6 +1,8 @@
 import { type Country } from './tglApi'
 import { getLocaleForCountry, type Locale } from './i18n'
 
+export type { Locale }
+
 const LANG_STORAGE_KEY = 'tgl_preferred_lang'
 
 /**

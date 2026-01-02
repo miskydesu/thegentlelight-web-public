@@ -3,9 +3,8 @@ import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type DailyDetailResponse } from '../../../../lib/tglApi'
 import { canonicalUrl } from '../../../../lib/seo'
 import { getLocaleForCountry, type Locale } from '../../../../lib/i18n'
-import { getViewFromSearchParams, type View } from '../../../../lib/view-switch'
 
-export function generateMetadata({ params, searchParams }: { params: { country: string; date: string }; searchParams: { lang?: string; view?: string } }) {
+export function generateMetadata({ params }: { params: { country: string; date: string } }) {
   const { country, date } = params
   return {
     alternates: {
@@ -16,17 +15,13 @@ export function generateMetadata({ params, searchParams }: { params: { country: 
 
 export default async function DailyDetailPage({
   params,
-  searchParams,
 }: {
   params: { country: string; date: string }
-  searchParams: { lang?: string; view?: string }
 }) {
   const { country, date } = params
   if (!isCountry(country)) return notFound()
 
-  const lang: Locale = searchParams.lang === 'en' || searchParams.lang === 'ja' ? searchParams.lang : getLocaleForCountry(country)
-  const view: View = getViewFromSearchParams(searchParams)
-  const data = await fetchJson<DailyDetailResponse>(`/v1/${country}/daily/${encodeURIComponent(date)}?lang=${lang}&view=${view}`, { next: { revalidate: 30 } })
+  const data = await fetchJson<DailyDetailResponse>(`/v1/${country}/daily/${encodeURIComponent(date)}`, { next: { revalidate: 30 } })
 
   return (
     <main>
