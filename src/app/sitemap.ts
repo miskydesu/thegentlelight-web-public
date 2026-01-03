@@ -53,7 +53,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     fixedRoutes.push(`/${c.code}/latest`)
     fixedRoutes.push(`/${c.code}/daily`)
     // カテゴリページ（Event Registry news/* に揃えたサイト内部カテゴリ）
-    const categories = ['politics', 'business', 'technology', 'health', 'science_earth', 'arts']
+    const categories = ['heartwarming', 'politics', 'business', 'technology', 'health', 'science_earth', 'arts']
     for (const cat of categories) {
       fixedRoutes.push(`/${c.code}/category/${cat}`)
     }

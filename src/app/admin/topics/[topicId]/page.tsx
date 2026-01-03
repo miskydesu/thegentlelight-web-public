@@ -31,6 +31,7 @@ export default function AdminTopicDetailPage() {
 
   const [soft, setSoft] = useState('')
   const [gentleMessage, setGentleMessage] = useState('')
+  const [content, setContent] = useState('')
   const [status, setStatus] = useState('active')
 
   const [mergeTo, setMergeTo] = useState('')
@@ -64,6 +65,7 @@ export default function AdminTopicDetailPage() {
       setStatus(t?.status || 'active')
       setSoft(t?.summaries?.soft ?? '')
       setGentleMessage(t?.gentle_message?.soft ?? '')
+      setContent(t?.content?.soft ?? '')
 
       // override情報を読み込む
       const overrideData = res?.overrides || null
@@ -99,6 +101,7 @@ export default function AdminTopicDetailPage() {
         status,
         summaries: { soft },
         gentle_message: { soft: gentleMessage },
+        content: { soft: content },
       })
       await load()
     } catch (err: any) {
@@ -367,6 +370,10 @@ export default function AdminTopicDetailPage() {
           <label>
             <div className="tglMuted">gentle_message（余韻の一言）</div>
             <textarea value={gentleMessage} onChange={(e) => setGentleMessage(e.target.value)} rows={2} style={{ width: '100%' }} />
+          </label>
+          <label>
+            <div className="tglMuted">content（本文）</div>
+            <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={8} style={{ width: '100%' }} />
           </label>
         </div>
         <div style={{ height: 10 }} />

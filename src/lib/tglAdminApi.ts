@@ -58,6 +58,7 @@ export type AdminTopicRow = {
   topic_importance_tier?: string | null
   topic_confidence_tier?: string | null
   gentle_light_score?: number | null
+  heartwarming_score?: number | null
   distress_score?: number | null
   ai_status?: string | null
   ai_error?: string | null
@@ -71,16 +72,43 @@ export type AdminTopicRow = {
   override?: any
 }
 
-export async function adminListTopics(country: Country, q: string, status: string, category: string, aiStatus?: string, aiError?: string) {
+export async function adminListTopics(
+  country: Country | 'all',
+  q: string,
+  category: string,
+  aiStatus?: string,
+  aiError?: string,
+  orderBy?: 'updated_at' | 'created_at' | 'gentle_light_score' | 'heartwarming_score',
+  limit?: number,
+  cursor?: number,
+  importanceTier?: string[],
+  confidenceTier?: string[],
+  glScoreMin?: number,
+  heartScoreMin?: number
+) {
   const sp = new URLSearchParams()
   if (q) sp.set('q', q)
-  if (status) sp.set('status', status)
   if (category) sp.set('category', category)
   if (aiStatus) sp.set('aiStatus', aiStatus)
   if (aiError) sp.set('aiError', aiError)
-  sp.set('limit', '50')
-  sp.set('cursor', '0')
-  return adminFetchJson<{ topics: AdminTopicRow[]; meta: any }>(`/admin/v1/${country}/topics?${sp.toString()}`)
+  if (orderBy) sp.set('orderBy', orderBy)
+  if (limit !== undefined) sp.set('limit', String(limit))
+  if (cursor !== undefined) sp.set('cursor', String(cursor))
+  if (importanceTier && importanceTier.length > 0) {
+    importanceTier.forEach((tier) => sp.append('importanceTier', tier))
+  }
+  if (confidenceTier && confidenceTier.length > 0) {
+    confidenceTier.forEach((tier) => sp.append('confidenceTier', tier))
+  }
+  if (glScoreMin !== undefined && glScoreMin > 0) {
+    sp.set('glScoreMin', String(glScoreMin))
+  }
+  if (heartScoreMin !== undefined && heartScoreMin > 0) {
+    sp.set('heartScoreMin', String(heartScoreMin))
+  }
+  return adminFetchJson<{ topics: AdminTopicRow[]; meta: { total_count: number; limit: number; cursor: number; has_more: boolean } }>(
+    `/admin/v1/${country}/topics?${sp.toString()}`
+  )
 }
 
 export async function adminGetTopic(country: Country, topicId: string) {
@@ -130,6 +158,57 @@ export async function adminRunTopicAI(country: Country, topicId: string, opts?: 
   return adminFetchJson<any>(`/admin/v1/${country}/topics/${encodeURIComponent(topicId)}/ai/run`, {
     method: 'POST',
     body: JSON.stringify({ force: Boolean(opts?.force) }),
+  })
+}
+
+export type EventRegistryCheckLocation = 'ALL' | 'JP' | 'US'
+export type EventRegistryKeywordSearchMode = 'phrase' | 'exact' | 'simple'
+
+export type EventRegistryCheckResponse = {
+  status: 'ok'
+  result: {
+    request: {
+      request_hash: string
+      request_url_masked: string
+      http_status: number
+      elapsed_ms: number
+    }
+    effective: {
+      keyword: string
+      keywordSearchMode: EventRegistryKeywordSearchMode
+      excludePresetApplied: boolean
+      excludePresetQuery: string
+    }
+    totalResults: number
+    pages: number
+    count: number
+    articles: Array<{
+      uri?: string
+      lang?: string
+      date?: string
+      dateTime?: string
+      dateTimePub?: string
+      url?: string
+      title?: string
+      body?: string
+      source?: { title?: string }
+      image?: string
+      eventUri?: string
+    }>
+  }
+}
+
+export async function adminEventRegistryCheck(body: {
+  keyword: string
+  location: EventRegistryCheckLocation
+  keywordSearchMode: EventRegistryKeywordSearchMode
+  excludePreset: boolean
+  useCategory: boolean
+  categoryUri?: string
+}) {
+  return adminFetchJson<EventRegistryCheckResponse>('/admin/v1/tools/eventregistry/check', {
+    method: 'POST',
+    body: JSON.stringify(body),
   })
 }
 

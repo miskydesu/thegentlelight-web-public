@@ -40,7 +40,7 @@ export default function AdminQuotesPage() {
   }, [])
 
   return (
-    <main>
+    <main style={{ maxWidth: '1800px', margin: '0 auto', padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
         <h1 style={{ fontSize: '1.4rem' }}>Quotes</h1>
         <Link className="tglButton" href="/admin/quotes/new">

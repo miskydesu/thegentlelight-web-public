@@ -10,7 +10,7 @@ export interface ViewSwitchProps {
 
 /**
  * ViewSwitch: gentleモード切替UI（クエリパラメータ方式）
- * gentle=1 のとき「穏やかに読める範囲」を優先（トップは gentle_light_score>=50）
+ * gentle=1 のとき「穏やかに読める範囲」を優先（重要度×heartwarming_score で絞り込み）
  */
 export function ViewSwitch({ className }: ViewSwitchProps) {
   const pathname = usePathname()
@@ -41,7 +41,7 @@ export function ViewSwitch({ className }: ViewSwitchProps) {
             ? 'text-[var(--text)] font-medium'
             : 'text-[var(--muted)] hover:text-[var(--text)]'
         )}
-        title="gentleモード ON（トップはgentle_light_score>=50）"
+        title="gentleモード ON（重要度×heartwarming_scoreで絞り込み）"
       >
         Gentle ON
       </button>

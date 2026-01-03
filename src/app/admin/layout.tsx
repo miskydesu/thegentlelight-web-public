@@ -1,3 +1,9 @@
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'The Gentle Light 管理画面',
+}
+
 export default function AdminLayout({
   children,
 }: {
@@ -19,6 +25,7 @@ export default function AdminLayout({
             <a href="/admin/ai-runs">AI Runs</a>
             <a href="/admin/columns">Columns</a>
             <a href="/admin/quotes">Quotes</a>
+            <a href="/admin/tools/eventregistry">Event Registry</a>
             <a href="/admin/login" className="tglMuted">
               Login
             </a>

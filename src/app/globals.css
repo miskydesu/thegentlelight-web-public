@@ -73,7 +73,7 @@ a {
 }
 
 .tglHeaderInner {
-  max-width: 1100px;
+  max-width: 1800px;
   margin: 0 auto;
   padding: 0.9rem 1.25rem;
   display: flex;
@@ -91,7 +91,7 @@ a {
 }
 
 .tglContainer {
-  max-width: 1100px;
+  max-width: 1800px;
   margin: 0 auto;
   padding: 1.25rem;
 }

@@ -5,9 +5,11 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { getGentleFromSearchParams } from '@/lib/view-switch'
 // 表示はsoft一本（UX方針）
 
 const CATEGORIES = [
+  { code: 'heartwarming', label: 'Heartwarming', labelJa: '優しい話' },
   { code: 'politics', label: 'Politics', labelJa: '政治' },
   { code: 'business', label: 'Business', labelJa: 'ビジネス' },
   { code: 'technology', label: 'Technology', labelJa: 'テクノロジー' },
@@ -29,8 +31,10 @@ export function generateMetadata({
 
 export default async function CategoryPage({
   params,
+  searchParams,
 }: {
   params: { country: string; category: string }
+  searchParams: { gentle?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
@@ -39,9 +43,10 @@ export default async function CategoryPage({
   const category = CATEGORIES.find((c) => c.code === params.category)
   if (!category) return notFound()
   const t = useTranslations(country, lang)
+  const gentle = getGentleFromSearchParams(searchParams)
 
   const data = await fetchJson<TopicsResponse>(
-    `/v1/${country}/topics?category=${encodeURIComponent(category.code)}&limit=30`,
+    `/v1/${country}/topics?category=${encodeURIComponent(category.code)}&limit=30${gentle ? `&gentle=1` : ''}`,
     { next: { revalidate: 30 } }
   )
   const isPartial = Boolean(data.meta?.is_partial)
@@ -51,7 +56,7 @@ export default async function CategoryPage({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
         <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? category.labelJa : category.label}</h1>
         <Link
-          href={`/${country}/news`}
+          href={`/${country}/news${gentle ? '?gentle=1' : ''}`}
           style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}
         >
           {t.pages.category.seeMore}

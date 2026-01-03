@@ -6,6 +6,7 @@ import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { NewsSearchForm } from '@/components/news/NewsSearchForm'
 import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { getGentleFromSearchParams } from '@/lib/view-switch'
 // 表示はsoft一本（UX方針）
 
 // Categories are handled by dedicated category pages (/category/[category]).
@@ -33,8 +34,9 @@ export default async function NewsPage({
   const query = searchParams.q || ''
   const category = searchParams.category || ''
   const t = useTranslations(country, lang)
+  const gentle = getGentleFromSearchParams(searchParams)
 
-  const apiPath = `/v1/${country}/topics?limit=30${query ? `&q=${encodeURIComponent(query)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}`
+  const apiPath = `/v1/${country}/topics?limit=30${gentle ? `&gentle=1` : ''}${query ? `&q=${encodeURIComponent(query)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}`
   const data = await fetchJson<TopicsResponse>(apiPath, { next: { revalidate: 30 } })
   const isPartial = Boolean(data.meta?.is_partial)
 
