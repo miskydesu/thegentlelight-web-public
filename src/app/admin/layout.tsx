@@ -20,14 +20,13 @@ export default function AdminLayout({
             <span className="tglPill">Admin</span>
           </div>
           <nav className="tglNav">
-            <a href="/admin">Home</a>
-            <a href="/admin/topics">Topics</a>
-            <a href="/admin/ai-runs">AI Runs</a>
-            <a href="/admin/columns">Columns</a>
-            <a href="/admin/quotes">Quotes</a>
-            <a href="/admin/tools/eventregistry">Event Registry</a>
+            <a href="/admin">ホーム</a>
+            <a href="/admin/topics">トピック</a>
+            <a href="/admin/quotes">名言</a>
+            <a href="/admin/columns">コラム</a>
+            <a href="/admin/ai-runs">AI実行ログ</a>
             <a href="/admin/login" className="tglMuted">
-              Login
+              ログイン
             </a>
           </nav>
         </div>

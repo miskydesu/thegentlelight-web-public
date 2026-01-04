@@ -29,14 +29,194 @@ export async function adminFetchJson<T>(path: string, init?: RequestInit): Promi
   if (token) headers.authorization = `Bearer ${token}`
   if (!headers['content-type'] && init?.body) headers['content-type'] = 'application/json'
 
-  const res = await fetch(url, { ...init, headers })
-  if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    const err = new Error(`Admin API ${res.status} ${res.statusText}: ${url}${body ? `\n${body}` : ''}`)
-    ;(err as any).status = res.status
+  try {
+    const res = await fetch(url, { ...init, headers })
+    if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      const err = new Error(`Admin API ${res.status} ${res.statusText}: ${url}${body ? `\n${body}` : ''}`)
+      ;(err as any).status = res.status
+      throw err
+    }
+    return (await res.json()) as T
+  } catch (err: any) {
+    // ネットワークエラー（接続拒否など）の場合
+    if (err instanceof TypeError && err.message.includes('fetch')) {
+      throw new Error(`APIサーバーに接続できません。APIサーバーが起動しているか確認してください。\nURL: ${url}\n\nエラー: ${err.message}`)
+    }
+    // その他のエラーはそのまま再スロー
     throw err
   }
-  return (await res.json()) as T
+}
+
+export async function adminUploadImage(file: File): Promise<{ url: string; key: string }> {
+  const base = getApiBaseUrl().replace(/\/$/, '')
+  const url = `${base}/admin/v1/images/upload`
+  const token = getAdminToken()
+
+  const fd = new FormData()
+  fd.append('image', file)
+
+  const headers: Record<string, string> = { accept: 'application/json' }
+  if (token) headers.authorization = `Bearer ${token}`
+
+  const res = await fetch(url, { method: 'POST', body: fd, headers })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`Admin API ${res.status} ${res.statusText}: ${url}${body ? `\n${body}` : ''}`)
+  }
+  const json = (await res.json()) as any
+  if (!json?.url || !json?.key) throw new Error('upload response is invalid')
+  return { url: String(json.url), key: String(json.key) }
+}
+
+export async function adminUploadTempImage(file: File, sessionId: string): Promise<{ url: string; key: string; session_id: string }> {
+  const base = getApiBaseUrl().replace(/\/$/, '')
+  const url = `${base}/admin/v1/images/upload-temp?session_id=${encodeURIComponent(sessionId)}`
+  const token = getAdminToken()
+
+  const fd = new FormData()
+  fd.append('image', file)
+
+  const headers: Record<string, string> = { accept: 'application/json' }
+  if (token) headers.authorization = `Bearer ${token}`
+
+  const res = await fetch(url, { method: 'POST', body: fd, headers })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`Admin API ${res.status} ${res.statusText}: ${url}${body ? `\n${body}` : ''}`)
+  }
+  const json = (await res.json()) as any
+  if (!json?.url || !json?.key) throw new Error('upload response is invalid')
+  return { url: String(json.url), key: String(json.key), session_id: String(json.session_id || sessionId) }
+}
+
+export async function adminUploadColumnCover(columnId: string, file: File): Promise<{ url: string; key: string }> {
+  const base = getApiBaseUrl().replace(/\/$/, '')
+  const url = `${base}/admin/v1/columns/${encodeURIComponent(columnId)}/cover`
+  const token = getAdminToken()
+
+  const fd = new FormData()
+  fd.append('image', file)
+
+  const headers: Record<string, string> = { accept: 'application/json' }
+  if (token) headers.authorization = `Bearer ${token}`
+
+  const res = await fetch(url, { method: 'POST', body: fd, headers })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`Admin API ${res.status} ${res.statusText}: ${url}${body ? `\n${body}` : ''}`)
+  }
+  const json = (await res.json()) as any
+  if (!json?.url || !json?.key) throw new Error('upload response is invalid')
+  return { url: String(json.url), key: String(json.key) }
+}
+
+export async function adminDeleteColumnCover(columnId: string): Promise<{ key: string }> {
+  return adminFetchJson<{ status: string; key: string }>(`/admin/v1/columns/${encodeURIComponent(columnId)}/cover`, {
+    method: 'DELETE',
+  })
+}
+
+export type AdminColumnsUnusedImagesScanResult = {
+  status: 'ok'
+  prefix: string
+  excludePrefix: string
+  scanned: number
+  candidates: number
+  used: number
+  unused: number
+  unused_objects: Array<{ key: string; url: string; size: number | null; lastModified: string | null }>
+}
+
+export async function adminScanUnusedColumnImages(limit = 2000) {
+  return adminFetchJson<AdminColumnsUnusedImagesScanResult>('/admin/v1/tools/columns/images/scan', {
+    method: 'POST',
+    body: JSON.stringify({ limit }),
+  })
+}
+
+export async function adminDeleteColumnImages(keys: string[]) {
+  return adminFetchJson<{ status: 'ok'; deleted: number; failed: number; deleted_keys: string[]; failed_items: Array<{ key: string; error: string }> }>(
+    '/admin/v1/tools/columns/images/delete',
+    {
+      method: 'POST',
+      body: JSON.stringify({ keys }),
+    }
+  )
+}
+
+export async function adminDeleteColumn(columnId: string) {
+  return adminFetchJson<{ status: 'ok' }>(`/admin/v1/columns/${encodeURIComponent(columnId)}`, {
+    method: 'DELETE',
+  })
+}
+
+export type AdminColumnsTmpCleanupResult = {
+  status: 'ok'
+  prefix: string
+  olderThanHours: number
+  cutoff: string
+  scanned: number
+  older: number
+  referenced_in_db: number
+  delete_candidates: number
+  deleted: number
+  failed: number
+  skipped_referenced: number
+  deleted_keys: string[]
+  failed_items: Array<{ key: string; error: string }>
+}
+
+export type AdminColumnsTmpScanResult = {
+  status: 'ok'
+  prefix: string
+  olderThanHours: number
+  cutoff: string
+  scanned: number
+  older: number
+  referenced_in_db: number
+  delete_candidates: number
+  skipped_referenced: number
+  candidate_keys: string[]
+}
+
+export async function adminScanColumnTmpImages(olderThanHours = 72, limit = 2000) {
+  return adminFetchJson<AdminColumnsTmpScanResult>('/admin/v1/tools/columns/tmp-images/scan', {
+    method: 'POST',
+    body: JSON.stringify({ olderThanHours, limit }),
+  })
+}
+
+export async function adminCleanupColumnTmpImages(olderThanHours = 72, limit = 2000) {
+  return adminFetchJson<AdminColumnsTmpCleanupResult>('/admin/v1/tools/columns/tmp-images/cleanup', {
+    method: 'POST',
+    body: JSON.stringify({ olderThanHours, limit }),
+  })
+}
+
+export type AdminColumnJaToEnInput = {
+  title: string
+  slug?: string | null
+  excerpt?: string | null
+  body_md: string
+  seo_title?: string | null
+  seo_description?: string | null
+}
+
+export type AdminColumnJaToEnOutput = {
+  title_en: string
+  slug_en: string
+  excerpt_en: string
+  body_md_en: string
+  seo_title_en: string
+  seo_description_en: string
+}
+
+export async function adminColumnsJaToEn(ja: AdminColumnJaToEnInput) {
+  return adminFetchJson<{ generated: AdminColumnJaToEnOutput }>('/admin/v1/tools/columns/ja-to-en', {
+    method: 'POST',
+    body: JSON.stringify({ ja }),
+  })
 }
 
 export async function adminLogin(email: string, password: string): Promise<{ token: string; user: any }> {
@@ -161,56 +341,7 @@ export async function adminRunTopicAI(country: Country, topicId: string, opts?: 
   })
 }
 
-export type EventRegistryCheckLocation = 'ALL' | 'JP' | 'US'
-export type EventRegistryKeywordSearchMode = 'phrase' | 'exact' | 'simple'
-
-export type EventRegistryCheckResponse = {
-  status: 'ok'
-  result: {
-    request: {
-      request_hash: string
-      request_url_masked: string
-      http_status: number
-      elapsed_ms: number
-    }
-    effective: {
-      keyword: string
-      keywordSearchMode: EventRegistryKeywordSearchMode
-      excludePresetApplied: boolean
-      excludePresetQuery: string
-    }
-    totalResults: number
-    pages: number
-    count: number
-    articles: Array<{
-      uri?: string
-      lang?: string
-      date?: string
-      dateTime?: string
-      dateTimePub?: string
-      url?: string
-      title?: string
-      body?: string
-      source?: { title?: string }
-      image?: string
-      eventUri?: string
-    }>
-  }
-}
-
-export async function adminEventRegistryCheck(body: {
-  keyword: string
-  location: EventRegistryCheckLocation
-  keywordSearchMode: EventRegistryKeywordSearchMode
-  excludePreset: boolean
-  useCategory: boolean
-  categoryUri?: string
-}) {
-  return adminFetchJson<EventRegistryCheckResponse>('/admin/v1/tools/eventregistry/check', {
-    method: 'POST',
-    body: JSON.stringify(body),
-  })
-}
+// (removed) Event Registry 取得チェックツールは廃止
 
 export type AdminAiRunRow = {
   run_id: string
@@ -244,14 +375,14 @@ export async function adminListAiRuns(opts?: { country?: Country; limit?: number
 }
 
 // Columns API
-export async function adminListColumns(lang?: string, q?: string, status?: string, tag?: string) {
+export async function adminListColumns(lang?: string, q?: string, status?: string, tag?: string, limit = 50, cursor = 0) {
   const sp = new URLSearchParams()
   if (lang) sp.set('lang', lang)
   if (q) sp.set('q', q)
   if (status) sp.set('status', status)
   if (tag) sp.set('tag', tag)
-  sp.set('limit', '50')
-  sp.set('cursor', '0')
+  sp.set('limit', String(limit))
+  sp.set('cursor', String(cursor))
   return adminFetchJson<{ columns: any[]; meta: any }>(`/admin/v1/columns?${sp.toString()}`)
 }
 
@@ -276,14 +407,15 @@ export async function adminUpdateColumn(columnId: string, body: any) {
 }
 
 // Quotes API
-export async function adminListQuotes(lang?: string, q?: string, isPublished?: boolean, tag?: string) {
+export async function adminListQuotes(lang?: string | null, q?: string, isPublished?: boolean, tag?: string, limit = 50, cursor = 0) {
   const sp = new URLSearchParams()
   if (lang) sp.set('lang', lang)
+  else sp.set('lang', 'all') // デフォルトはすべて
   if (q) sp.set('q', q)
   if (typeof isPublished === 'boolean') sp.set('is_published', String(isPublished))
   if (tag) sp.set('tag', tag)
-  sp.set('limit', '50')
-  sp.set('cursor', '0')
+  sp.set('limit', String(limit))
+  sp.set('cursor', String(cursor))
   return adminFetchJson<{ quotes: any[]; meta: any }>(`/admin/v1/quotes?${sp.toString()}`)
 }
 
@@ -304,6 +436,164 @@ export async function adminUpdateQuote(quoteId: string, body: any) {
   return adminFetchJson<any>(`/admin/v1/quotes/${encodeURIComponent(quoteId)}`, {
     method: 'PATCH',
     body: JSON.stringify(body),
+  })
+}
+
+export async function adminDeleteQuote(quoteId: string) {
+  return adminFetchJson<{ success: boolean }>(`/admin/v1/quotes/${encodeURIComponent(quoteId)}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function adminCheckDuplicateQuote(quoteTextJa?: string, quoteTextEn?: string) {
+  const sp = new URLSearchParams()
+  if (quoteTextJa) sp.set('quote_text_ja', quoteTextJa)
+  if (quoteTextEn) sp.set('quote_text_en', quoteTextEn)
+  return adminFetchJson<{
+    is_duplicate: boolean
+    duplicates: Array<{
+      quote_id: string
+      author_name: string | null
+      localizations: Array<{
+        lang: string
+        quote_text: string
+        author_name: string | null
+      }>
+    }>
+  }>(`/admin/v1/quotes/check-duplicate?${sp.toString()}`)
+}
+
+export async function adminCreateQuoteWithGpt(body: {
+  tags?: string[]
+  is_published?: boolean
+  quote_text_ja: string
+  author_name_ja?: string | null
+  source_text_ja?: string | null
+  author_name?: string | null
+}) {
+  return adminFetchJson<{
+    quote: {
+      quote_id: string
+      author_name: string | null
+      tags: string[]
+      is_published: boolean
+      created_at: string
+      updated_at: string
+    }
+    generated: any
+  }>('/admin/v1/quotes/create-with-gpt', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function adminCreateQuoteWithGptEn(body: {
+  tags?: string[]
+  is_published?: boolean
+  quote_text_en: string
+  author_name_en?: string | null
+  source_text_en?: string | null
+  author_name?: string | null
+}) {
+  return adminFetchJson<{
+    quote: {
+      quote_id: string
+      author_name: string | null
+      tags: string[]
+      is_published: boolean
+      created_at: string
+      updated_at: string
+    }
+    generated: any
+  }>('/admin/v1/quotes/create-with-gpt-en', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function adminGenerateQuoteEn(quoteId: string) {
+  return adminFetchJson<{
+    quote: {
+      quote_id: string
+      localizations: {
+        ja?: any
+        en?: any
+      }
+    }
+  }>(`/admin/v1/quotes/${encodeURIComponent(quoteId)}/generate-en`, {
+    method: 'POST',
+  })
+}
+
+export async function adminListQuoteTags() {
+  return adminFetchJson<{
+    tags: Array<{
+      tag: string
+      tag_name_en: string | null
+      tag_name_jp: string | null
+      description_en: string | null
+      description_jp: string | null
+      display_order: number | null
+      count: number
+      created_at: string
+      updated_at: string
+    }>
+    meta: { total_tags: number; total_quotes: number }
+  }>('/admin/v1/quotes/tags')
+}
+
+export async function adminCreateQuoteTag(body: {
+  tag: string
+  tag_name_en?: string | null
+  tag_name_jp?: string | null
+  description_en?: string | null
+  description_jp?: string | null
+  display_order?: number | null
+}) {
+  return adminFetchJson<{
+    tag: {
+      tag: string
+      tag_name_en: string | null
+      tag_name_jp: string | null
+      description_en: string | null
+      description_jp: string | null
+      display_order: number | null
+      created_at: string
+      updated_at: string
+    }
+  }>('/admin/v1/quotes/tags', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function adminUpdateQuoteTag(tag: string, body: {
+  tag_name_en?: string | null
+  tag_name_jp?: string | null
+  description_en?: string | null
+  description_jp?: string | null
+  display_order?: number | null
+}) {
+  return adminFetchJson<{
+    tag: {
+      tag: string
+      tag_name_en: string | null
+      tag_name_jp: string | null
+      description_en: string | null
+      description_jp: string | null
+      display_order: number | null
+      created_at: string
+      updated_at: string
+    }
+  }>(`/admin/v1/quotes/tags/${encodeURIComponent(tag)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function adminDeleteQuoteTag(tag: string) {
+  return adminFetchJson<{ success: boolean }>(`/admin/v1/quotes/tags/${encodeURIComponent(tag)}`, {
+    method: 'DELETE',
   })
 }
 
