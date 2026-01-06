@@ -30,6 +30,7 @@ export default function AdminLayout({
             <a href="/admin/column-names">コラム名</a>
             <a href="/admin/columns">コラム</a>
             <a href="/admin/ai-runs">AI実行ログ</a>
+            <a href="/admin/job-logs">ジョブログ</a>
             <a href="/admin/login" className="tglMuted">
               ログイン
             </a>

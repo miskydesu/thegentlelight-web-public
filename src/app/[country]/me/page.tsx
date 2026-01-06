@@ -114,7 +114,7 @@ export default function MyPage() {
             : `Email sending failed: ${r.mail_error}\nPlease verify via the (dev) link below.`
         )
       } else {
-        setNotice(isJp ? '認証メールを送信しました。受信箱をご確認ください。' : 'Verification email sent. Please check your inbox.')
+      setNotice(isJp ? '認証メールを送信しました。受信箱をご確認ください。' : 'Verification email sent. Please check your inbox.')
       }
     } catch (e: any) {
       setError(e?.message || '送信に失敗しました')
