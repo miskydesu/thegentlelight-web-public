@@ -21,6 +21,7 @@ export default function AdminLayout({
           </div>
           <nav className="tglNav">
             <a href="/admin">ホーム</a>
+            <a href="/admin/jobs">ジョブ</a>
             <a href="/admin/topics">トピック</a>
             <a href="/admin/quotes">名言</a>
             <a href="/admin/writers">ライター</a>

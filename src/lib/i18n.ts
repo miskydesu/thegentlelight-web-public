@@ -195,7 +195,7 @@ const translations: Record<Locale, Translations> = {
         description: '更新を時系列でまとめて見たいときに',
       },
       news: {
-        title: 'ニュース（棚）',
+        title: 'ニュース検索',
         searchResults: '検索結果',
         noResults: 'まだトピックがありません',
         noResultsDescription: '先にジョブを実行して topics を作成してください。',

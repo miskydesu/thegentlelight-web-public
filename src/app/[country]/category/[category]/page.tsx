@@ -27,7 +27,7 @@ export default async function CategoryPage({
   searchParams,
 }: {
   params: { country: string; category: string }
-  searchParams: { gentle?: string }
+  searchParams: { gentle?: string; cursor?: string; limit?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
@@ -39,11 +39,27 @@ export default async function CategoryPage({
   const gentle = getGentleFromSearchParams(searchParams)
   const locale = lang === 'ja' ? 'ja' : 'en'
 
+  const cursor = Number.isFinite(Number(searchParams.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
+  const limit = Number.isFinite(Number(searchParams.limit)) ? Math.min(100, Math.max(1, Math.trunc(Number(searchParams.limit)))) : 30
+
   const data = await fetchJson<TopicsResponse>(
-    `/v1/${country}/topics?category=${encodeURIComponent(category.code)}&limit=30${gentle ? `&gentle=1` : ''}`,
+    `/v1/${country}/topics?category=${encodeURIComponent(category.code)}&limit=${limit}&cursor=${cursor}${gentle ? `&gentle=1` : ''}`,
     { next: { revalidate: 30 } }
   )
   const isPartial = Boolean(data.meta?.is_partial)
+  const hasNext = data.topics.length === limit
+  const hasPrev = cursor > 0
+  const start = data.topics.length > 0 ? cursor + 1 : 0
+  const end = cursor + data.topics.length
+
+  const buildUrl = (nextCursor: number) => {
+    const sp = new URLSearchParams()
+    if (gentle) sp.set('gentle', '1')
+    if (limit !== 30) sp.set('limit', String(limit))
+    if (nextCursor > 0) sp.set('cursor', String(nextCursor))
+    const qs = sp.toString()
+    return `/${country}/category/${encodeURIComponent(category.code)}${qs ? `?${qs}` : ''}`
+  }
 
   return (
     <main>
@@ -72,6 +88,32 @@ export default async function CategoryPage({
 
       {data.topics.length > 0 ? (
         <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+            <div style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
+              {start && end ? (locale === 'ja' ? `表示: ${start}-${end}` : `Showing: ${start}-${end}`) : null}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {hasPrev ? (
+                <Link className="tglButton" href={buildUrl(Math.max(0, cursor - limit))}>
+                  {locale === 'ja' ? '前へ' : 'Prev'}
+                </Link>
+              ) : (
+                <span className="tglButton" style={{ opacity: 0.35, pointerEvents: 'none' }}>
+                  {locale === 'ja' ? '前へ' : 'Prev'}
+                </span>
+              )}
+              {hasNext ? (
+                <Link className="tglButton" href={buildUrl(cursor + data.topics.length)}>
+                  {locale === 'ja' ? '次へ' : 'Next'}
+                </Link>
+              ) : (
+                <span className="tglButton" style={{ opacity: 0.35, pointerEvents: 'none' }}>
+                  {locale === 'ja' ? '次へ' : 'Next'}
+                </span>
+              )}
+            </div>
+          </div>
+
           <div className={styles.listGrid}>
             {data.topics.map((x) => (
               <Link key={x.topic_id} href={`/${country}/news/n/${x.topic_id}`}>
@@ -115,6 +157,32 @@ export default async function CategoryPage({
                 })()}
               </Link>
             ))}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
+            <div style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
+              {start && end ? (locale === 'ja' ? `表示: ${start}-${end}` : `Showing: ${start}-${end}`) : null}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {hasPrev ? (
+                <Link className="tglButton" href={buildUrl(Math.max(0, cursor - limit))}>
+                  {locale === 'ja' ? '前へ' : 'Prev'}
+                </Link>
+              ) : (
+                <span className="tglButton" style={{ opacity: 0.35, pointerEvents: 'none' }}>
+                  {locale === 'ja' ? '前へ' : 'Prev'}
+                </span>
+              )}
+              {hasNext ? (
+                <Link className="tglButton" href={buildUrl(cursor + data.topics.length)}>
+                  {locale === 'ja' ? '次へ' : 'Next'}
+                </Link>
+              ) : (
+                <span className="tglButton" style={{ opacity: 0.35, pointerEvents: 'none' }}>
+                  {locale === 'ja' ? '次へ' : 'Next'}
+                </span>
+              )}
+            </div>
           </div>
 
           {isPartial && <PartialNotice country={country} />}
