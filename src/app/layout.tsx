@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
 
+export const runtime = 'edge'
+
 const isNoindex = process.env.ROBOTS_NOINDEX === 'true'
 
 export const metadata: Metadata = {
