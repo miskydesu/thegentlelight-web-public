@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { login, loginWithGoogleIdToken } from '@/lib/userAuth'
+import { useEffect, useRef, useState } from 'react'
+import { getSession, getUserToken, login, loginWithGoogleIdToken, setUserToken } from '@/lib/userAuth'
 import { readSavedKeys } from '@/lib/savedTopics'
 import { importServerSavedKeys } from '@/lib/userAuth'
 import { closeProgressDialog, openProgressDialog } from '@/lib/publicSwal'
@@ -19,11 +19,122 @@ export default function LoginClient() {
   const country = params.country
   const isJp = country === 'jp'
   const router = useRouter()
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const googleBtnRef = useRef<HTMLDivElement | null>(null)
+  const googleInitRef = useRef(false)
+
+  useEffect(() => {
+    // 既にログイン済みなら /me へ（ログイン画面に戻ってきても自動遷移）
+    void (async () => {
+      try {
+        const token = getUserToken()
+        if (!token) return
+        await getSession()
+        router.replace(`/${country}/me`)
+      } catch (e: any) {
+        const status = e?.status
+        const msg = String(e?.message || '')
+        if (status === 401 || msg.toLowerCase().includes('unauthorized')) {
+          setUserToken(null)
+        }
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    const clientId = googleClientId
+    if (!clientId) return
+    if (typeof window === 'undefined') return
+    if (!googleBtnRef.current) return
+    if (googleInitRef.current) return
+
+    googleInitRef.current = true
+
+    const loadScript = () =>
+      new Promise<void>((resolve, reject) => {
+        if (window.google?.accounts?.id) return resolve()
+        const existing = document.querySelector('script[data-google-gis="1"]') as HTMLScriptElement | null
+        if (existing) {
+          existing.addEventListener('load', () => resolve())
+          existing.addEventListener('error', () => reject(new Error('failed to load google gis')))
+          return
+        }
+        const s = document.createElement('script')
+        s.src = 'https://accounts.google.com/gsi/client'
+        s.async = true
+        s.defer = true
+        s.dataset.googleGis = '1'
+        s.onload = () => resolve()
+        s.onerror = () => reject(new Error('failed to load google gis'))
+        document.head.appendChild(s)
+      })
+
+    void (async () => {
+      try {
+        await loadScript()
+        const g = window.google
+        if (!g?.accounts?.id) return
+        g.accounts.id.initialize({
+          client_id: clientId,
+          callback: async (resp: any) => {
+            const cred = String(resp?.credential || '').trim()
+            if (!cred) {
+              setError(isJp ? 'Googleログインに失敗しました（credentialが空）' : 'Google sign-in failed (empty credential)')
+              return
+            }
+            setError(null)
+            setBusy(true)
+            await openProgressDialog(isJp ? 'ログイン中…' : 'Signing in…')
+            try {
+              await loginWithGoogleIdToken(cred, { remember })
+              // sync cookie saved -> DB
+              try {
+                const keys = readSavedKeys()
+                if (keys.length) await importServerSavedKeys(keys)
+              } catch {
+                // ignore
+              }
+              router.push(`/${country}/me`)
+            } catch (e: any) {
+              const status = e?.status
+              const msg = String(e?.message || '').trim()
+              if (status === 401 && (msg === 'account_not_found' || msg.toLowerCase() === 'no account found.')) {
+                setError(
+                  isJp
+                    ? '該当のアカウントはありません。新規作成画面からお試しください。'
+                    : 'No account found. Please try from the sign-up page.'
+                )
+              } else {
+                setError(msg || (isJp ? 'ログインに失敗しました' : 'Sign-in failed'))
+              }
+            } finally {
+              await closeProgressDialog()
+              setBusy(false)
+            }
+          },
+        })
+
+        // Render button
+        g.accounts.id.renderButton(googleBtnRef.current, {
+          theme: 'outline',
+          size: 'large',
+          width: 360,
+          text: 'continue_with',
+          // ブラウザの言語に引っ張られて日本語になることがあるため、ページ側の言語に寄せる
+          locale: country === 'jp' ? 'ja' : 'en',
+        })
+      } catch (e: any) {
+        setError(isJp ? `Googleログインの初期化に失敗しました: ${e?.message || String(e)}` : `Failed to init Google sign-in: ${e?.message || String(e)}`)
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const doLogin = async () => {
     setError(null)
@@ -43,27 +154,6 @@ export default function LoginClient() {
       setError(e?.message || (isJp ? 'ログインに失敗しました' : 'Sign-in failed'))
     } finally {
       await closeProgressDialog()
-      setBusy(false)
-    }
-  }
-
-  const doGoogle = async () => {
-    setError(null)
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
-    if (!clientId) {
-      setError(isJp ? 'NEXT_PUBLIC_GOOGLE_CLIENT_ID が未設定です' : 'NEXT_PUBLIC_GOOGLE_CLIENT_ID is not set')
-      return
-    }
-    setBusy(true)
-    try {
-      // GIS: one-tap is more work; simplest popup token is not available without rendering button.
-      // Here we expect you to wire a proper GIS button later; keep endpoint ready.
-      setError(
-        isJp
-          ? 'Googleログインは準備中です（API側は /v1/auth/google 対応済み）'
-          : 'Google sign-in is not ready yet (API /v1/auth/google is prepared).'
-      )
-    } finally {
       setBusy(false)
     }
   }
@@ -118,9 +208,18 @@ export default function LoginClient() {
           <button type="submit" disabled={busy} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid #000', background: '#000', color: '#fff', fontWeight: 800 }}>
             {busy ? (isJp ? 'ログイン中…' : 'Signing in…') : isJp ? 'ログイン' : 'Sign in'}
           </button>
-          <button type="button" disabled={busy} onClick={() => void doGoogle()} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)', background: '#fff', color: '#000', fontWeight: 800 }}>
-            {isJp ? 'Googleでログイン' : 'Continue with Google'}
-          </button>
+          <div style={{ display: 'grid', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <div ref={googleBtnRef} />
+            </div>
+            {!googleClientId ? (
+              <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                {isJp
+                  ? '※ Googleログインには NEXT_PUBLIC_GOOGLE_CLIENT_ID が必要です'
+                  : '※ Google sign-in requires NEXT_PUBLIC_GOOGLE_CLIENT_ID'}
+              </div>
+            ) : null}
+          </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', fontSize: 13 }}>
             <Link href={`/${country}/signup`} style={{ color: 'var(--text)' }}>
               {isJp ? '新規登録へ' : 'Create an account'}

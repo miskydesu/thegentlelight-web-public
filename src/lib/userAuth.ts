@@ -138,12 +138,23 @@ export async function login(email: string, password: string, opts?: { remember?:
   return r
 }
 
-export async function loginWithGoogleIdToken(idToken: string) {
+export async function loginWithGoogleIdToken(idToken: string, opts?: { remember?: boolean }) {
   const r = await userFetchJson<{ token: string; user: any }>('/v1/auth/google', {
     method: 'POST',
     body: JSON.stringify({ id_token: idToken }),
   })
   setUserToken(r.token)
+  setRememberMeToken(r.token, Boolean(opts?.remember))
+  return r
+}
+
+export async function signupWithGoogleIdToken(idToken: string, opts?: { remember?: boolean }) {
+  const r = await userFetchJson<{ token: string; user: any }>('/v1/auth/google/signup', {
+    method: 'POST',
+    body: JSON.stringify({ id_token: idToken }),
+  })
+  setUserToken(r.token)
+  setRememberMeToken(r.token, Boolean(opts?.remember))
   return r
 }
 

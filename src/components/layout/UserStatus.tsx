@@ -42,10 +42,10 @@ export function UserStatus({ country }: { country: string }) {
   if (!email) {
     return (
       <Link
-        href={`/${country}/login`}
+        href={`/${country}/signup`}
         style={{ fontSize: 13, color: 'var(--muted)', textDecoration: 'none' }}
       >
-        Sign up / Login
+        {isJp ? '新規登録 / ログイン' : 'Sign up / Login'}
       </Link>
     )
   }
