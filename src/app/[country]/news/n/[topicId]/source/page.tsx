@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type TopicSourcesResponse } from '../../../../../../lib/tglApi'
 import { canonicalUrl } from '../../../../../../lib/seo'
+import { getLocaleForCountry } from '../../../../../../lib/i18n'
 import { getGentleFromSearchParams } from '../../../../../../lib/view-switch'
 
 export function generateMetadata({ params }: { params: { country: string; topicId: string } }) {
@@ -24,6 +25,7 @@ export default async function TopicSourcesPage({
   if (!isCountry(country)) return notFound()
 
   const gentle = getGentleFromSearchParams(searchParams)
+  const isJa = getLocaleForCountry(country) === 'ja'
   const data = await fetchJson<TopicSourcesResponse>(
     `/v1/${country}/topics/${encodeURIComponent(topicId)}/sources${gentle ? '?gentle=1' : ''}`,
     { next: { revalidate: 30 } }
@@ -39,11 +41,11 @@ export default async function TopicSourcesPage({
   return (
     <main>
       <div className="tglMuted" style={{ marginBottom: 10, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <Link href={`/${country}/news/n/${topicId}${gentle ? '?gentle=1' : ''}`}>← トピック</Link>
-        <Link href={`/${country}/news${gentle ? '?gentle=1' : ''}`}>ニュース</Link>
+        <Link href={`/${country}/news/n/${topicId}${gentle ? '?gentle=1' : ''}`}>{isJa ? '← トピック' : '← Topic'}</Link>
+        <Link href={`/${country}/news${gentle ? '?gentle=1' : ''}`}>{isJa ? 'ニュース' : 'News'}</Link>
       </div>
 
-      <h1 style={{ fontSize: '1.35rem' }}>参照元一覧</h1>
+      <h1 style={{ fontSize: '1.35rem' }}>{isJa ? '参照元一覧' : 'Sources'}</h1>
       <div style={{ height: 12 }} />
 
       {data.sources?.length ? (
@@ -57,15 +59,17 @@ export default async function TopicSourcesPage({
                   return label ? <span className="tglPill">{label}</span> : null
                 })()}
                 {s.published_at ? <span>{new Date(s.published_at).toLocaleString()}</span> : null}
-                <span className="tglMuted">外部サイトで開く →</span>
+                <span className="tglMuted">{isJa ? '外部サイトで開く →' : 'Open source →'}</span>
               </div>
             </a>
           ))}
         </div>
       ) : (
         <div className="tglRow">
-          <div className="tglRowTitle">参照元がありません</div>
-          <div className="tglRowMeta">topic_sources がまだ紐付いていない可能性があります。</div>
+          <div className="tglRowTitle">{isJa ? '参照元がありません' : 'No sources'}</div>
+          <div className="tglRowMeta">
+            {isJa ? 'topic_sources がまだ紐付いていない可能性があります。' : 'topic_sources may not be linked yet.'}
+          </div>
         </div>
       )}
     </main>

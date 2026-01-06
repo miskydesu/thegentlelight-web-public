@@ -241,7 +241,8 @@ export function getTranslations(locale: Locale): Translations {
   return translations[locale]
 }
 
-export function useTranslations(country: Country, lang?: Locale | null): Translations {
+// NOTE: Not a React hook (safe in Server Components). Do not name with "use*" to avoid eslint react-hooks rules.
+export function getTranslationsForCountry(country: Country, lang?: Locale | null): Translations {
   const locale = lang || getLocaleForCountry(country)
   return getTranslations(locale)
 }

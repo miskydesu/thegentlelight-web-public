@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { isCountry, fetchJson, type ApiMeta } from '@/lib/tglApi'
-import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 
 type ColumnDetailResponse = {
   column: {
@@ -28,7 +28,7 @@ export default async function ColumnDetailPage({ params }: { params: { country: 
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = getLocaleForCountry(country)
-  const t = useTranslations(country, lang)
+  const t = getTranslationsForCountry(country, lang)
 
   const data = await fetchJson<ColumnDetailResponse>(`/v1/${country}/columns/${encodeURIComponent(params.columnId)}`, { next: { revalidate: 60 } })
   const c = data.column
@@ -38,7 +38,7 @@ export default async function ColumnDetailPage({ params }: { params: { country: 
     <main>
       <div style={{ marginBottom: 12 }}>
         <Link href={`/${country}/columns`} style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}>
-          ← コラム一覧へ
+          {lang === 'ja' ? '← コラム一覧へ' : '← Back to columns'}
         </Link>
       </div>
 
@@ -52,7 +52,7 @@ export default async function ColumnDetailPage({ params }: { params: { country: 
       {c.body_md ? (
         <article style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{c.body_md}</article>
       ) : (
-        <div style={{ color: 'var(--muted)' }}>本文がありません。</div>
+        <div style={{ color: 'var(--muted)' }}>{lang === 'ja' ? '本文がありません。' : 'No content.'}</div>
       )}
 
       <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>

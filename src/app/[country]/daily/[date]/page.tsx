@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type DailyDetailResponse } from '../../../../lib/tglApi'
 import { canonicalUrl } from '../../../../lib/seo'
-import { getLocaleForCountry, useTranslations, type Locale } from '../../../../lib/i18n'
+import { getLocaleForCountry, getTranslationsForCountry, type Locale } from '../../../../lib/i18n'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
@@ -80,7 +80,7 @@ export default async function DailyDetailPage({
   }
 
   const lang: Locale = getLocaleForCountry(country)
-  const t = useTranslations(country, lang)
+  const t = getTranslationsForCountry(country, lang)
   // 生成ボタン押下直後に即時反映したいので no-store（キャッシュ無効）
   let data: DailyDetailResponse
   try {
@@ -209,7 +209,7 @@ export default async function DailyDetailPage({
         <>
           {data.messages?.length ? (
             <>
-              <MorningMessagesRotator messages={data.messages} intervalMs={5000} />
+              <MorningMessagesRotator country={country} messages={data.messages} intervalMs={5000} />
               <div style={{ height: 12 }} />
             </>
           ) : null}
@@ -244,7 +244,7 @@ export default async function DailyDetailPage({
           </section>
 
           <section style={{ marginBottom: '1.5rem' }}>
-            {sectionHeader('心温まる話')}
+            {sectionHeader(locale === 'ja' ? '心温まる話' : 'Heartwarming')}
             {renderTopicCards(heartwarmingTopics) ?? (
               <EmptyState
                 title={country === 'jp' ? '心温まる話枠のトピックがありません' : 'No heartwarming topics'}
@@ -255,7 +255,7 @@ export default async function DailyDetailPage({
           </section>
 
           <section style={{ marginBottom: '1.5rem' }}>
-            {sectionHeader('押さえておきたいNews')}
+            {sectionHeader(locale === 'ja' ? '押さえておきたいNews' : 'Must-know News')}
             {renderTopicCards(importantTopics) ?? (
               <EmptyState
                 title={country === 'jp' ? '重要トピックスがありません' : 'No important topics'}

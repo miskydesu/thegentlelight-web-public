@@ -4,7 +4,7 @@ import { isCountry, fetchJson, type LatestResponse } from '@/lib/tglApi'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
-import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { formatTopicListDate } from '@/lib/topicDate'
 // 表示はsoft一本（UX方針）
 
@@ -29,7 +29,7 @@ export default async function LatestPagePage({
   const lang: Locale = getLocaleForCountry(country)
   const pageNum = parseInt(params.page, 10)
   if (isNaN(pageNum) || pageNum < 2) return notFound()
-  const t = useTranslations(country, lang)
+  const t = getTranslationsForCountry(country, lang)
   const locale = lang === 'ja' ? 'ja' : 'en'
 
   const cursor = (pageNum - 1) * 30

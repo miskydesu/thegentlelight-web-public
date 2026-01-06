@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { getLocaleForCountry } from '@/lib/i18n'
 
 export function MorningMessagesRotator(props: {
   messages: Array<{ rank?: number; message: string }> | string[]
+  country?: 'jp' | 'us' | 'uk' | 'ca' | string
   intervalMs?: number
   typeMsPerChar?: number
 }) {
@@ -11,6 +13,7 @@ export function MorningMessagesRotator(props: {
   const typeMsPerChar = Math.max(10, Math.trunc(props.typeMsPerChar ?? 75))
   const blankMs = 1000
   const maxCycles = 2
+  const isJa = props.country ? getLocaleForCountry(props.country as any) === 'ja' : false
 
   const lines = useMemo(() => {
     const raw: any = props.messages
@@ -138,7 +141,7 @@ export function MorningMessagesRotator(props: {
       <button
         type="button"
         onClick={onToggle}
-        aria-label={isPlaying ? '停止' : '再生'}
+        aria-label={isPlaying ? (isJa ? '停止' : 'Pause') : isJa ? '再生' : 'Play'}
         style={{
           position: 'absolute',
           top: 10,
@@ -159,7 +162,7 @@ export function MorningMessagesRotator(props: {
       >
         {isPlaying ? '❚❚' : '▶'}
       </button>
-      <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>朝刊メッセージ</div>
+      <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>{isJa ? '朝刊メッセージ' : 'Morning messages'}</div>
       <div style={{ fontSize: 16, fontWeight: 700, whiteSpace: 'pre-wrap', minHeight: 28 }}>{typed}</div>
     </div>
   )

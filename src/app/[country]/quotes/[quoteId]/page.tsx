@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { isCountry, fetchJson, type ApiMeta } from '@/lib/tglApi'
-import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import styles from '../quotes.module.css'
 
 type QuoteDetailResponse = {
@@ -34,7 +34,7 @@ export default async function QuoteDetailPage({ params }: { params: { country: s
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = getLocaleForCountry(country)
-  const t = useTranslations(country, lang)
+  const t = getTranslationsForCountry(country, lang)
 
   const [data, themesData] = await Promise.all([
     fetchJson<QuoteDetailResponse>(`/v1/${country}/quotes/${encodeURIComponent(params.quoteId)}`, { next: { revalidate: 60 } }),

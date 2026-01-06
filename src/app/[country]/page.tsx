@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { fetchJson, isCountry, type HomeResponse } from '../../lib/tglApi'
 import { canonicalUrl, getSiteBaseUrl } from '../../lib/seo'
-import { useTranslations, getLocaleForCountry, type Locale } from '../../lib/i18n'
+import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '../../lib/i18n'
 import { generateSEOMetadata, generateHreflang } from '../../lib/seo-helpers'
 import { getGentleFromSearchParams } from '../../lib/view-switch'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -107,7 +107,7 @@ export default async function CountryHome({
     return String(b.topic_id).localeCompare(String(a.topic_id))
   })
   const isPartial = Boolean(data.meta?.is_partial)
-  const t = useTranslations(country, lang)
+  const t = getTranslationsForCountry(country, lang)
   const locale = lang === 'ja' ? 'ja' : 'en'
 
   return (

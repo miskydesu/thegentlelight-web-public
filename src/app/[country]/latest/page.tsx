@@ -5,7 +5,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { BadgeGroup } from '@/components/ui/BadgeGroup'
-import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { formatTopicListDate } from '@/lib/topicDate'
 // 表示はsoft一本（UX方針）
 
@@ -26,7 +26,7 @@ export default async function LatestPage({
   const lang: Locale = getLocaleForCountry(country)
   const data = await fetchJson<LatestResponse>(`/v1/${country}/latest?limit=30`, { next: { revalidate: 30 } })
   const isPartial = Boolean(data.meta?.is_partial)
-  const t = useTranslations(country, lang)
+  const t = getTranslationsForCountry(country, lang)
   const locale = lang === 'ja' ? 'ja' : 'en'
 
   return (

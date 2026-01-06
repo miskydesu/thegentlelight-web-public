@@ -130,7 +130,7 @@ export default function MyPage() {
 
   return (
     <main style={{ maxWidth: 720, margin: '0 auto', padding: 20 }}>
-      <h1 style={{ fontSize: '1.5rem', marginBottom: 12 }}>マイページ</h1>
+      <h1 style={{ fontSize: '1.5rem', marginBottom: 12 }}>{isJp ? 'マイページ' : 'My page'}</h1>
 
       {error ? (
         <div style={{ marginBottom: 12, padding: '10px 12px', border: '1px solid #f5c2c7', background: '#f8d7da', color: '#842029', borderRadius: 6, whiteSpace: 'pre-wrap' }}>
@@ -140,7 +140,7 @@ export default function MyPage() {
 
       <section style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.06)', marginBottom: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
-          <div style={{ fontWeight: 800 }}>ログイン情報</div>
+          <div style={{ fontWeight: 800 }}>{isJp ? 'ログイン情報' : 'Login info'}</div>
           <button
             type="button"
             onClick={() => {
@@ -153,17 +153,20 @@ export default function MyPage() {
           </button>
         </div>
         <div style={{ color: 'var(--muted)' }}>{email || '—'}</div>
-        <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 6 }}>{googleSub ? 'Google連携: あり' : 'Google連携: なし'}</div>
         <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 6 }}>
-          メール認証: {emailVerifiedAt ? `済（${new Date(emailVerifiedAt).toLocaleString()}）` : '未'}
+          {googleSub ? (isJp ? 'Google連携: あり' : 'Google linked: yes') : isJp ? 'Google連携: なし' : 'Google linked: no'}
+        </div>
+        <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 6 }}>
+          {isJp ? 'メール認証' : 'Email verification'}:{' '}
+          {emailVerifiedAt ? (isJp ? `済（${new Date(emailVerifiedAt).toLocaleString()}）` : `Verified (${new Date(emailVerifiedAt).toLocaleString()})`) : isJp ? '未' : 'Not verified'}
         </div>
         {!emailVerifiedAt ? (
           <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
             <button type="button" onClick={() => void sendVerify()} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)', background: '#fff' }}>
-              認証メールを送る
+              {isJp ? '認証メールを送る' : 'Send verification email'}
             </button>
             <Link href={`/${country}/verify-email?token=${encodeURIComponent(emailToken)}`} style={{ fontSize: 13, color: 'var(--muted)' }}>
-              （dev）確認ページへ
+              {isJp ? '（dev）確認ページへ' : '(dev) Verify page'}
             </Link>
           </div>
         ) : null}
@@ -224,44 +227,66 @@ export default function MyPage() {
       </section>
 
       <section style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.06)', marginBottom: 14 }}>
-        <div style={{ fontWeight: 800, marginBottom: 8 }}>ID（メールアドレス）変更</div>
+        <div style={{ fontWeight: 800, marginBottom: 8 }}>{isJp ? 'ID（メールアドレス）変更' : 'Change email address'}</div>
         <div style={{ display: 'grid', gap: 10 }}>
-          <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="新しいメールアドレス" style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)' }} />
+          <input
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder={isJp ? '新しいメールアドレス' : 'New email address'}
+            style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)' }}
+          />
           <button type="button" onClick={() => void requestChange()} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)', background: '#fff', fontWeight: 800 }}>
-            変更用メールを送る
+            {isJp ? '変更用メールを送る' : 'Send change-email link'}
           </button>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <input value={emailToken} onChange={(e) => setEmailToken(e.target.value)} placeholder="（dev）トークン" style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)', flex: '1 1 240px' }} />
+            <input
+              value={emailToken}
+              onChange={(e) => setEmailToken(e.target.value)}
+              placeholder={isJp ? '（dev）トークン' : '(dev) Token'}
+              style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)', flex: '1 1 240px' }}
+            />
             <button type="button" onClick={() => void confirmChange()} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid #000', background: '#000', color: '#fff', fontWeight: 800 }}>
-              変更を確定
+              {isJp ? '変更を確定' : 'Confirm change'}
             </button>
           </div>
           <Link href={`/${country}/confirm-email-change?token=${encodeURIComponent(emailToken)}`} style={{ fontSize: 13, color: 'var(--muted)' }}>
-            （dev）確認ページへ
+            {isJp ? '（dev）確認ページへ' : '(dev) Confirm page'}
           </Link>
         </div>
       </section>
 
       {!googleSub ? (
         <section style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
-          <div style={{ fontWeight: 800, marginBottom: 8 }}>パスワード変更</div>
+          <div style={{ fontWeight: 800, marginBottom: 8 }}>{isJp ? 'パスワード変更' : 'Change password'}</div>
           <div style={{ display: 'grid', gap: 10 }}>
-            <input type="password" placeholder="現在のパスワード" value={curPw} onChange={(e) => setCurPw(e.target.value)} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)' }} />
-            <input type="password" placeholder="新しいパスワード" value={newPw} onChange={(e) => setNewPw(e.target.value)} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)' }} />
+            <input
+              type="password"
+              placeholder={isJp ? '現在のパスワード' : 'Current password'}
+              value={curPw}
+              onChange={(e) => setCurPw(e.target.value)}
+              style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)' }}
+            />
+            <input
+              type="password"
+              placeholder={isJp ? '新しいパスワード' : 'New password'}
+              value={newPw}
+              onChange={(e) => setNewPw(e.target.value)}
+              style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)' }}
+            />
             <button type="button" disabled={busyPw} onClick={() => void savePw()} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid #000', background: '#000', color: '#fff', fontWeight: 800 }}>
-              {busyPw ? '保存中…' : '変更'}
+              {busyPw ? (isJp ? '保存中…' : 'Saving…') : isJp ? '変更' : 'Update'}
             </button>
           </div>
         </section>
       ) : (
         <div style={{ color: 'var(--muted)', fontSize: 13 }}>
-          Google連携アカウントは、ここからパスワード変更できません。
+          {isJp ? 'Google連携アカウントは、ここからパスワード変更できません。' : 'Google-linked accounts cannot change password here.'}
         </div>
       )}
 
       <div style={{ marginTop: 14, fontSize: 13 }}>
         <Link href={`/${country}`} style={{ color: 'var(--muted)' }}>
-          ← トップへ
+          {isJp ? '← トップへ' : '← Back to top'}
         </Link>
       </div>
     </main>

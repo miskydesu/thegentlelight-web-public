@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type DailyListResponse } from '../../../lib/tglApi'
 import { canonicalUrl } from '../../../lib/seo'
-import { useTranslations, getLocaleForCountry, type Locale } from '../../../lib/i18n'
+import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '../../../lib/i18n'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
@@ -56,7 +56,7 @@ export default async function DailyIndex({
   // 生成直後の反映を優先（キャッシュ無効）
   const data = await fetchJson<DailyListResponse>(`/v1/${country}/daily?year=${year}&month=${month}`, { cache: 'no-store' })
   const isPartial = Boolean(data.meta?.is_partial)
-  const t = useTranslations(country, lang)
+  const t = getTranslationsForCountry(country, lang)
 
   const monthLabel = `${year}-${String(month).padStart(2, '0')}`
   const prev = (() => {

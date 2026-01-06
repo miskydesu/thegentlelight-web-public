@@ -4,9 +4,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, FormEvent } from 'react'
 import { type Country } from '@/lib/tglApi'
 import { Button } from '@/components/ui/Button'
-import { useTranslations } from '@/lib/i18n'
+import { getTranslationsForCountry, getLocaleForCountry } from '@/lib/i18n'
 import { CATEGORIES, getCategoryLabel } from '@/lib/categories'
-import { getLocaleForCountry } from '@/lib/i18n'
 
 export function NewsSearchForm({
   country,
@@ -21,7 +20,7 @@ export function NewsSearchForm({
   const searchParams = useSearchParams()
   const [query, setQuery] = useState(initialQuery)
   const [category, setCategory] = useState(initialCategory)
-  const t = useTranslations(country)
+  const t = getTranslationsForCountry(country)
   const locale = getLocaleForCountry(country) === 'ja' ? 'ja' : 'en'
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {

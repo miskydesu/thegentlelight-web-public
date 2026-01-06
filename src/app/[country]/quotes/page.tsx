@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { isCountry, fetchJson, type ApiMeta } from '@/lib/tglApi'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
-import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import styles from './quotes.module.css'
 
 type QuotesResponse = {
@@ -42,7 +42,7 @@ export default async function QuotesPage({
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = getLocaleForCountry(country)
-  const t = useTranslations(country, lang)
+  const t = getTranslationsForCountry(country, lang)
 
   // searchParamsは任意（シンプルなGET検索フォーム）
   const q = typeof searchParams.q === 'string' ? searchParams.q.trim() : ''

@@ -92,6 +92,7 @@ export default async function TopicPage({
   })
 
   const locale = lang === 'ja' ? 'ja' : 'en'
+  const isJa = locale === 'ja'
   const categoryLabel = getCategoryLabel(topic.category, locale)
   const catTheme = getCategoryBadgeTheme(topic.category)
   const publishedLabel = topic.last_source_published_at
@@ -128,7 +129,7 @@ export default async function TopicPage({
             href={`/${country}/news${gentle ? '?gentle=1' : ''}`}
             style={{ fontSize: '0.95rem', color: 'var(--muted)', textDecoration: 'none' }}
           >
-            ← ニュース
+            {isJa ? '← ニュース' : '← News'}
           </Link>
           <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>{gentle ? 'Gentle' : 'All'}</span>
         </div>
@@ -173,10 +174,14 @@ export default async function TopicPage({
 
         <Card className={styles.topCard}>
           <CardTitle className={styles.sectionTitle}>
-            <span className={styles.cardTitleAccent}>要約</span>
+            <span className={styles.cardTitleAccent}>{isJa ? '要約' : 'Summary'}</span>
           </CardTitle>
           <CardContent>
-            {topic.summary ? <div className={styles.bodyText}>{topic.summary}</div> : <div className={styles.mutedText}>（要約はまだありません）</div>}
+            {topic.summary ? (
+              <div className={styles.bodyText}>{topic.summary}</div>
+            ) : (
+              <div className={styles.mutedText}>{isJa ? '（要約はまだありません）' : '(No summary yet)'}</div>
+            )}
           </CardContent>
         </Card>
 
@@ -184,10 +189,14 @@ export default async function TopicPage({
 
         <Card className={styles.topCard}>
           <CardTitle className={styles.sectionTitle}>
-            <span className={styles.cardTitleAccent}>本文</span>
+            <span className={styles.cardTitleAccent}>{isJa ? '本文' : 'Content'}</span>
           </CardTitle>
           <CardContent>
-            {topic.content ? <div className={styles.bodyText}>{topic.content}</div> : <div className={styles.mutedText}>（本文はまだありません）</div>}
+            {topic.content ? (
+              <div className={styles.bodyText}>{topic.content}</div>
+            ) : (
+              <div className={styles.mutedText}>{isJa ? '（本文はまだありません）' : '(No content yet)'}</div>
+            )}
           </CardContent>
         </Card>
 
@@ -195,7 +204,7 @@ export default async function TopicPage({
 
         <Card className={styles.topCard}>
           <CardTitle className={styles.sectionTitle}>
-            <span className={styles.cardTitleAccent}>参照元</span>
+            <span className={styles.cardTitleAccent}>{isJa ? '参照元' : 'Sources'}</span>
           </CardTitle>
           <CardContent>
             {sources.length ? (
@@ -209,13 +218,13 @@ export default async function TopicPage({
                         return label ? <span className={styles.categoryBadge}>{label}</span> : null
                       })()}
                       {s.published_at ? <span>{new Date(s.published_at).toLocaleString()}</span> : null}
-                      <span>外部サイトで開く →</span>
+                      <span>{isJa ? '外部サイトで開く →' : 'Open source →'}</span>
                     </div>
                   </a>
                 ))}
               </div>
             ) : (
-              <div className={styles.mutedText}>（参照元がまだありません）</div>
+              <div className={styles.mutedText}>{isJa ? '（参照元がまだありません）' : '(No sources yet)'}</div>
             )}
           </CardContent>
         </Card>

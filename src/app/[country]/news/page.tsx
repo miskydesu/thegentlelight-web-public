@@ -5,7 +5,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { NewsSearchForm } from '@/components/news/NewsSearchForm'
-import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { getGentleFromSearchParams } from '@/lib/view-switch'
 import { formatTopicListDate } from '@/lib/topicDate'
 import { getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
@@ -36,7 +36,7 @@ export default async function NewsPage({
   const lang: Locale = getLocaleForCountry(country)
   const query = searchParams.q || ''
   const category = searchParams.category || ''
-  const t = useTranslations(country, lang)
+  const t = getTranslationsForCountry(country, lang)
   const gentle = getGentleFromSearchParams(searchParams)
   const locale = lang === 'ja' ? 'ja' : 'en'
 

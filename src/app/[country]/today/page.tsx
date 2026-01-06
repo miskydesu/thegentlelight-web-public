@@ -8,7 +8,7 @@ import type { TopicsResponse } from '@/lib/tglApi'
 import styles from '../home.module.css'
 import { getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import { formatTopicListDate } from '@/lib/topicDate'
-import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 // 表示はsoft一本（UX方針）
 
 export function generateMetadata({ params }: { params: { country: string } }) {
@@ -47,7 +47,7 @@ export default async function TodayPage({
     )
   }
   const isPartial = Boolean(data.meta?.is_partial)
-  const t = useTranslations(country, lang)
+  const t = getTranslationsForCountry(country, lang)
   const locale = lang === 'ja' ? 'ja' : 'en'
 
   return (

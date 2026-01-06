@@ -8,6 +8,7 @@ import { forgotPassword } from '@/lib/userAuth'
 export default function ForgotPasswordPage() {
   const params = useParams<{ country: string }>()
   const country = params.country
+  const isJp = country === 'jp'
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -19,10 +20,10 @@ export default function ForgotPasswordPage() {
     setDevToken(null)
     try {
       const r = await forgotPassword(email)
-      setMessage('再発行メールを送信しました（該当ユーザーがいる場合）')
+      setMessage(isJp ? '再発行メールを送信しました（該当ユーザーがいる場合）' : 'If the account exists, a reset email has been sent.')
       if (r.dev_reset_token) setDevToken(r.dev_reset_token)
     } catch (e: any) {
-      setMessage(e?.message || '失敗しました')
+      setMessage(e?.message || (isJp ? '失敗しました' : 'Failed'))
     } finally {
       setBusy(false)
     }
@@ -30,24 +31,29 @@ export default function ForgotPasswordPage() {
 
   return (
     <main style={{ maxWidth: 520, margin: '0 auto', padding: '20px' }}>
-      <h1 style={{ fontSize: '1.5rem', marginBottom: 12 }}>パスワード再発行</h1>
+      <h1 style={{ fontSize: '1.5rem', marginBottom: 12 }}>{isJp ? 'パスワード再発行' : 'Forgot password'}</h1>
       <section style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
         <div style={{ display: 'grid', gap: 10 }}>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="メールアドレス" style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)' }} />
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={isJp ? 'メールアドレス' : 'Email'}
+            style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)' }}
+          />
           <button type="button" disabled={busy} onClick={() => void submit()} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid #000', background: '#000', color: '#fff', fontWeight: 800 }}>
-            {busy ? '送信中…' : '送信'}
+            {busy ? (isJp ? '送信中…' : 'Sending…') : isJp ? '送信' : 'Send'}
           </button>
           {message ? <div style={{ color: 'var(--muted)', fontSize: 13, whiteSpace: 'pre-wrap' }}>{message}</div> : null}
           {devToken ? (
             <div style={{ fontSize: 13 }}>
-              dev token: <code>{devToken}</code>
+              {isJp ? '（dev）トークン:' : 'dev token:'} <code>{devToken}</code>
               <div>
-                <Link href={`/${country}/reset-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(devToken)}`}>リセットへ</Link>
+                <Link href={`/${country}/reset-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(devToken)}`}>{isJp ? 'リセットへ' : 'Go to reset'}</Link>
               </div>
             </div>
           ) : null}
           <Link href={`/${country}/login`} style={{ fontSize: 13, color: 'var(--muted)' }}>
-            ← ログインへ
+            {isJp ? '← ログインへ' : '← Back to sign in'}
           </Link>
         </div>
       </section>

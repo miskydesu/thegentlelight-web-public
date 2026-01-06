@@ -4,7 +4,7 @@ import { isCountry, fetchJson, type TopicsResponse } from '@/lib/tglApi'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
-import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { getGentleFromSearchParams } from '@/lib/view-switch'
 import { CATEGORIES, getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import styles from './category.module.css'
@@ -35,7 +35,7 @@ export default async function CategoryPage({
   const lang: Locale = getLocaleForCountry(country)
   const category = CATEGORIES.find((c) => c.code === params.category)
   if (!category) return notFound()
-  const t = useTranslations(country, lang)
+  const t = getTranslationsForCountry(country, lang)
   const gentle = getGentleFromSearchParams(searchParams)
   const locale = lang === 'ja' ? 'ja' : 'en'
 

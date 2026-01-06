@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react'
 import type { TopicSummary } from '@/lib/tglApi'
 import { isSaved, toggleSavedTopic } from '@/lib/savedTopics'
 import { getUserToken, removeTopicFromServer, saveTopicToServer } from '@/lib/userAuth'
+import { getLocaleForCountry } from '@/lib/i18n'
 
 export function SaveTopicButton({ topic }: { topic: TopicSummary }) {
   const [saved, setSaved] = useState(false)
   const [busy, setBusy] = useState(false)
+  const isJa = getLocaleForCountry(topic.country as any) === 'ja'
 
   useEffect(() => {
     setSaved(isSaved(topic.country, topic.topic_id))
@@ -47,9 +49,9 @@ export function SaveTopicButton({ topic }: { topic: TopicSummary }) {
         opacity: busy ? 0.6 : 1,
       }}
       aria-pressed={saved}
-      title={saved ? '保存解除' : '保存'}
+      title={saved ? (isJa ? '保存解除' : 'Unsave') : isJa ? '保存' : 'Save'}
     >
-      {saved ? '保存済' : '保存'}
+      {saved ? (isJa ? '保存済' : 'Saved') : isJa ? '保存' : 'Save'}
     </button>
   )
 }

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo } from 'react'
 import { COUNTRIES, isCountry, type Country } from '@/lib/tglApi'
-import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { getCategoryLabel } from '@/lib/categories'
 import { addGentleToUrl, getGentleFromUrl, getPreferredGentle } from '@/lib/view-switch'
 import { getCountrySwitchUrl } from '@/lib/country-switch'
@@ -31,7 +31,7 @@ export function Header({ country, className }: HeaderProps) {
 
   // メイン言語固定（URLの ?lang= 切替は廃止）
   const lang: Locale | null = country ? getLocaleForCountry(country) : null
-  const t = country && lang ? useTranslations(country, lang) : null
+  const t = country && lang ? getTranslationsForCountry(country, lang) : null
   const locale = lang === 'ja' ? 'ja' : 'en'
   const isJa = locale === 'ja'
   const imageBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || process.env.IMAGE_BASE_URL || ''

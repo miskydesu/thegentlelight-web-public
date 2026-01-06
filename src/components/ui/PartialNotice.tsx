@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { cn } from '@/lib/cn'
-import { useTranslations, type Country } from '@/lib/i18n'
+import { getTranslationsForCountry, type Country } from '@/lib/i18n'
 
 export interface PartialNoticeProps {
   country: Country
@@ -14,7 +14,7 @@ export interface PartialNoticeProps {
  * - 文言は「不足」より「更新中」「一部反映遅れ」など柔らかく
  */
 export function PartialNotice({ country, className }: PartialNoticeProps) {
-  const t = useTranslations(country)
+  const t = getTranslationsForCountry(country)
   
   return (
     <div

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { isCountry, fetchJson, type ApiMeta } from '@/lib/tglApi'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
-import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import styles from './columns.module.css'
 
 function joinUrl(base: string, key: string): string {
@@ -39,7 +39,7 @@ export default async function ColumnsPage({ params }: { params: { country: strin
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = getLocaleForCountry(country)
-  const t = useTranslations(country, lang)
+  const t = getTranslationsForCountry(country, lang)
   const imageBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || process.env.IMAGE_BASE_URL || ''
 
   const data = await fetchJson<ColumnsResponse>(`/v1/${country}/columns?limit=30`, { next: { revalidate: 60 } })
@@ -106,8 +106,8 @@ export default async function ColumnsPage({ params }: { params: { country: strin
           marginBottom: 2,
         }}
       >
-        <h1 style={{ fontSize: '1.4rem' }}>コラム</h1>
-        <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>published</span>
+        <h1 style={{ fontSize: '1.4rem' }}>{lang === 'ja' ? 'コラム' : 'Columns'}</h1>
+        <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>{lang === 'ja' ? '公開' : 'published'}</span>
       </div>
 
       <div style={{ height: 12 }} />
