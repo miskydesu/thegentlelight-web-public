@@ -23,6 +23,8 @@ export default function MyPage() {
   const [newEmail, setNewEmail] = useState('')
   const [emailToken, setEmailToken] = useState('')
   const [devInfo, setDevInfo] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [busyVerify, setBusyVerify] = useState(false)
 
   const [curPw, setCurPw] = useState('')
   const [newPw, setNewPw] = useState('')
@@ -84,15 +86,21 @@ export default function MyPage() {
 
   const sendVerify = async () => {
     setError(null)
+    setNotice(null)
     setDevInfo(null)
+    setBusyVerify(true)
     try {
       const r = await requestEmailVerify()
       if (r.dev_verify_token) {
         setDevInfo(`dev_verify_token: ${r.dev_verify_token}`)
         setEmailToken(r.dev_verify_token)
       }
+      // In production, dev token is not shown. Always show a small confirmation message.
+      setNotice(isJp ? '認証メールを送信しました。受信箱をご確認ください。' : 'Verification email sent. Please check your inbox.')
     } catch (e: any) {
       setError(e?.message || '送信に失敗しました')
+    } finally {
+      setBusyVerify(false)
     }
   }
 
@@ -138,6 +146,11 @@ export default function MyPage() {
           {error}
         </div>
       ) : null}
+      {notice ? (
+        <div style={{ marginBottom: 12, padding: '10px 12px', border: '1px solid rgba(0,0,0,0.08)', background: '#fff', color: 'var(--text)', borderRadius: 6, whiteSpace: 'pre-wrap' }}>
+          {notice}
+        </div>
+      ) : null}
 
       <section style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.06)', marginBottom: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 8 }}>
@@ -163,8 +176,13 @@ export default function MyPage() {
         </div>
         {!emailVerifiedAt ? (
           <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-            <button type="button" onClick={() => void sendVerify()} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)', background: '#fff' }}>
-              {isJp ? '認証メールを送る' : 'Send verification email'}
+            <button
+              type="button"
+              disabled={busyVerify}
+              onClick={() => void sendVerify()}
+              style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)', background: '#fff', cursor: busyVerify ? 'not-allowed' : 'pointer', opacity: busyVerify ? 0.6 : 1 }}
+            >
+              {busyVerify ? (isJp ? '送信中…' : 'Sending…') : isJp ? '認証メールを送る' : 'Send verification email'}
             </button>
             {showDev ? (
               <Link href={`/${country}/verify-email?token=${encodeURIComponent(emailToken)}`} style={{ fontSize: 13, color: 'var(--muted)' }}>
