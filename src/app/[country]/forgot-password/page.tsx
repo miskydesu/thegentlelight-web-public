@@ -9,6 +9,7 @@ export default function ForgotPasswordPage() {
   const params = useParams<{ country: string }>()
   const country = params.country
   const isJp = country === 'jp'
+  const showDev = process.env.NODE_ENV !== 'production'
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -21,7 +22,7 @@ export default function ForgotPasswordPage() {
     try {
       const r = await forgotPassword(email)
       setMessage(isJp ? '再発行メールを送信しました（該当ユーザーがいる場合）' : 'If the account exists, a reset email has been sent.')
-      if (r.dev_reset_token) setDevToken(r.dev_reset_token)
+      if (showDev && r.dev_reset_token) setDevToken(r.dev_reset_token)
     } catch (e: any) {
       setMessage(e?.message || (isJp ? '失敗しました' : 'Failed'))
     } finally {
@@ -44,7 +45,7 @@ export default function ForgotPasswordPage() {
             {busy ? (isJp ? '送信中…' : 'Sending…') : isJp ? '送信' : 'Send'}
           </button>
           {message ? <div style={{ color: 'var(--muted)', fontSize: 13, whiteSpace: 'pre-wrap' }}>{message}</div> : null}
-          {devToken ? (
+          {showDev && devToken ? (
             <div style={{ fontSize: 13 }}>
               {isJp ? '（dev）トークン:' : 'dev token:'} <code>{devToken}</code>
               <div>

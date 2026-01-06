@@ -12,6 +12,7 @@ export default function MyPage() {
   const country = params.country
   const router = useRouter()
   const isJp = country === 'jp'
+  const showDev = process.env.NODE_ENV !== 'production'
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -165,12 +166,14 @@ export default function MyPage() {
             <button type="button" onClick={() => void sendVerify()} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)', background: '#fff' }}>
               {isJp ? '認証メールを送る' : 'Send verification email'}
             </button>
-            <Link href={`/${country}/verify-email?token=${encodeURIComponent(emailToken)}`} style={{ fontSize: 13, color: 'var(--muted)' }}>
-              {isJp ? '（dev）確認ページへ' : '(dev) Verify page'}
-            </Link>
+            {showDev ? (
+              <Link href={`/${country}/verify-email?token=${encodeURIComponent(emailToken)}`} style={{ fontSize: 13, color: 'var(--muted)' }}>
+                {isJp ? '（dev）確認ページへ' : '(dev) Verify page'}
+              </Link>
+            ) : null}
           </div>
         ) : null}
-        {devInfo ? <div style={{ marginTop: 8, fontSize: 12, color: 'var(--muted)', whiteSpace: 'pre-wrap' }}>{devInfo}</div> : null}
+        {showDev && devInfo ? <div style={{ marginTop: 8, fontSize: 12, color: 'var(--muted)', whiteSpace: 'pre-wrap' }}>{devInfo}</div> : null}
       </section>
 
       <section style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.06)', marginBottom: 14 }}>
@@ -238,20 +241,28 @@ export default function MyPage() {
           <button type="button" onClick={() => void requestChange()} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)', background: '#fff', fontWeight: 800 }}>
             {isJp ? '変更用メールを送る' : 'Send change-email link'}
           </button>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <input
-              value={emailToken}
-              onChange={(e) => setEmailToken(e.target.value)}
-              placeholder={isJp ? '（dev）トークン' : '(dev) Token'}
-              style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)', flex: '1 1 240px' }}
-            />
-            <button type="button" onClick={() => void confirmChange()} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid #000', background: '#000', color: '#fff', fontWeight: 800 }}>
-              {isJp ? '変更を確定' : 'Confirm change'}
-            </button>
-          </div>
-          <Link href={`/${country}/confirm-email-change?token=${encodeURIComponent(emailToken)}`} style={{ fontSize: 13, color: 'var(--muted)' }}>
-            {isJp ? '（dev）確認ページへ' : '(dev) Confirm page'}
-          </Link>
+          {showDev ? (
+            <>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <input
+                  value={emailToken}
+                  onChange={(e) => setEmailToken(e.target.value)}
+                  placeholder={isJp ? '（dev）トークン' : '(dev) Token'}
+                  style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)', flex: '1 1 240px' }}
+                />
+                <button type="button" onClick={() => void confirmChange()} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid #000', background: '#000', color: '#fff', fontWeight: 800 }}>
+                  {isJp ? '変更を確定' : 'Confirm change'}
+                </button>
+              </div>
+              <Link href={`/${country}/confirm-email-change?token=${encodeURIComponent(emailToken)}`} style={{ fontSize: 13, color: 'var(--muted)' }}>
+                {isJp ? '（dev）確認ページへ' : '(dev) Confirm page'}
+              </Link>
+            </>
+          ) : (
+            <div style={{ fontSize: 13, color: 'var(--muted)' }}>
+              {isJp ? '確認メール内のリンクから手続きを完了してください。' : 'Please complete the change via the link in the email.'}
+            </div>
+          )}
         </div>
       </section>
 
