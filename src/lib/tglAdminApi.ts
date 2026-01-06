@@ -386,6 +386,154 @@ export async function adminListColumns(lang?: string, q?: string, status?: strin
   return adminFetchJson<{ columns: any[]; meta: any }>(`/admin/v1/columns?${sp.toString()}`)
 }
 
+// Column Names API
+export type AdminColumnName = {
+  column_name_id: string
+  slug: string
+  name_en: string
+  name_jp: string
+  description_en: string | null
+  description_jp: string | null
+  cover_image_key: string | null
+  cover_image_url: string | null
+  display_order: number | null
+  created_at: string
+  updated_at: string
+  count: number
+}
+
+export async function adminListColumnNames(q?: string) {
+  const sp = new URLSearchParams()
+  if (q) sp.set('q', q)
+  return adminFetchJson<{ column_names: AdminColumnName[]; meta: { total: number } }>(`/admin/v1/column-names?${sp.toString()}`)
+}
+
+export async function adminCreateColumnName(body: {
+  slug: string
+  name_en: string
+  name_jp: string
+  description_en?: string | null
+  description_jp?: string | null
+  display_order?: number | null
+}) {
+  return adminFetchJson<{ column_name: AdminColumnName }>('/admin/v1/column-names', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function adminUpdateColumnName(columnNameId: string, body: {
+  slug?: string
+  name_en?: string
+  name_jp?: string
+  description_en?: string | null
+  description_jp?: string | null
+  display_order?: number | null
+}) {
+  return adminFetchJson<{ column_name: AdminColumnName }>(`/admin/v1/column-names/${encodeURIComponent(columnNameId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function adminDeleteColumnName(columnNameId: string) {
+  return adminFetchJson<{ status: 'ok' }>(`/admin/v1/column-names/${encodeURIComponent(columnNameId)}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function adminUploadColumnNameCover(columnNameId: string, file: File): Promise<{ url: string; key: string }> {
+  const base = getApiBaseUrl().replace(/\/$/, '')
+  const url = `${base}/admin/v1/column-names/${encodeURIComponent(columnNameId)}/cover`
+  const token = getAdminToken()
+
+  const fd = new FormData()
+  fd.append('image', file)
+
+  const headers: Record<string, string> = { accept: 'application/json' }
+  if (token) headers.authorization = `Bearer ${token}`
+
+  const res = await fetch(url, { method: 'POST', body: fd, headers })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`Admin API ${res.status} ${res.statusText}: ${url}${body ? `\n${body}` : ''}`)
+  }
+  const json = (await res.json()) as any
+  if (!json?.url || !json?.key) throw new Error('upload response is invalid')
+  return { url: String(json.url), key: String(json.key) }
+}
+
+export async function adminDeleteColumnNameCover(columnNameId: string): Promise<{ key: string | null }> {
+  return adminFetchJson<{ status: string; key: string | null }>(`/admin/v1/column-names/${encodeURIComponent(columnNameId)}/cover`, {
+    method: 'DELETE',
+  })
+}
+
+// Writers API
+export type AdminWriter = {
+  writer_id: string
+  writer_name_en: string
+  writer_name_jp: string
+  created_at: string
+  updated_at: string
+  count_column_names: number
+  count_columns: number
+}
+
+export async function adminListWriters(q?: string) {
+  const sp = new URLSearchParams()
+  if (q) sp.set('q', q)
+  return adminFetchJson<{ writers: AdminWriter[]; meta: { total: number } }>(`/admin/v1/writers?${sp.toString()}`)
+}
+
+export async function adminCreateWriter(body: { writer_name_en: string; writer_name_jp: string }) {
+  return adminFetchJson<{ writer: AdminWriter }>('/admin/v1/writers', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function adminUpdateWriter(writerId: string, body: { writer_name_en?: string; writer_name_jp?: string }) {
+  return adminFetchJson<{ writer: AdminWriter }>(`/admin/v1/writers/${encodeURIComponent(writerId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function adminDeleteWriter(writerId: string) {
+  return adminFetchJson<{ status: 'ok' }>(`/admin/v1/writers/${encodeURIComponent(writerId)}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function adminGetColumnNameWriters(columnNameId: string) {
+  return adminFetchJson<{
+    writer_ids: string[]
+    writers: Array<{ writer_id: string; writer_name_en: string; writer_name_jp: string; display_order: number | null }>
+  }>(`/admin/v1/column-names/${encodeURIComponent(columnNameId)}/writers`)
+}
+
+export async function adminSetColumnNameWriters(columnNameId: string, writerIds: string[]) {
+  return adminFetchJson<{ status: 'ok' }>(`/admin/v1/column-names/${encodeURIComponent(columnNameId)}/writers`, {
+    method: 'PUT',
+    body: JSON.stringify({ writer_ids: writerIds }),
+  })
+}
+
+export async function adminGetColumnWriters(columnId: string) {
+  return adminFetchJson<{
+    writer_ids: string[]
+    writers: Array<{ writer_id: string; writer_name_en: string; writer_name_jp: string; display_order: number | null }>
+  }>(`/admin/v1/columns/${encodeURIComponent(columnId)}/writers`)
+}
+
+export async function adminSetColumnWriters(columnId: string, writerIds: string[]) {
+  return adminFetchJson<{ status: 'ok' }>(`/admin/v1/columns/${encodeURIComponent(columnId)}/writers`, {
+    method: 'PUT',
+    body: JSON.stringify({ writer_ids: writerIds }),
+  })
+}
+
 export async function adminGetColumn(columnId: string, lang?: string) {
   const sp = new URLSearchParams()
   if (lang) sp.set('lang', lang)

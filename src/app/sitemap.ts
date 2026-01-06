@@ -53,7 +53,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     fixedRoutes.push(`/${c.code}/latest`)
     fixedRoutes.push(`/${c.code}/daily`)
     // カテゴリページ（Event Registry news/* に揃えたサイト内部カテゴリ）
-    const categories = ['heartwarming', 'politics', 'business', 'technology', 'health', 'science_earth', 'arts']
+    const categories = ['heartwarming', 'science_earth', 'politics', 'health', 'technology', 'arts', 'business', 'sports']
     for (const cat of categories) {
       fixedRoutes.push(`/${c.code}/category/${cat}`)
     }
@@ -140,7 +140,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
   */
 
-  // 5. Daily（日報、status=ready、過去30日分）
+  // 5. Morning Briefing（朝刊、status=ready、過去30日分）
   for (const c of COUNTRIES) {
     try {
       const today = new Date()

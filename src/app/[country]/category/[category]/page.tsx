@@ -6,17 +6,10 @@ import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { getGentleFromSearchParams } from '@/lib/view-switch'
+import { CATEGORIES, getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
+import styles from './category.module.css'
+import { formatTopicListDate } from '@/lib/topicDate'
 // 表示はsoft一本（UX方針）
-
-const CATEGORIES = [
-  { code: 'heartwarming', label: 'Heartwarming', labelJa: '優しい話' },
-  { code: 'politics', label: 'Politics', labelJa: '政治' },
-  { code: 'business', label: 'Business', labelJa: 'ビジネス' },
-  { code: 'technology', label: 'Technology', labelJa: 'テクノロジー' },
-  { code: 'health', label: 'Health', labelJa: '健康' },
-  { code: 'science_earth', label: 'Science & Earth', labelJa: '科学と地球' },
-  { code: 'arts', label: 'Arts', labelJa: '文化' },
-]
 
 export function generateMetadata({
   params,
@@ -44,6 +37,7 @@ export default async function CategoryPage({
   if (!category) return notFound()
   const t = useTranslations(country, lang)
   const gentle = getGentleFromSearchParams(searchParams)
+  const locale = lang === 'ja' ? 'ja' : 'en'
 
   const data = await fetchJson<TopicsResponse>(
     `/v1/${country}/topics?category=${encodeURIComponent(category.code)}&limit=30${gentle ? `&gentle=1` : ''}`,
@@ -53,8 +47,19 @@ export default async function CategoryPage({
 
   return (
     <main>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
-        <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? category.labelJa : category.label}</h1>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          gap: '1rem',
+          flexWrap: 'wrap',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.22)',
+          paddingBottom: 8,
+          marginBottom: 2,
+        }}
+      >
+        <h1 style={{ fontSize: '1.4rem' }}>{getCategoryLabel(category.code, locale)}</h1>
         <Link
           href={`/${country}/news${gentle ? '?gentle=1' : ''}`}
           style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}
@@ -67,25 +72,47 @@ export default async function CategoryPage({
 
       {data.topics.length > 0 ? (
         <>
-          <div style={{ display: 'grid', gap: '0.75rem' }}>
-            {data.topics.map((t) => (
-              <Link key={t.topic_id} href={`/${country}/news/n/${t.topic_id}`}>
-                <Card clickable>
-                  <CardTitle>{t.title}</CardTitle>
-                  {t.summary && (
-                    <CardContent style={{ marginTop: '0.5rem' }}>
-                      <p style={{ fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--muted)' }}>
-                        {t.summary}
-                      </p>
-                    </CardContent>
-                  )}
-                  <CardMeta style={{ marginTop: '0.5rem' }}>
-                    <span>{t.source_count} sources</span>
-                    {t.last_source_published_at && (
-                      <span>{new Date(t.last_source_published_at).toLocaleString()}</span>
-                    )}
-                  </CardMeta>
-                </Card>
+          <div className={styles.listGrid}>
+            {data.topics.map((x) => (
+              <Link key={x.topic_id} href={`/${country}/news/n/${x.topic_id}`}>
+                {(() => {
+                  const theme = getCategoryBadgeTheme(x.category)
+                  const isHeartwarming = x.category === 'heartwarming'
+                  return (
+                    <Card
+                      clickable
+                      className={`${styles.topCard} ${isHeartwarming ? styles.topCardHeartwarming : ''}`}
+                      style={{ ['--cat-color' as any]: theme.color } as any}
+                    >
+                      <CardTitle className={styles.cardTitleAccent}>{x.title}</CardTitle>
+                      {x.summary ? (
+                        <CardContent style={{ marginTop: '0.25rem' }}>
+                          <p className={styles.cardSummary}>{x.summary}</p>
+                        </CardContent>
+                      ) : null}
+                      <CardMeta style={{ marginTop: '0.5rem', columnGap: 0, rowGap: 0 }}>
+                        <span className={`${styles.categoryBadge} ${styles.metaItem}`} style={theme}>
+                          {getCategoryLabel(x.category, locale)}
+                        </span>
+                        {Boolean(x.high_arousal) || (x.distress_score ?? 0) >= 50 ? (
+                          <span className={`${styles.categoryBadge} ${styles.metaItem}`} style={{ opacity: 0.75 }}>
+                            {locale === 'ja' ? '心の負担に注意' : 'May be upsetting'}
+                          </span>
+                        ) : null}
+                        <span className={`${styles.sourceCountPill} ${styles.metaItem}`}>
+                          {locale === 'ja'
+                            ? `参照元 : ${x.source_count}記事`
+                            : `Sources: ${x.source_count} ${x.source_count === 1 ? 'article' : 'articles'}`}
+                        </span>
+                      </CardMeta>
+                      {formatTopicListDate(x.last_source_published_at, locale) ? (
+                        <span className={styles.cardDate}>
+                          {formatTopicListDate(x.last_source_published_at, locale)}
+                        </span>
+                      ) : null}
+                    </Card>
+                  )
+                })()}
               </Link>
             ))}
           </div>

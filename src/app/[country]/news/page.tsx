@@ -7,6 +7,7 @@ import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { NewsSearchForm } from '@/components/news/NewsSearchForm'
 import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { getGentleFromSearchParams } from '@/lib/view-switch'
+import { formatTopicListDate } from '@/lib/topicDate'
 // 表示はsoft一本（UX方針）
 
 // Categories are handled by dedicated category pages (/category/[category]).
@@ -35,6 +36,7 @@ export default async function NewsPage({
   const category = searchParams.category || ''
   const t = useTranslations(country, lang)
   const gentle = getGentleFromSearchParams(searchParams)
+  const locale = lang === 'ja' ? 'ja' : 'en'
 
   const apiPath = `/v1/${country}/topics?limit=30${gentle ? `&gentle=1` : ''}${query ? `&q=${encodeURIComponent(query)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}`
   const data = await fetchJson<TopicsResponse>(apiPath, { next: { revalidate: 30 } })
@@ -78,9 +80,9 @@ export default async function NewsPage({
                   <CardMeta style={{ marginTop: '0.5rem' }}>
                     <span>{t.category}</span>
                     <span>{t.source_count} sources</span>
-                    {t.last_source_published_at && (
-                      <span>{new Date(t.last_source_published_at).toLocaleString()}</span>
-                    )}
+                    {formatTopicListDate(t.last_source_published_at, locale) ? (
+                      <span>{formatTopicListDate(t.last_source_published_at, locale)}</span>
+                    ) : null}
                   </CardMeta>
                 </Card>
               </Link>

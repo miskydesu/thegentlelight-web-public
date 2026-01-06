@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { formatTopicListDate } from '@/lib/topicDate'
 // 表示はsoft一本（UX方針）
 
 export function generateMetadata({
@@ -29,6 +30,7 @@ export default async function LatestPagePage({
   const pageNum = parseInt(params.page, 10)
   if (isNaN(pageNum) || pageNum < 2) return notFound()
   const t = useTranslations(country, lang)
+  const locale = lang === 'ja' ? 'ja' : 'en'
 
   const cursor = (pageNum - 1) * 30
   const data = await fetchJson<LatestResponse>(
@@ -64,9 +66,9 @@ export default async function LatestPagePage({
                   )}
                   <CardMeta style={{ marginTop: '0.5rem' }}>
                     <span>{t.category}</span>
-                    {t.last_source_published_at && (
-                      <span>{new Date(t.last_source_published_at).toLocaleString()}</span>
-                    )}
+                    {formatTopicListDate(t.last_source_published_at, locale) ? (
+                      <span>{formatTopicListDate(t.last_source_published_at, locale)}</span>
+                    ) : null}
                   </CardMeta>
                 </Card>
               </Link>

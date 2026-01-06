@@ -55,6 +55,19 @@ export type Translations = {
     category: {
       seeMore: string
     }
+    quotes: {
+      title: string
+      subtitle: string
+      themeShelf: string
+      filterByTheme: string
+      searchPlaceholder: string
+      clear: string
+      backToList: string
+      noResults: string
+      noResultsDescription: string
+      empty: string
+      emptyDescription: string
+    }
     saved: {
       title: string
       empty: string
@@ -81,7 +94,7 @@ const translations: Record<Locale, Translations> = {
       top: 'Home',
       today: 'Today',
       news: 'News',
-      daily: 'Daily',
+      daily: 'Morning Briefing',
       latest: 'Latest',
     },
     common: {
@@ -117,6 +130,19 @@ const translations: Record<Locale, Translations> = {
       category: {
         seeMore: '→ News',
       },
+      quotes: {
+        title: 'Quotes',
+        subtitle: 'quotes',
+        themeShelf: 'Theme shelves',
+        filterByTheme: 'Filter by theme',
+        searchPlaceholder: 'Search quotes',
+        clear: 'Clear',
+        backToList: '← Back to quotes',
+        noResults: 'No matching quotes',
+        noResultsDescription: 'Try another keyword.',
+        empty: 'No quotes yet',
+        emptyDescription: 'No published quotes yet.',
+      },
       saved: {
         title: 'Saved Topics',
         empty: 'No saved topics',
@@ -141,7 +167,7 @@ const translations: Record<Locale, Translations> = {
       top: 'トップ',
       today: '今日',
       news: 'ニュース',
-      daily: '日報',
+      daily: '朝刊',
       latest: '最新',
     },
     common: {
@@ -176,6 +202,19 @@ const translations: Record<Locale, Translations> = {
       },
       category: {
         seeMore: 'ニュース一覧へ →',
+      },
+      quotes: {
+        title: '名言',
+        subtitle: 'quotes',
+        themeShelf: 'テーマ棚',
+        filterByTheme: 'テーマで絞り込み',
+        searchPlaceholder: '名言や著者で検索',
+        clear: 'クリア',
+        backToList: '← 名言一覧へ',
+        noResults: '該当する名言がありません',
+        noResultsDescription: '別のキーワードでもう一度お試しください。',
+        empty: '名言がありません',
+        emptyDescription: 'まだ公開された名言がありません。',
       },
       saved: {
         title: '保存したトピック',

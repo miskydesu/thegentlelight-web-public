@@ -12,9 +12,14 @@ export function isCountry(s: string): s is Country {
 }
 
 export function getApiBaseUrl(): string {
+  const env = typeof process !== 'undefined' ? (process.env as any) : (undefined as any)
   // 環境変数: NEXT_PUBLIC_API_BASE_URL（prod/stg/devで設定）
-  const v = process.env.NEXT_PUBLIC_API_BASE_URL
+  const v = env?.NEXT_PUBLIC_API_BASE_URL
   if (v) return v
+
+  // サーバーサイド用（公開しない環境変数でも設定できるように）
+  const s = env?.API_BASE_URL || env?.TGL_API_BASE_URL
+  if (s) return s
 
   // フォールバック（ローカル開発）
   // クライアント側のみ: ホスト名から推測（互換性のため）
@@ -32,10 +37,18 @@ export type ApiMeta = { is_partial?: boolean; next_cursor?: number; gentle?: boo
 export async function fetchJson<T>(path: string, init?: RequestInit & { next?: { revalidate?: number } }): Promise<T> {
   const base = getApiBaseUrl().replace(/\/$/, '')
   const url = `${base}${path.startsWith('/') ? path : `/${path}`}`
-  const res = await fetch(url, {
-    ...init,
-    headers: { accept: 'application/json', ...(init?.headers || {}) },
-  })
+  let res: Response
+  try {
+    res = await fetch(url, {
+      ...init,
+      headers: { accept: 'application/json', ...(init?.headers || {}) },
+    })
+  } catch (e: any) {
+    const penv = typeof process !== 'undefined' ? (process.env as any) : undefined
+    const env = penv?.NEXT_PUBLIC_API_BASE_URL ? 'NEXT_PUBLIC_API_BASE_URL=SET' : 'NEXT_PUBLIC_API_BASE_URL=EMPTY'
+    const env2 = penv?.API_BASE_URL ? 'API_BASE_URL=SET' : penv?.TGL_API_BASE_URL ? 'TGL_API_BASE_URL=SET' : 'API_BASE_URL/TGL_API_BASE_URL=EMPTY'
+    throw new Error(`API fetch failed: ${url}\n(${env}, ${env2})\n${e?.message || String(e)}`)
+  }
   if (!res.ok) {
     const body = await res.text().catch(() => '')
     throw new Error(`API ${res.status} ${res.statusText}: ${url}${body ? `\n${body}` : ''}`)
@@ -51,8 +64,10 @@ export type TopicSummary = {
   title: string
   importance_score: number
   source_count: number
+  last_seen_at?: string | null
   last_source_published_at: string | null
   high_arousal: boolean
+  distress_score?: number | null
   summary: string | null
   summary_updated_at: string | null
 }
@@ -73,6 +88,8 @@ export type TopicDetailResponse = {
   topic: TopicSummary & {
     summaries?: { soft: string | null }
     entities?: any
+    content?: string | null
+    gentle_message?: string | null
   }
   meta?: ApiMeta
 }
@@ -92,12 +109,21 @@ export type TopicSourcesResponse = {
 }
 
 export type DailyListResponse = {
-  days: Array<{ dateLocal: string; topicCount: number; updatedAt: string; status: string }>
+  days: Array<{ dateLocal: string; topicCount: number; updatedAt: string | null; status: string }>
   meta: ApiMeta
 }
 
 export type DailyDetailResponse = {
-  daily: { daily_id: string; country: Country; date_local: string; generated_at: string | null; topic_count: number }
+  daily: {
+    daily_id: string | null
+    country: Country
+    dateLocal: string
+    status: 'ready' | 'pending' | 'failed' | 'missing' | string
+    topic_count: number
+    generated_at: string | null
+    summary: string | null
+  }
+  messages?: Array<{ rank: number; message: string }>
   topics: Array<TopicSummary & { rank: number }>
   meta: ApiMeta
 }
@@ -118,6 +144,7 @@ export type TodayResponse = {
     generated_at: string | null
     summary: string | null
   } | null
+  messages?: Array<{ rank: number; message: string }>
   topics: Array<TopicSummary & { rank: number }>
   meta: ApiMeta
 }

@@ -1,0 +1,133 @@
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.22);
+  padding-bottom: 8px;
+  margin-bottom: 2px;
+}
+
+.topCard {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.08);
+  border-radius: 6px !important;
+  padding: 15px 15px 15px 18px !important;
+  position: relative;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.topCard:hover {
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.05),
+    0 10px 26px rgba(0, 0, 0, 0.08);
+}
+
+.cardTitleAccent {
+  display: block;
+  border-left: 4px solid var(--cat-color, rgba(0, 0, 0, 0.18));
+  padding-left: 6px;
+  line-height: 1.3;
+}
+
+.sectionTitle {
+  margin-bottom: 8px !important;
+}
+
+.categoryBadge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  padding: 1px 8px;
+  font-size: 0.80rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.bodyText {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  color: #000;
+}
+
+.mutedText {
+  color: var(--muted);
+}
+
+.sourceList {
+  display: grid;
+  gap: 10px;
+}
+
+.sourceItem {
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.sourceItem:hover {
+  border-color: rgba(0, 0, 0, 0.18);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.sourceTitle {
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.sourceMeta {
+  margin-top: 6px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.countPill {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 4px;
+  padding: 1px 8px;
+  font-size: 0.80rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.metaLeft {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.metaRight {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+

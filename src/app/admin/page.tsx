@@ -89,6 +89,132 @@ export default function AdminPage() {
         <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>読み込み中...</div>
       ) : stats ? (
         <>
+          {/* 直近5日（JST日付区切り）の要約生成済み件数 */}
+          <section
+            style={{
+              marginBottom: 32,
+              backgroundColor: '#fff',
+              borderRadius: '8px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              overflow: 'hidden',
+            }}
+          >
+            <div style={{ padding: '16px 20px', backgroundColor: '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
+              <h2 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 600, color: '#1a1a1a' }}>要約生成済み（直近5日）</h2>
+              <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.9rem' }}>
+                日付区切り: 日本時間（JST）0:00
+              </div>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table
+                style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  fontSize: '0.95rem',
+                }}
+              >
+                <thead>
+                  <tr style={{ backgroundColor: '#f1f3f5', borderBottom: '2px solid #dee2e6' }}>
+                    <th
+                      style={{
+                        padding: '12px 16px',
+                        textAlign: 'left',
+                        fontWeight: 600,
+                        color: '#495057',
+                        fontSize: '0.9rem',
+                        backgroundColor: '#e9ecef',
+                      }}
+                    >
+                      日付
+                    </th>
+                    <th
+                      style={{
+                        padding: '12px 16px',
+                        textAlign: 'right',
+                        fontWeight: 600,
+                        color: '#495057',
+                        fontSize: '0.9rem',
+                        backgroundColor: '#e7f3ff',
+                      }}
+                    >
+                      TOTAL
+                    </th>
+                    {stats.countries?.map((c: any) => (
+                      <th
+                        key={c.country}
+                        style={{
+                          padding: '12px 16px',
+                          textAlign: 'right',
+                          fontWeight: 600,
+                          color: '#495057',
+                          fontSize: '0.9rem',
+                        }}
+                      >
+                        {String(c.country).toUpperCase()}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(stats.topic_summaries_by_day_last_5_days?.days ?? []).map((d: any, rowIdx: number) => (
+                    <tr
+                      key={d.date_local}
+                      style={{
+                        backgroundColor: rowIdx % 2 === 0 ? '#fff' : '#f8f9fa',
+                        borderBottom: '1px solid #e9ecef',
+                        transition: 'background-color 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#e7f3ff'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = rowIdx % 2 === 0 ? '#fff' : '#f8f9fa'
+                      }}
+                    >
+                      <td
+                        style={{
+                          padding: '12px 16px',
+                          fontWeight: 500,
+                          color: '#212529',
+                          backgroundColor: '#f8f9fa',
+                        }}
+                      >
+                        {d.date_local}
+                      </td>
+                      <td
+                        style={{
+                          padding: '12px 16px',
+                          textAlign: 'right',
+                          color: '#0b5394',
+                          fontSize: '1rem',
+                          fontWeight: 600,
+                          backgroundColor: '#e7f3ff',
+                        }}
+                      >
+                        {d.total ?? 0}
+                      </td>
+                      {stats.countries?.map((c: any) => {
+                        const found = (d.countries ?? []).find((x: any) => x.country === c.country)
+                        return (
+                          <td
+                            key={c.country}
+                            style={{
+                              padding: '12px 16px',
+                              textAlign: 'right',
+                              color: '#495057',
+                            }}
+                          >
+                            {found?.count ?? 0}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
           {/* 要約未生成数（TOTALと各国別をテーブル形式で表示） */}
           <section
             style={{

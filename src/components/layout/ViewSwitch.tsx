@@ -1,8 +1,9 @@
 'use client'
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { getGentleFromUrl, getGentleSwitchedUrl, setPreferredGentle } from '@/lib/view-switch'
 import { cn } from '@/lib/cn'
+import styles from './ViewSwitch.module.css'
 
 export interface ViewSwitchProps {
   className?: string
@@ -14,7 +15,6 @@ export interface ViewSwitchProps {
  */
 export function ViewSwitch({ className }: ViewSwitchProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const searchParams = useSearchParams()
   
   const gentle = getGentleFromUrl(`${pathname}?${searchParams.toString()}`)
@@ -32,32 +32,25 @@ export function ViewSwitch({ className }: ViewSwitchProps) {
   }
 
   return (
-    <div className={cn('flex gap-2 items-center', className)}>
+    <div className={cn(styles.wrap, className)}>
+      <span className={styles.label}>Gentle Mode</span>
       <button
-        onClick={() => handleToggle(true)}
-        className={cn(
-          'text-sm transition-colors',
+        type="button"
+        role="switch"
+        aria-checked={gentle}
+        aria-label={gentle ? 'Gentle mode on' : 'Gentle mode off'}
+        title={
           gentle
-            ? 'text-[var(--text)] font-medium'
-            : 'text-[var(--muted)] hover:text-[var(--text)]'
-        )}
-        title="gentleモード ON（重要度×heartwarming_scoreで絞り込み）"
+            ? 'gentleモード ON（重要度×heartwarming_scoreで絞り込み）'
+            : 'gentleモード OFF（スコアに関係なく表示）'
+        }
+        className={cn(styles.switch, gentle && styles.switchOn)}
+        onClick={() => handleToggle(!gentle)}
       >
-        Gentle ON
+        <span className={cn(styles.knob, gentle && styles.knobOn)} />
+        <span className={styles.srOnly}>{gentle ? 'ON' : 'OFF'}</span>
       </button>
-      <span className="text-[var(--muted)] opacity-60">|</span>
-      <button
-        onClick={() => handleToggle(false)}
-        className={cn(
-          'text-sm transition-colors',
-          !gentle
-            ? 'text-[var(--text)] font-medium'
-            : 'text-[var(--muted)] hover:text-[var(--text)]'
-        )}
-        title="gentleモード OFF（スコアに関係なく表示）"
-      >
-        Gentle OFF
-      </button>
+      <span className={styles.stateText}>{gentle ? 'ON' : 'OFF'}</span>
     </div>
   )
 }

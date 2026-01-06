@@ -5,27 +5,29 @@ import Link from 'next/link'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { type TopicSummary } from '@/lib/tglApi'
-
-const STORAGE_KEY = 'tgl_saved_topics'
+import { getLocaleForCountry } from '@/lib/i18n'
+import { formatTopicListDate } from '@/lib/topicDate'
+import { loadSavedTopics, removeSavedKey, readSavedKeys, type SavedKey } from '@/lib/savedTopics'
 
 export default function SavedPage() {
   const [savedTopics, setSavedTopics] = useState<TopicSummary[]>([])
+  const [keys, setKeys] = useState<SavedKey[]>([])
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      try {
-        setSavedTopics(JSON.parse(stored))
-      } catch (e) {
-        console.error('Failed to parse saved topics', e)
-      }
+    const run = async () => {
+      const ks = readSavedKeys()
+      setKeys(ks)
+      const topics = await loadSavedTopics()
+      setSavedTopics(topics)
     }
+    void run()
   }, [])
 
-  const handleRemove = (topicId: string) => {
-    const updated = savedTopics.filter((t) => t.topic_id !== topicId)
-    setSavedTopics(updated)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+  const handleRemove = (country: string, topicId: string) => {
+    const key = `${country}:${topicId}`
+    removeSavedKey(key)
+    setKeys(readSavedKeys())
+    setSavedTopics((prev) => prev.filter((t) => !(t.topic_id === topicId && t.country === country)))
   }
 
   return (
@@ -42,47 +44,49 @@ export default function SavedPage() {
 
       <div style={{ height: 12 }} />
 
-      {savedTopics.length > 0 ? (
+      {keys.length > 0 ? (
         <div style={{ display: 'grid', gap: '0.75rem' }}>
-          {savedTopics.map((t) => (
-            <Card key={t.topic_id}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: '1rem' }}>
-                <div style={{ flex: 1 }}>
-                  <Link href={`/${t.country}/news/n/${t.topic_id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    <CardTitle>{t.title}</CardTitle>
-                  </Link>
-                  {t.summary && (
-                    <CardContent style={{ marginTop: '0.5rem' }}>
-                      <p style={{ fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--muted)' }}>
-                        {t.summary}
-                      </p>
-                    </CardContent>
-                  )}
-                  <CardMeta style={{ marginTop: '0.5rem' }}>
-                    <span>{t.category}</span>
-                    <span>{t.source_count} sources</span>
-                    {t.last_source_published_at && (
-                      <span>{new Date(t.last_source_published_at).toLocaleString()}</span>
+          {savedTopics.map((t) => {
+            const locale = getLocaleForCountry(t.country as any) === 'ja' ? 'ja' : 'en'
+            const dateLabel = formatTopicListDate(t.last_source_published_at, locale)
+            return (
+              <Card key={t.topic_id}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <Link href={`/${t.country}/news/n/${t.topic_id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <CardTitle>{t.title}</CardTitle>
+                    </Link>
+                    {t.summary && (
+                      <CardContent style={{ marginTop: '0.5rem' }}>
+                        <p style={{ fontSize: '0.9rem', lineHeight: 1.6, color: 'var(--muted)' }}>
+                          {t.summary}
+                        </p>
+                      </CardContent>
                     )}
-                  </CardMeta>
+                    <CardMeta style={{ marginTop: '0.5rem' }}>
+                      <span>{t.category}</span>
+                      <span>{t.source_count} sources</span>
+                      {dateLabel ? <span>{dateLabel}</span> : null}
+                    </CardMeta>
+                  </div>
+                  <button
+                    onClick={() => handleRemove(t.country, t.topic_id)}
+                    style={{
+                      padding: '0.4rem 0.8rem',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      backgroundColor: 'var(--surface)',
+                      color: 'var(--text)',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    削除
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleRemove(t.topic_id)}
-                  style={{
-                    padding: '0.4rem 0.8rem',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
-                    backgroundColor: 'var(--surface)',
-                    color: 'var(--text)',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                  }}
-                >
-                  削除
-                </button>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            )
+          })}
         </div>
       ) : (
         <EmptyState

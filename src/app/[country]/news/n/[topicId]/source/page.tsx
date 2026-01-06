@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type TopicSourcesResponse } from '../../../../../../lib/tglApi'
 import { canonicalUrl } from '../../../../../../lib/seo'
+import { getGentleFromSearchParams } from '../../../../../../lib/view-switch'
 
 export function generateMetadata({ params }: { params: { country: string; topicId: string } }) {
   const { country, topicId } = params
@@ -12,17 +13,34 @@ export function generateMetadata({ params }: { params: { country: string; topicI
   }
 }
 
-export default async function TopicSourcesPage({ params }: { params: { country: string; topicId: string } }) {
+export default async function TopicSourcesPage({
+  params,
+  searchParams,
+}: {
+  params: { country: string; topicId: string }
+  searchParams: { gentle?: string }
+}) {
   const { country, topicId } = params
   if (!isCountry(country)) return notFound()
 
-  const data = await fetchJson<TopicSourcesResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}/sources`, { next: { revalidate: 30 } })
+  const gentle = getGentleFromSearchParams(searchParams)
+  const data = await fetchJson<TopicSourcesResponse>(
+    `/v1/${country}/topics/${encodeURIComponent(topicId)}/sources${gentle ? '?gentle=1' : ''}`,
+    { next: { revalidate: 30 } }
+  )
+
+  const pickSourceBadgeLabel = (s: { source_name: string | null; source_domain: string | null }) => {
+    const name = String(s.source_name || '').trim()
+    if (name && !name.includes('\uFFFD')) return name
+    const domain = String(s.source_domain || '').trim()
+    return domain || ''
+  }
 
   return (
     <main>
       <div className="tglMuted" style={{ marginBottom: 10, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <Link href={`/${country}/news/n/${topicId}`}>← トピック</Link>
-        <Link href={`/${country}/news`}>ニュース</Link>
+        <Link href={`/${country}/news/n/${topicId}${gentle ? '?gentle=1' : ''}`}>← トピック</Link>
+        <Link href={`/${country}/news${gentle ? '?gentle=1' : ''}`}>ニュース</Link>
       </div>
 
       <h1 style={{ fontSize: '1.35rem' }}>参照元一覧</h1>
@@ -34,7 +52,10 @@ export default async function TopicSourcesPage({ params }: { params: { country: 
             <a key={s.source_id} className="tglRow" href={s.url} target="_blank" rel="noreferrer">
               <div className="tglRowTitle">{s.title}</div>
               <div className="tglRowMeta">
-                {s.source_domain ? <span className="tglPill">{s.source_domain}</span> : null}
+                {(() => {
+                  const label = pickSourceBadgeLabel(s)
+                  return label ? <span className="tglPill">{label}</span> : null
+                })()}
                 {s.published_at ? <span>{new Date(s.published_at).toLocaleString()}</span> : null}
                 <span className="tglMuted">外部サイトで開く →</span>
               </div>

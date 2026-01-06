@@ -1,0 +1,149 @@
+.desktopOnly {
+  display: block;
+}
+
+.mobileOnly {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .desktopOnly {
+    display: none !important;
+  }
+  .mobileOnly {
+    display: block !important;
+  }
+}
+
+.hamburgerButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hamburgerLines {
+  width: 18px;
+  height: 12px;
+  position: relative;
+}
+
+.hamburgerLines::before,
+.hamburgerLines::after,
+.hamburgerLines span {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #000;
+  border-radius: 999px;
+}
+
+.hamburgerLines::before {
+  top: 0;
+}
+
+.hamburgerLines span {
+  top: 5px;
+}
+
+.hamburgerLines::after {
+  bottom: 0;
+}
+
+.mobileMenuSectionTitle {
+  font-weight: 800;
+  margin: 6px 0 10px;
+}
+
+.mobileMenuLinks {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.mobileMenuLink {
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  font-size: 14px;
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+}
+
+.mobileMenuLinkActive {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+  font-weight: 700;
+}
+
+.mobileMenuRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.divider {
+  border-top: 1px solid rgba(0, 0, 0, 0.14);
+  margin: 12px 0;
+}
+
+.logoImg {
+
+    height: 60px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.logoGlow {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+.logoGlow::before {
+  content: '';
+  position: absolute;
+  inset: -26px -60px -10px -60px;
+  border-radius: 999px;
+  background:
+    radial-gradient(closest-side at 46% 22%, rgba(240, 164, 178, 0.22), rgba(240, 164, 178, 0)),
+    radial-gradient(closest-side at 62% 18%, rgba(245, 204, 128, 0.26), rgba(245, 204, 128, 0));
+  filter: blur(0.2px);
+  pointer-events: none;
+}
+
+.logoGlow > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 640px) {
+  .logoImg {
+    height: 47px;
+  }
+
+  .logoGlow {
+    padding: 4px 10px;
+  }
+
+  .logoGlow::before {
+    inset: -22px -44px -8px -44px;
+  }
+}
+
+

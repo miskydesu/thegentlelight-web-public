@@ -1,0 +1,97 @@
+.gentleRadioGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.gentleRadioItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease,
+    transform 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.gentleRadioItem:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.gentleRadioItemSelected {
+  background: #000;
+  color: #fff;
+  border-color: rgba(0, 0, 0, 0.6);
+}
+
+.gentleRadioLeft {
+  display: grid;
+  gap: 2px;
+}
+
+.gentleRadioTitle {
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.gentleRadioDesc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.25;
+}
+
+.gentleRadioItemSelected .gentleRadioDesc {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.gentleRadioDot {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid rgba(0, 0, 0, 0.45);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.gentleRadioDot::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.gentleRadioItemSelected .gentleRadioDot {
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.gentleRadioItemSelected .gentleRadioDot::after {
+  background: #fff;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+

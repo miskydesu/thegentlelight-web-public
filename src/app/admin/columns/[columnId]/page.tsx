@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams, useParams } from 'next/navigation'
-import { adminColumnsJaToEn, adminDeleteColumnCover, adminGetColumn, adminUpdateColumn, adminUploadColumnCover, adminUploadTempImage, clearAdminToken } from '../../../../lib/tglAdminApi'
+import { adminColumnsJaToEn, adminDeleteColumnCover, adminGetColumn, adminGetColumnWriters, adminListColumnNames, adminListWriters, adminSetColumnWriters, adminUpdateColumn, adminUploadColumnCover, adminUploadTempImage, clearAdminToken, type AdminColumnName, type AdminWriter } from '../../../../lib/tglAdminApi'
 import { TiptapMarkdownEditor } from '@/components/admin/TiptapMarkdownEditor'
 import { CoverImageCropperModal } from '@/components/admin/CoverImageCropperModal'
 import { swalClose, swalConfirm, swalError, swalLoading, swalSuccess } from '@/lib/adminSwal'
@@ -31,6 +31,10 @@ export default function AdminColumnDetailPage() {
 
   const [status, setStatus] = useState('draft')
   const [publishedAtLocal, setPublishedAtLocal] = useState('') // datetime-local (browser local time)
+  const [columnNameId, setColumnNameId] = useState('')
+  const [columnNames, setColumnNames] = useState<AdminColumnName[]>([])
+  const [writers, setWriters] = useState<AdminWriter[]>([])
+  const [selectedWriterIds, setSelectedWriterIds] = useState<Record<string, boolean>>({})
   const [cover, setCover] = useState('')
   const [coverUrl, setCoverUrl] = useState<string | null>(null)
   const [busyCover, setBusyCover] = useState(false)
@@ -128,12 +132,32 @@ export default function AdminColumnDetailPage() {
     setBusy(true)
     try {
       await swalLoading('読み込み中…', 'コラム情報を取得しています')
+      // コラム名一覧（非fatal）
+      try {
+        const cn = await adminListColumnNames()
+        setColumnNames(cn.column_names || [])
+      } catch {
+        // ignore
+      }
+      // ライター一覧（非fatal）
+      try {
+        const w = await adminListWriters()
+        setWriters(w.writers || [])
+        const init: Record<string, boolean> = {}
+        for (const x of w.writers || []) init[x.writer_id] = false
+        const linked = await adminGetColumnWriters(columnId)
+        for (const id of linked.writer_ids || []) init[id] = true
+        setSelectedWriterIds(init)
+      } catch {
+        // ignore
+      }
       // en/ja両方を一度に取得して、タブで切り替える
       const res = await adminGetColumn(columnId, 'all')
       setData(res)
       const c = res?.column
       if (c) {
         setStatus(c.status || 'draft')
+        setColumnNameId(String(c.column_name_id || ''))
         // published_at(ISO) -> datetime-local
         const iso = c.published_at ? String(c.published_at) : ''
         if (iso) {
@@ -202,6 +226,7 @@ export default function AdminColumnDetailPage() {
       await swalLoading('保存中…', '変更を保存しています')
       await adminUpdateColumn(columnId, {
         status,
+        column_name_id: columnNameId.trim() ? columnNameId.trim() : null,
         published_at: publishedAtLocal ? new Date(publishedAtLocal).toISOString() : null,
         localizations: {
           en: {
@@ -231,6 +256,15 @@ export default function AdminColumnDetailPage() {
         setCoverUrl(r.url)
         setBusyCover(false)
       }
+
+      // writers（個別コラム）
+      try {
+        const ids = Object.entries(selectedWriterIds).filter(([, v]) => v).map(([k]) => k)
+        await adminSetColumnWriters(columnId, ids)
+      } catch (e: any) {
+        setError((p) => (p ? `${p}\n` : '') + (e?.message || 'ライター紐付けの保存に失敗しました'))
+      }
+
       setCoverDeleteRequested(false)
       setCoverFile(null)
       if (coverPreviewUrl) URL.revokeObjectURL(coverPreviewUrl)
@@ -332,6 +366,23 @@ export default function AdminColumnDetailPage() {
       >
         <h2 style={{ fontSize: '1.1rem', marginBottom: 20, fontWeight: 600, color: '#1a1a1a' }}>基本情報（Base）</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span style={{ color: '#495057', fontSize: '0.85rem', fontWeight: 500 }}>コラム名（column_name）</span>
+            <select
+              value={columnNameId}
+              onChange={(e) => setColumnNameId(e.target.value)}
+              disabled={busy}
+              style={{ padding: '8px 12px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '0.9rem', backgroundColor: '#fff' }}
+            >
+              <option value="">（未設定）</option>
+              {columnNames.map((n) => (
+                <option key={n.column_name_id} value={n.column_name_id}>
+                  {n.name_jp} / {n.name_en} ({n.slug})
+                </option>
+              ))}
+            </select>
+            <div style={{ color: '#6c757d', fontSize: '0.8rem' }}>コラムに1つだけ割り当てられます</div>
+          </label>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <span style={{ color: '#495057', fontSize: '0.85rem', fontWeight: 500 }}>状態（status）</span>
             <select
@@ -454,6 +505,26 @@ export default function AdminColumnDetailPage() {
               </div>
             ) : null}
           </label>
+        </div>
+      </section>
+
+      <section style={{ marginBottom: 24, backgroundColor: '#fff', borderRadius: 8, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: 20 }}>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: 12, fontWeight: 600, color: '#1a1a1a' }}>ライター（個別コラム）</h2>
+        <div style={{ color: '#6c757d', fontSize: '0.85rem', marginBottom: 10 }}>※コラム名のライターに加えて、個別コラムにも複数紐付けできます</div>
+        <div style={{ display: 'grid', gap: 8 }}>
+          {writers.map((w) => (
+            <label key={w.writer_id} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <input
+                type="checkbox"
+                checked={!!selectedWriterIds[w.writer_id]}
+                onChange={(e) => setSelectedWriterIds((p) => ({ ...p, [w.writer_id]: e.target.checked }))}
+                disabled={busy}
+              />
+              <span style={{ fontWeight: 700 }}>{w.writer_name_jp}</span>
+              <span style={{ color: '#6c757d' }}>{w.writer_name_en}</span>
+            </label>
+          ))}
+          {writers.length === 0 ? <div style={{ color: '#6c757d' }}>ライターが未登録です（先に /admin/writers で作成してください）</div> : null}
         </div>
       </section>
 

@@ -4,6 +4,10 @@ import { isCountry, fetchJson, type TodayResponse, type Country } from '@/lib/tg
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
+import type { TopicsResponse } from '@/lib/tglApi'
+import styles from '../home.module.css'
+import { getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
+import { formatTopicListDate } from '@/lib/topicDate'
 import { useTranslations, getLocaleForCountry, type Locale } from '@/lib/i18n'
 // 表示はsoft一本（UX方針）
 
@@ -22,9 +26,29 @@ export default async function TodayPage({
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = getLocaleForCountry(country)
-  const data = await fetchJson<TodayResponse>(`/v1/${country}/today`, { next: { revalidate: 30 } })
+  let data: TodayResponse
+  let pickup: TopicsResponse
+  try {
+    data = await fetchJson<TodayResponse>(`/v1/${country}/today`, { next: { revalidate: 30 } })
+    pickup = await fetchJson<TopicsResponse>(`/v1/${country}/pickup/heartwarming?limit=4`, { cache: 'no-store' })
+  } catch (e: any) {
+    return (
+      <main>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
+          <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? '今日のまとめ' : "Today's Summary"}</h1>
+        </div>
+        <div style={{ height: 12 }} />
+        <EmptyState
+          title={country === 'jp' ? 'APIに接続できません' : 'Cannot reach API'}
+          description={String(e?.message || e || '')}
+          action={{ label: country === 'jp' ? 'トップへ' : 'Back to home', href: `/${country}` }}
+        />
+      </main>
+    )
+  }
   const isPartial = Boolean(data.meta?.is_partial)
   const t = useTranslations(country, lang)
+  const locale = lang === 'ja' ? 'ja' : 'en'
 
   return (
     <main>
@@ -41,18 +65,81 @@ export default async function TodayPage({
 
       {data.daily?.status === 'failed' ? (
         <EmptyState
-          title={country === 'jp' ? '日報の生成に失敗しました' : 'Daily generation failed'}
+          title={country === 'jp' ? '朝刊の生成に失敗しました' : 'Morning briefing generation failed'}
           description={country === 'jp' ? 'しばらくしてからもう一度ご覧ください。' : 'Please try again later.'}
-          action={{ label: country === 'jp' ? '日報一覧へ' : 'Daily List', href: `/${country}/daily` }}
+          action={{ label: country === 'jp' ? '朝刊一覧へ' : 'Briefings', href: `/${country}/daily` }}
         />
       ) : data.daily?.status === 'pending' ? (
         <EmptyState
-          title={country === 'jp' ? '日報を生成中です' : 'Generating daily...'}
+          title={country === 'jp' ? '朝刊を生成中です' : 'Generating morning briefing...'}
           description={country === 'jp' ? 'しばらくお待ちください。' : 'Please wait a moment.'}
-          action={{ label: country === 'jp' ? '日報一覧へ' : 'Daily List', href: `/${country}/daily` }}
+          action={{ label: country === 'jp' ? '朝刊一覧へ' : 'Briefings', href: `/${country}/daily` }}
         />
       ) : data.daily && data.topics.length > 0 ? (
         <>
+          <section style={{ marginBottom: '1.5rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+                gap: '1rem',
+                borderBottom: '1px solid rgba(0, 0, 0, 0.22)',
+                paddingBottom: 8,
+                marginBottom: 2,
+              }}
+            >
+              <h2 style={{ fontSize: '1.1rem' }}>
+                {lang === 'ja' ? 'PickUp 心温まる話' : 'Curated Heartwarming'}
+              </h2>
+              <Link
+                href={`/${country}/category/heartwarming`}
+                style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}
+              >
+                {t.pages.home.seeMore}
+              </Link>
+            </div>
+            <div style={{ height: 8 }} />
+            {pickup.topics?.length ? (
+              <div className={styles.heroGrid}>
+                {pickup.topics.map((x) => (
+                  <Link key={x.topic_id} href={`/${country}/news/n/${x.topic_id}`}>
+                    {(() => {
+                      const theme = getCategoryBadgeTheme('heartwarming')
+                      return (
+                        <Card
+                          clickable
+                          className={`${styles.topCard} ${styles.topCardHeartwarming}`}
+                          style={{ ['--cat-color' as any]: theme.color } as any}
+                        >
+                          <CardTitle className={styles.cardTitleAccent}>{x.title}</CardTitle>
+                          {x.summary ? (
+                            <CardContent style={{ marginTop: '0.25rem' }}>
+                              <p className={styles.cardSummary}>{x.summary}</p>
+                            </CardContent>
+                          ) : null}
+                          <CardMeta style={{ marginTop: '0.5rem' }}>
+                            <span className={styles.categoryBadge} style={theme}>
+                              {getCategoryLabel('heartwarming', locale)}
+                            </span>
+                            {Boolean(x.high_arousal) || (x.distress_score ?? 0) >= 50 ? (
+                              <span className={styles.categoryBadge} style={{ opacity: 0.75 }}>
+                                {locale === 'ja' ? '心の負担に注意' : 'May be upsetting'}
+                              </span>
+                            ) : null}
+                          </CardMeta>
+                          {formatTopicListDate(x.last_source_published_at, locale) ? (
+                            <span className={styles.cardDate}>{formatTopicListDate(x.last_source_published_at, locale)}</span>
+                          ) : null}
+                        </Card>
+                      )
+                    })()}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </section>
+
           {data.daily.summary && (
             <section style={{ marginBottom: '1.5rem' }}>
               <Card>
@@ -97,7 +184,7 @@ export default async function TodayPage({
         <EmptyState
           title={country === 'jp' ? 'まだ今日のまとめがありません' : "Today's summary is not available yet"}
           description={country === 'jp' ? '日報が生成されるまでお待ちください。' : 'Please wait for the daily to be generated.'}
-          action={{ label: country === 'jp' ? '日報一覧へ' : 'Daily List', href: `/${country}/daily` }}
+          action={{ label: country === 'jp' ? '朝刊一覧へ' : 'Briefings', href: `/${country}/daily` }}
         />
       )}
     </main>
