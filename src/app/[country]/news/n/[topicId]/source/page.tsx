@@ -1,0 +1,75 @@
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { fetchJson, isCountry, type TopicSourcesResponse } from '../../../../../../lib/tglApi'
+import { canonicalUrl } from '../../../../../../lib/seo'
+import { getGentleFromSearchParams } from '../../../../../../lib/view-switch'
+
+export function generateMetadata({ params }: { params: { country: string; topicId: string } }) {
+  const { country, topicId } = params
+  return {
+    alternates: {
+      canonical: canonicalUrl(`/${country}/news/n/${topicId}/source`),
+    },
+  }
+}
+
+export default async function TopicSourcesPage({
+  params,
+  searchParams,
+}: {
+  params: { country: string; topicId: string }
+  searchParams: { gentle?: string }
+}) {
+  const { country, topicId } = params
+  if (!isCountry(country)) return notFound()
+
+  const gentle = getGentleFromSearchParams(searchParams)
+  const data = await fetchJson<TopicSourcesResponse>(
+    `/v1/${country}/topics/${encodeURIComponent(topicId)}/sources${gentle ? '?gentle=1' : ''}`,
+    { next: { revalidate: 30 } }
+  )
+
+  const pickSourceBadgeLabel = (s: { source_name: string | null; source_domain: string | null }) => {
+    const name = String(s.source_name || '').trim()
+    if (name && !name.includes('\uFFFD')) return name
+    const domain = String(s.source_domain || '').trim()
+    return domain || ''
+  }
+
+  return (
+    <main>
+      <div className="tglMuted" style={{ marginBottom: 10, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <Link href={`/${country}/news/n/${topicId}${gentle ? '?gentle=1' : ''}`}>← トピック</Link>
+        <Link href={`/${country}/news${gentle ? '?gentle=1' : ''}`}>ニュース</Link>
+      </div>
+
+      <h1 style={{ fontSize: '1.35rem' }}>参照元一覧</h1>
+      <div style={{ height: 12 }} />
+
+      {data.sources?.length ? (
+        <div className="tglList">
+          {data.sources.map((s) => (
+            <a key={s.source_id} className="tglRow" href={s.url} target="_blank" rel="noreferrer">
+              <div className="tglRowTitle">{s.title}</div>
+              <div className="tglRowMeta">
+                {(() => {
+                  const label = pickSourceBadgeLabel(s)
+                  return label ? <span className="tglPill">{label}</span> : null
+                })()}
+                {s.published_at ? <span>{new Date(s.published_at).toLocaleString()}</span> : null}
+                <span className="tglMuted">外部サイトで開く →</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div className="tglRow">
+          <div className="tglRowTitle">参照元がありません</div>
+          <div className="tglRowMeta">topic_sources がまだ紐付いていない可能性があります。</div>
+        </div>
+      )}
+    </main>
+  )
+}
+
+
