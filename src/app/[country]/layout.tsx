@@ -5,6 +5,8 @@ import { Header } from '../../components/layout/Header'
 import { SidebarDailyCalendar, SidebarGentleIntro, SidebarLatestColumns, SidebarQuoteOfDay } from './_sidebar/blocks'
 import styles from './layout.module.css'
 
+export const runtime = 'edge'
+
 export default async function CountryLayout({
   children,
   params,
