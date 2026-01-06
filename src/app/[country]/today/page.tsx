@@ -9,11 +9,20 @@ import styles from '../home.module.css'
 import { getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import { formatTopicListDate } from '@/lib/topicDate'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { canonicalUrl, getSiteBaseUrl } from '@/lib/seo'
+import { generateHreflang, generateBreadcrumbListJSONLD } from '@/lib/seo-helpers'
 // 表示はsoft一本（UX方針）
 
 export function generateMetadata({ params }: { params: { country: string } }) {
+  const country = params.country
+  const canonical = canonicalUrl(`/${country}/today`)
+  const hreflang = generateHreflang('/today')
   return {
-    title: `Today's Summary - ${params.country.toUpperCase()}`,
+    title: `Today's Summary - ${country.toUpperCase()}`,
+    alternates: {
+      canonical,
+      languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
+    },
   }
 }
 
@@ -26,6 +35,15 @@ export default async function TodayPage({
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = getLocaleForCountry(country)
+  const base = getSiteBaseUrl()
+  const isJa = country === 'jp'
+  const breadcrumbJSONLD = generateBreadcrumbListJSONLD({
+    items: [
+      { name: 'The Gentle Light', url: `${base}/` },
+      { name: isJa ? 'トップ' : 'Home', url: `${base}/${country}` },
+      { name: isJa ? '今日' : 'Today', url: `${base}/${country}/today` },
+    ],
+  })
   let data: TodayResponse
   let pickup: TopicsResponse
   try {
@@ -33,17 +51,25 @@ export default async function TodayPage({
     pickup = await fetchJson<TopicsResponse>(`/v1/${country}/pickup/heartwarming?limit=4`, { cache: 'no-store' })
   } catch (e: any) {
     return (
-      <main>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
-          <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? '今日のまとめ' : "Today's Summary"}</h1>
-        </div>
-        <div style={{ height: 12 }} />
-        <EmptyState
-          title={country === 'jp' ? 'APIに接続できません' : 'Cannot reach API'}
-          description={String(e?.message || e || '')}
-          action={{ label: country === 'jp' ? 'トップへ' : 'Back to home', href: `/${country}` }}
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(breadcrumbJSONLD),
+          }}
         />
-      </main>
+        <main>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
+            <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? '今日のまとめ' : "Today's Summary"}</h1>
+          </div>
+          <div style={{ height: 12 }} />
+          <EmptyState
+            title={country === 'jp' ? 'APIに接続できません' : 'Cannot reach API'}
+            description={String(e?.message || e || '')}
+            action={{ label: country === 'jp' ? 'トップへ' : 'Back to home', href: `/${country}` }}
+          />
+        </main>
+      </>
     )
   }
   const isPartial = Boolean(data.meta?.is_partial)
@@ -51,15 +77,22 @@ export default async function TodayPage({
   const locale = lang === 'ja' ? 'ja' : 'en'
 
   return (
-    <main>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
-        <h1 style={{ fontSize: '1.4rem' }}>{t.pages.today.title}</h1>
-        {data.daily?.generated_at && (
-          <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
-            {new Date(data.daily.generated_at).toLocaleString()}
-          </span>
-        )}
-      </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJSONLD),
+        }}
+      />
+      <main>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
+          <h1 style={{ fontSize: '1.4rem' }}>{t.pages.today.title}</h1>
+          {data.daily?.generated_at && (
+            <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
+              {new Date(data.daily.generated_at).toLocaleString()}
+            </span>
+          )}
+        </div>
 
       <div style={{ height: 12 }} />
 
@@ -187,7 +220,8 @@ export default async function TodayPage({
           action={{ label: country === 'jp' ? '朝刊一覧へ' : 'Briefings', href: `/${country}/daily` }}
         />
       )}
-    </main>
+      </main>
+    </>
   )
 }
 

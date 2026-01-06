@@ -10,16 +10,33 @@ import { getGentleFromSearchParams } from '@/lib/view-switch'
 import { formatTopicListDate } from '@/lib/topicDate'
 import { getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import styles from './news.module.css'
+import { canonicalUrl } from '@/lib/seo'
+import { generateHreflang } from '@/lib/seo-helpers'
 // 表示はsoft一本（UX方針）
 
 // Categories are handled by dedicated category pages (/category/[category]).
 
-export function generateMetadata({ params, searchParams }: { params: { country: string }; searchParams: { q?: string } }) {
+export function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: { country: string }
+  searchParams: { q?: string; category?: string; gentle?: string; cursor?: string; limit?: string }
+}) {
   const country = params.country
   const query = searchParams.q || ''
   const title = query ? (country === 'jp' ? `検索: ${query}` : `Search: ${query}`) : (country === 'jp' ? 'ニュース検索' : 'News')
+  const canonical = canonicalUrl(`/${country}/news`)
+
+  // フィルタ付き（検索語や絞り込み等）は hreflang を付けない（意図の同一性が担保しにくい）
+  const hasFilter = Boolean(searchParams.q || searchParams.category || searchParams.gentle || searchParams.cursor || searchParams.limit)
+  const hreflang = hasFilter ? null : generateHreflang('/news')
   return {
     title: `${title} - ${country.toUpperCase()}`,
+    alternates: {
+      canonical,
+      ...(hreflang ? { languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])) } : {}),
+    },
   }
 }
 
