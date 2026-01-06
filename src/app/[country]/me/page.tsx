@@ -25,6 +25,8 @@ export default function MyPage() {
   const [devInfo, setDevInfo] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [busyVerify, setBusyVerify] = useState(false)
+  const [busyChange, setBusyChange] = useState(false)
+  const [busyConfirmChange, setBusyConfirmChange] = useState(false)
 
   const [curPw, setCurPw] = useState('')
   const [newPw, setNewPw] = useState('')
@@ -95,8 +97,25 @@ export default function MyPage() {
         setDevInfo(`dev_verify_token: ${r.dev_verify_token}`)
         setEmailToken(r.dev_verify_token)
       }
-      // In production, dev token is not shown. Always show a small confirmation message.
-      setNotice(isJp ? '認証メールを送信しました。受信箱をご確認ください。' : 'Verification email sent. Please check your inbox.')
+      // In production, dev token is not shown.
+      // In dev, SMTP未設定だと「送れた風」になりやすいので、結果に応じて表示を出し分ける。
+      const mailStatus = r.mail?.status
+      if (mailStatus === 'skipped') {
+        const reason = (r.mail as any)?.reason ? ` (${(r.mail as any).reason})` : ''
+        setNotice(
+          isJp
+            ? `SMTPが未設定のためメール送信はスキップされました${reason}。下の（dev）確認ページから認証してください。`
+            : `Email sending was skipped (SMTP not configured${reason}). Please verify via the (dev) link below.`
+        )
+      } else if (r.mail_error) {
+        setNotice(
+          isJp
+            ? `メール送信でエラーが発生しました: ${r.mail_error}\n下の（dev）確認ページから認証してください。`
+            : `Email sending failed: ${r.mail_error}\nPlease verify via the (dev) link below.`
+        )
+      } else {
+        setNotice(isJp ? '認証メールを送信しました。受信箱をご確認ください。' : 'Verification email sent. Please check your inbox.')
+      }
     } catch (e: any) {
       setError(e?.message || '送信に失敗しました')
     } finally {
@@ -105,27 +124,53 @@ export default function MyPage() {
   }
 
   const requestChange = async () => {
+    if (busyChange) return
     setError(null)
+    setNotice(null)
     setDevInfo(null)
+    setBusyChange(true)
     try {
       const r = await requestEmailChange(newEmail)
       if (r.dev_change_token) {
         setDevInfo(`dev_change_token: ${r.dev_change_token}`)
         setEmailToken(r.dev_change_token)
       }
+      const mailStatus = r.mail?.status
+      if (mailStatus === 'skipped') {
+        const reason = (r.mail as any)?.reason ? ` (${(r.mail as any).reason})` : ''
+        setNotice(
+          isJp
+            ? `SMTPが未設定のためメール送信はスキップされました${reason}。下の（dev）確認ページから変更を確定してください。`
+            : `Email sending was skipped (SMTP not configured${reason}). Please confirm via the (dev) link below.`
+        )
+      } else if (r.mail_error) {
+        setNotice(
+          isJp
+            ? `メール送信でエラーが発生しました: ${r.mail_error}\n下の（dev）確認ページから変更を確定してください。`
+            : `Email sending failed: ${r.mail_error}\nPlease confirm via the (dev) link below.`
+        )
+      } else {
+        setNotice(isJp ? '確認メールを送信しました。受信箱をご確認ください。' : 'Confirmation email sent. Please check your inbox.')
+      }
     } catch (e: any) {
       setError(e?.message || '送信に失敗しました')
+    } finally {
+      setBusyChange(false)
     }
   }
 
   const confirmChange = async () => {
+    if (busyConfirmChange) return
     setError(null)
     setDevInfo(null)
+    setBusyConfirmChange(true)
     try {
       await confirmEmailChange(emailToken)
       await load()
     } catch (e: any) {
       setError(e?.message || '変更に失敗しました')
+    } finally {
+      setBusyConfirmChange(false)
     }
   }
 
@@ -256,8 +301,21 @@ export default function MyPage() {
             placeholder={isJp ? '新しいメールアドレス' : 'New email address'}
             style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)' }}
           />
-          <button type="button" onClick={() => void requestChange()} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)', background: '#fff', fontWeight: 800 }}>
-            {isJp ? '変更用メールを送る' : 'Send change-email link'}
+          <button
+            type="button"
+            disabled={busyChange}
+            onClick={() => void requestChange()}
+            style={{
+              padding: '10px 12px',
+              borderRadius: 6,
+              border: '1px solid rgba(0,0,0,0.18)',
+              background: '#fff',
+              fontWeight: 800,
+              cursor: busyChange ? 'not-allowed' : 'pointer',
+              opacity: busyChange ? 0.6 : 1,
+            }}
+          >
+            {busyChange ? (isJp ? '送信中…' : 'Sending…') : isJp ? '変更用メールを送る' : 'Send change-email link'}
           </button>
           {showDev ? (
             <>
@@ -268,8 +326,22 @@ export default function MyPage() {
                   placeholder={isJp ? '（dev）トークン' : '(dev) Token'}
                   style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.18)', flex: '1 1 240px' }}
                 />
-                <button type="button" onClick={() => void confirmChange()} style={{ padding: '10px 12px', borderRadius: 6, border: '1px solid #000', background: '#000', color: '#fff', fontWeight: 800 }}>
-                  {isJp ? '変更を確定' : 'Confirm change'}
+                <button
+                  type="button"
+                  disabled={busyConfirmChange}
+                  onClick={() => void confirmChange()}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: 6,
+                    border: '1px solid #000',
+                    background: '#000',
+                    color: '#fff',
+                    fontWeight: 800,
+                    cursor: busyConfirmChange ? 'not-allowed' : 'pointer',
+                    opacity: busyConfirmChange ? 0.75 : 1,
+                  }}
+                >
+                  {busyConfirmChange ? (isJp ? '確定中…' : 'Confirming…') : isJp ? '変更を確定' : 'Confirm change'}
                 </button>
               </div>
               <Link href={`/${country}/confirm-email-change?token=${encodeURIComponent(emailToken)}`} style={{ fontSize: 13, color: 'var(--muted)' }}>

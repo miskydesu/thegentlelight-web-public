@@ -204,7 +204,13 @@ export async function removeTopicFromServer(topicId: string) {
 }
 
 export async function requestEmailVerify() {
-  return userFetchJson<{ status: 'ok'; dev_verify_token?: string }>('/v1/me/email/verify-request', {
+  return userFetchJson<{
+    status: 'ok'
+    dev_verify_token?: string
+    dev_verify_url?: string | null
+    mail?: { status: 'sent' } | { status: 'skipped'; reason: string } | null
+    mail_error?: string | null
+  }>('/v1/me/email/verify-request', {
     method: 'POST',
     body: JSON.stringify({}),
   })
@@ -218,7 +224,13 @@ export async function verifyEmail(token: string) {
 }
 
 export async function requestEmailChange(new_email: string) {
-  return userFetchJson<{ status: 'ok'; dev_change_token?: string }>('/v1/me/email/change-request', {
+  return userFetchJson<{
+    status: 'ok'
+    dev_change_token?: string
+    dev_change_url?: string | null
+    mail?: { status: 'sent' } | { status: 'skipped'; reason: string } | null
+    mail_error?: string | null
+  }>('/v1/me/email/change-request', {
     method: 'POST',
     body: JSON.stringify({ new_email }),
   })
