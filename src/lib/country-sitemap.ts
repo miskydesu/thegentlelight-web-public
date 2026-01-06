@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
-import { fetchJson, isCountry, type Country } from '../../lib/tglApi'
-import { getSiteBaseUrl } from '../../lib/seo'
+import type { Country } from './tglApi'
+import { fetchJson } from './tglApi'
+import { getSiteBaseUrl } from './seo'
 
 type TopicItem = {
   topic_id: string
@@ -19,14 +20,7 @@ function getLastModForTopic(t: TopicItem): Date {
   return t.last_source_published_at ? new Date(t.last_source_published_at) : new Date(t.last_seen_at)
 }
 
-export default async function sitemap({
-  params,
-}: {
-  params: { country: string }
-}): Promise<MetadataRoute.Sitemap> {
-  const country = params.country
-  if (!isCountry(country)) return []
-
+export async function generateCountrySitemap(country: Country): Promise<MetadataRoute.Sitemap> {
   const base = getSiteBaseUrl()
   const now = new Date()
 
