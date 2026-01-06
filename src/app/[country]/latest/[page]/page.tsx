@@ -6,6 +6,8 @@ import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { formatTopicListDate } from '@/lib/topicDate'
+import { canonicalUrl } from '@/lib/seo'
+import { generateHreflang } from '@/lib/seo-helpers'
 // 表示はsoft一本（UX方針）
 
 export function generateMetadata({
@@ -13,8 +15,16 @@ export function generateMetadata({
 }: {
   params: { country: string; page: string }
 }) {
+  const country = params.country
+  const page = params.page
+  const canonical = canonicalUrl(`/${country}/latest/${page}`)
+  const hreflang = generateHreflang(`/latest/${page}`)
   return {
-    title: `Latest - Page ${params.page} - ${params.country.toUpperCase()}`,
+    title: `Latest - Page ${page} - ${country.toUpperCase()}`,
+    alternates: {
+      canonical,
+      languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
+    },
   }
 }
 

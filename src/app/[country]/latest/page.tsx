@@ -7,11 +7,20 @@ import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { BadgeGroup } from '@/components/ui/BadgeGroup'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { formatTopicListDate } from '@/lib/topicDate'
+import { canonicalUrl, getSiteBaseUrl } from '@/lib/seo'
+import { generateHreflang, generateBreadcrumbListJSONLD } from '@/lib/seo-helpers'
 // 表示はsoft一本（UX方針）
 
 export function generateMetadata({ params }: { params: { country: string } }) {
+  const country = params.country
+  const canonical = canonicalUrl(`/${country}/latest`)
+  const hreflang = generateHreflang('/latest')
   return {
-    title: `Latest - ${params.country.toUpperCase()}`,
+    title: `Latest - ${country.toUpperCase()}`,
+    alternates: {
+      canonical,
+      languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
+    },
   }
 }
 
@@ -24,19 +33,35 @@ export default async function LatestPage({
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = getLocaleForCountry(country)
+  const base = getSiteBaseUrl()
+  const isJa = country === 'jp'
+  const breadcrumbJSONLD = generateBreadcrumbListJSONLD({
+    items: [
+      { name: 'The Gentle Light', url: `${base}/` },
+      { name: isJa ? 'トップ' : 'Home', url: `${base}/${country}` },
+      { name: isJa ? '最新' : 'Latest', url: `${base}/${country}/latest` },
+    ],
+  })
   const data = await fetchJson<LatestResponse>(`/v1/${country}/latest?limit=30`, { next: { revalidate: 30 } })
   const isPartial = Boolean(data.meta?.is_partial)
   const t = getTranslationsForCountry(country, lang)
   const locale = lang === 'ja' ? 'ja' : 'en'
 
   return (
-    <main>
-      <div style={{ marginBottom: '1rem' }}>
-        <h1 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>{t.pages.latest.title}</h1>
-        <p style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
-          {t.pages.latest.description}
-        </p>
-      </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJSONLD),
+        }}
+      />
+      <main>
+        <div style={{ marginBottom: '1rem' }}>
+          <h1 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>{t.pages.latest.title}</h1>
+          <p style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
+            {t.pages.latest.description}
+          </p>
+        </div>
 
       <div style={{ height: 12 }} />
 
@@ -92,7 +117,8 @@ export default async function LatestPage({
           action={{ label: t.pages.news.title, href: `/${country}/news` }}
         />
       )}
-    </main>
+      </main>
+    </>
   )
 }
 

@@ -1,13 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { COUNTRIES, fetchJson } from '../lib/tglApi'
-
-function getSiteBaseUrl(): string {
-  // 環境変数: NEXT_PUBLIC_SITE_URL（prod/stg/devで設定）
-  const v = process.env.NEXT_PUBLIC_SITE_URL
-  if (v) return v.replace(/\/$/, '')
-  // フォールバック（ローカル開発）
-  return 'http://localhost:3000'
-}
+import { getSiteBaseUrl } from '../lib/seo'
 
 type TopicItem = {
   topic_id: string
@@ -44,31 +37,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const entries: MetadataRoute.Sitemap = []
 
-  // 1. 固定ページ
-  const fixedRoutes: string[] = ['/', '/about', '/legal', '/saved']
+  // --- 基礎データ（lastmod をできる範囲で正しく） ---
+  // 国別トップ（/{country}）の lastmod は /home の updatedAt を使用
+  const homeLastModByCountry = new Map<string, Date>()
   for (const c of COUNTRIES) {
-    fixedRoutes.push(`/${c.code}`)
-    fixedRoutes.push(`/${c.code}/news`)
-    fixedRoutes.push(`/${c.code}/today`)
-    fixedRoutes.push(`/${c.code}/latest`)
-    fixedRoutes.push(`/${c.code}/daily`)
-    // カテゴリページ（Event Registry news/* に揃えたサイト内部カテゴリ）
-    const categories = ['heartwarming', 'science_earth', 'politics', 'health', 'technology', 'arts', 'business', 'sports']
-    for (const cat of categories) {
-      fixedRoutes.push(`/${c.code}/category/${cat}`)
+    try {
+      const r = await fetchJson<{ updatedAt?: string }>(`/v1/${c.code}/home?limit=1`, { next: { revalidate: 3600 } })
+      if (r?.updatedAt) homeLastModByCountry.set(c.code, new Date(r.updatedAt))
+    } catch (error) {
+      console.error(`Failed to fetch home updatedAt for ${c.code}:`, error)
     }
   }
 
-  entries.push(
-    ...fixedRoutes.map((path) => ({
-      url: `${base}${path}`,
-      lastModified: now,
-      changeFrequency: 'daily' as const,
-      priority: path === '/' ? 1.0 : 0.8,
-    }))
-  )
+  // 最新一覧（/{country}/latest）・ニュース（/{country}/news）は、latest topics の先頭（=最新）の時刻を利用
+  const latestLastModByCountry = new Map<string, Date>()
 
-  // 2. Topics（主要国/最新、上限5000件/国）
+  // 1. Topics（主要国/最新、上限5000件/国）
   for (const c of COUNTRIES) {
     try {
       // 最新トピックを取得（過去30日以内、または上位5000件）
@@ -76,6 +60,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         `/v1/${c.code}/latest?limit=5000`,
         { next: { revalidate: 3600 } } // 1時間キャッシュ
       )
+
+      const first = topicsResponse.topics?.[0] || null
+      if (first) {
+        const lm = first.last_source_published_at ? new Date(first.last_source_published_at) : new Date(first.last_seen_at)
+        latestLastModByCountry.set(c.code, lm)
+      }
 
       for (const topic of topicsResponse.topics.slice(0, 5000)) {
         const lastModified = topic.last_source_published_at
@@ -140,7 +130,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
   */
 
-  // 5. Morning Briefing（朝刊、status=ready、過去30日分）
+  // 2. Morning Briefing（朝刊、status=ready、過去30日分）
+  // - 日付詳細は updatedAt があればそれを lastmod にする
+  // - 朝刊一覧（/{country}/daily）の lastmod は、その月の最大 updatedAt を利用
+  const dailyIndexLastModByCountry = new Map<string, Date>()
   for (const c of COUNTRIES) {
     try {
       const today = new Date()
@@ -152,6 +145,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         `/v1/${c.code}/daily?year=${year}&month=${month}`,
         { next: { revalidate: 3600 } } // 1時間キャッシュ
       )
+
+      const maxUpdatedAt = (() => {
+        const xs = (dailyResponse.days || []).map((d) => (d.updatedAt ? new Date(d.updatedAt) : null)).filter(Boolean) as Date[]
+        if (!xs.length) return null
+        return xs.reduce((a, b) => (a.getTime() >= b.getTime() ? a : b))
+      })()
+      if (maxUpdatedAt) dailyIndexLastModByCountry.set(c.code, maxUpdatedAt)
 
       for (const day of dailyResponse.days) {
         const dayDate = new Date(day.dateLocal)
@@ -168,6 +168,79 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       console.error(`Failed to fetch daily for ${c.code}:`, error)
     }
   }
+
+  // 3. 固定ページ（changefreq は雑でも揃える。priorityは過信しないがヒントとして記載）
+  // NOTE: /saved はユーザー個人の保存リスト（クローラ非対象）なので sitemap から除外する
+  const fixedRoutes: string[] = ['/', '/about', '/legal']
+  for (const c of COUNTRIES) {
+    fixedRoutes.push(`/${c.code}`)
+    fixedRoutes.push(`/${c.code}/news`)
+    fixedRoutes.push(`/${c.code}/today`)
+    fixedRoutes.push(`/${c.code}/latest`)
+    fixedRoutes.push(`/${c.code}/daily`)
+    // カテゴリページ（Event Registry news/* に揃えたサイト内部カテゴリ）
+    const categories = ['heartwarming', 'science_earth', 'politics', 'health', 'technology', 'arts', 'business', 'sports']
+    for (const cat of categories) {
+      fixedRoutes.push(`/${c.code}/category/${cat}`)
+    }
+  }
+
+  const fixedEntries = fixedRoutes.map((path) => {
+    // デフォルトは now（固定ページは更新頻度が低いが、運用上は雑でもOK）
+    let lastModified: Date = now
+    let changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency'] = 'weekly'
+    let priority = 0.6
+
+    if (path === '/') {
+      lastModified = now
+      changeFrequency = 'monthly'
+      priority = 0.7
+    } else if (path === '/about' || path === '/legal') {
+      lastModified = now
+      changeFrequency = 'yearly'
+      priority = 0.3
+    } else {
+      const m = path.match(/^\/(us|uk|ca|jp)(\/.*)?$/)
+      const cc = m?.[1] || null
+      const rest = m?.[2] || ''
+      if (cc) {
+        if (rest === '') {
+          lastModified = homeLastModByCountry.get(cc) || now
+          changeFrequency = 'hourly'
+          priority = 1.0
+        } else if (rest === '/news') {
+          lastModified = latestLastModByCountry.get(cc) || homeLastModByCountry.get(cc) || now
+          changeFrequency = 'hourly'
+          priority = 0.9
+        } else if (rest === '/latest') {
+          lastModified = latestLastModByCountry.get(cc) || homeLastModByCountry.get(cc) || now
+          changeFrequency = 'hourly'
+          priority = 0.9
+        } else if (rest === '/today') {
+          lastModified = dailyIndexLastModByCountry.get(cc) || latestLastModByCountry.get(cc) || now
+          changeFrequency = 'daily'
+          priority = 0.8
+        } else if (rest === '/daily') {
+          lastModified = dailyIndexLastModByCountry.get(cc) || now
+          changeFrequency = 'daily'
+          priority = 0.8
+        } else if (rest.startsWith('/category/')) {
+          lastModified = latestLastModByCountry.get(cc) || homeLastModByCountry.get(cc) || now
+          changeFrequency = 'daily'
+          priority = 0.7
+        }
+      }
+    }
+
+    return {
+      url: `${base}${path}`,
+      lastModified,
+      changeFrequency,
+      priority,
+    }
+  })
+
+  entries.push(...fixedEntries)
 
   return entries
 }

@@ -33,7 +33,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  // ルートのみ自動振り分け（既存の /jp や /us などを壊さない）
+  // ルート以外は自動振り分けしない（既存の /jp や /us などを壊さない）
   if (p !== '/') {
     // 後段のServer Componentでパス判定できるように、pathnameをヘッダで渡す
     const h = new Headers(req.headers)
@@ -41,12 +41,8 @@ export function middleware(req: NextRequest) {
     return NextResponse.next({ request: { headers: h } })
   }
 
-  // 日本判定の場合は、ルートで「国と言語の選択」ページを見せたいのでリダイレクトしない
-  if (isJapan(req)) return NextResponse.next()
-
-  const url = req.nextUrl.clone()
-  url.pathname = '/us'
-  return NextResponse.redirect(url)
+  // / は「国選択（ルート表示）」を優先する（意図して直打ちしてくる人のため）
+  return NextResponse.next()
 }
 
 export const config = {

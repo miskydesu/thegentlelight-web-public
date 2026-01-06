@@ -9,6 +9,8 @@ import { getGentleFromSearchParams } from '@/lib/view-switch'
 import { CATEGORIES, getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import styles from './category.module.css'
 import { formatTopicListDate } from '@/lib/topicDate'
+import { canonicalUrl, getSiteBaseUrl } from '@/lib/seo'
+import { generateHreflang, generateBreadcrumbListJSONLD } from '@/lib/seo-helpers'
 // 表示はsoft一本（UX方針）
 
 export function generateMetadata({
@@ -17,8 +19,18 @@ export function generateMetadata({
   params: { country: string; category: string }
 }) {
   const category = CATEGORIES.find((c) => c.code === params.category)
+  const canonical = canonicalUrl(`/${params.country}/category/${encodeURIComponent(params.category)}`)
+  const hreflang = generateHreflang(`/category/${params.category}`)
+  const isJa = params.country === 'jp'
+  const catLabel = isJa ? (category?.labelJa || category?.label || params.category) : (category?.label || category?.labelJa || params.category)
+  const siteName = 'The Gentle Light'
   return {
-    title: `${category?.labelJa || category?.label || params.category} - ${params.country.toUpperCase()}`,
+    // ブランディング: [カテゴリ名]のトピック The Gentle Light
+    title: isJa ? `${catLabel}のトピック | ${siteName}` : `${catLabel} Topics | ${siteName}`,
+    alternates: {
+      canonical,
+      languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
+    },
   }
 }
 
@@ -38,6 +50,15 @@ export default async function CategoryPage({
   const t = getTranslationsForCountry(country, lang)
   const gentle = getGentleFromSearchParams(searchParams)
   const locale = lang === 'ja' ? 'ja' : 'en'
+  const base = getSiteBaseUrl()
+  const isJa = country === 'jp'
+  const breadcrumbJSONLD = generateBreadcrumbListJSONLD({
+    items: [
+      { name: 'The Gentle Light', url: `${base}/` },
+      { name: isJa ? 'トップ' : 'Home', url: `${base}/${country}` },
+      { name: getCategoryLabel(category.code, locale), url: `${base}/${country}/category/${category.code}` },
+    ],
+  })
 
   const cursor = Number.isFinite(Number(searchParams.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
   const limit = Number.isFinite(Number(searchParams.limit)) ? Math.min(100, Math.max(1, Math.trunc(Number(searchParams.limit)))) : 30
@@ -62,7 +83,14 @@ export default async function CategoryPage({
   }
 
   return (
-    <main>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJSONLD),
+        }}
+      />
+      <main>
       <div
         style={{
           display: 'flex',
@@ -194,7 +222,8 @@ export default async function CategoryPage({
           action={{ label: t.pages.today.title, href: `/${country}/today` }}
         />
       )}
-    </main>
+      </main>
+    </>
   )
 }
 

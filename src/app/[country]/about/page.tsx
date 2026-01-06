@@ -3,13 +3,21 @@ import { notFound } from 'next/navigation'
 import { isCountry } from '@/lib/tglApi'
 import { Card, CardContent, CardTitle } from '@/components/ui/Card'
 import styles from './about.module.css'
+import { canonicalUrl, getSiteBaseUrl } from '@/lib/seo'
+import { generateHreflang, generateBreadcrumbListJSONLD } from '@/lib/seo-helpers'
 
 export function generateMetadata({ params }: { params: { country: string } }) {
   const country = params.country
   if (!isCountry(country)) return {}
   const isJa = country === 'jp'
+  const canonical = canonicalUrl(`/${country}/about`)
+  const hreflang = generateHreflang('/about')
   return {
     title: `${isJa ? 'このサイトについて' : 'About'} - The Gentle Light`,
+    alternates: {
+      canonical,
+      languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
+    },
   }
 }
 
@@ -17,9 +25,24 @@ export default function AboutPage({ params }: { params: { country: string } }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
   const isJa = country === 'jp'
+  const base = getSiteBaseUrl()
+  const breadcrumbJSONLD = generateBreadcrumbListJSONLD({
+    items: [
+      { name: 'The Gentle Light', url: `${base}/` },
+      { name: isJa ? 'トップ' : 'Home', url: `${base}/${country}` },
+      { name: isJa ? 'このサイトについて' : 'About', url: `${base}/${country}/about` },
+    ],
+  })
 
   return (
-    <main>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJSONLD),
+        }}
+      />
+      <main>
       <div className={styles.pageHeader}>
         <Link
           href={`/${country}`}
@@ -121,7 +144,8 @@ export default function AboutPage({ params }: { params: { country: string } }) {
           {isJa ? '← トップへ戻る' : '← Back to Home'}
         </Link>
       </div>
-    </main>
+      </main>
+    </>
   )
 }
 

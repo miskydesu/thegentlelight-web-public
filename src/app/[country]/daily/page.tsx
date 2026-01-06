@@ -1,11 +1,12 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type DailyListResponse } from '../../../lib/tglApi'
-import { canonicalUrl } from '../../../lib/seo'
+import { canonicalUrl, getSiteBaseUrl } from '../../../lib/seo'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '../../../lib/i18n'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
+import { generateHreflang, generateBreadcrumbListJSONLD } from '../../../lib/seo-helpers'
 
 function getLocalYmdForCountry(country: 'us' | 'uk' | 'ca' | 'jp', now: Date = new Date()): string {
   const tz: Record<string, string> = {
@@ -25,9 +26,11 @@ function getLocalYmdForCountry(country: 'us' | 'uk' | 'ca' | 'jp', now: Date = n
 
 export function generateMetadata({ params }: { params: { country: string } }) {
   const country = params.country
+  const hreflang = generateHreflang('/daily')
   return {
     alternates: {
       canonical: canonicalUrl(`/${country}/daily`),
+      languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
     },
   }
 }
@@ -43,6 +46,15 @@ export default async function DailyIndex({
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = getLocaleForCountry(country)
+  const base = getSiteBaseUrl()
+  const isJa = country === 'jp'
+  const breadcrumbJSONLD = generateBreadcrumbListJSONLD({
+    items: [
+      { name: 'The Gentle Light', url: `${base}/` },
+      { name: isJa ? 'トップ' : 'Home', url: `${base}/${country}` },
+      { name: isJa ? '朝刊' : 'Morning Briefing', url: `${base}/${country}/daily` },
+    ],
+  })
   const now = new Date()
   const year = (() => {
     const y = searchParams?.year ? Number(searchParams.year) : now.getUTCFullYear()
@@ -102,11 +114,18 @@ export default async function DailyIndex({
   }
 
   return (
-    <main>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
-        <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? '朝刊' : 'Morning Briefing'}</h1>
-        {isPartial && <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>}
-      </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJSONLD),
+        }}
+      />
+      <main>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
+          <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? '朝刊' : 'Morning Briefing'}</h1>
+          {isPartial && <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>}
+        </div>
 
       <div style={{ height: 12 }} />
 
@@ -232,7 +251,8 @@ export default async function DailyIndex({
       )}
 
       {isPartial && <PartialNotice country={country} />}
-    </main>
+      </main>
+    </>
   )
 }
 

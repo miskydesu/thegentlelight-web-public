@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type TopicDetailResponse, type TopicSourcesResponse } from '../../../../../lib/tglApi'
 import { canonicalUrl } from '../../../../../lib/seo'
 import { getLocaleForCountry, type Locale } from '../../../../../lib/i18n'
-import { generateSEOMetadata, generateArticleJSONLD, generateHreflang } from '../../../../../lib/seo-helpers'
+import { generateSEOMetadata, generateArticleJSONLD } from '../../../../../lib/seo-helpers'
 import { getSiteBaseUrl } from '../../../../../lib/seo'
 import { getGentleFromSearchParams } from '../../../../../lib/view-switch'
 import { Card, CardContent, CardMeta, CardTitle } from '../../../../../components/ui/Card'
@@ -21,6 +21,8 @@ export async function generateMetadata({
   if (!isCountry(country)) return {}
 
   const lang: Locale = getLocaleForCountry(country)
+  const locale = lang === 'ja' ? 'ja' : 'en'
+  const siteName = 'The Gentle Light'
 
   try {
     // トピックデータを取得（metadata生成用）
@@ -33,26 +35,17 @@ export async function generateMetadata({
     const path = `/news/n/${topicId}`
     const canonicalPath = `/${country}${path}`
 
-    // 利用可能な言語を判定（topic_localizationsから）
-    // 注意: 現時点ではAPIレスポンスに言語情報が含まれていないため、デフォルト言語のみと仮定
-    // TODO: APIレスポンスに言語情報を追加するか、別途APIで確認
-    const availableLangs: Locale[] = [getLocaleForCountry(country)] // デフォルト言語は常に利用可能
-    // 将来的に翻訳がある場合は追加: if (hasTranslation) availableLangs.push(otherLang)
-
-    const hreflang = generateHreflang(country, path, availableLangs)
-
     return generateSEOMetadata({
-      title: t.title || `${country.toUpperCase()} News`,
+      title: [t.title || `${country.toUpperCase()} News`, getCategoryLabel(t.category, locale), siteName].filter(Boolean).join(' | '),
       description: t.summary || undefined,
       type: 'article',
       publishedTime: t.last_source_published_at || undefined,
       canonical: `${base}${canonicalPath}`,
-      hreflang,
     })
   } catch (error) {
     // エラー時は最小限のmetadataを返す
     return generateSEOMetadata({
-      title: `${country.toUpperCase()} News`,
+      title: [`${country.toUpperCase()} News`, siteName].join(' | '),
       canonical: canonicalUrl(`/${country}/news/n/${topicId}`),
     })
   }

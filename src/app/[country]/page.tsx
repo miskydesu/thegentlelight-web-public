@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { fetchJson, isCountry, type HomeResponse } from '../../lib/tglApi'
 import { canonicalUrl, getSiteBaseUrl } from '../../lib/seo'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '../../lib/i18n'
-import { generateSEOMetadata, generateHreflang } from '../../lib/seo-helpers'
+import { generateSEOMetadata, generateHreflang, generateBreadcrumbListJSONLD } from '../../lib/seo-helpers'
 import { getGentleFromSearchParams } from '../../lib/view-switch'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
@@ -32,17 +32,16 @@ export async function generateMetadata({
   const country = params.country
   if (!isCountry(country)) return {}
 
-  const lang: Locale = getLocaleForCountry(country)
   const base = getSiteBaseUrl()
-  const path = ''
   const canonicalPath = `/${country}`
 
-  // 利用可能な言語（デフォルト言語は常に利用可能）
-  const availableLangs: Locale[] = [getLocaleForCountry(country)]
-  const hreflang = generateHreflang(country, path, availableLangs)
+  // hreflang（4カ国エディションの代替リンク）
+  const hreflang = generateHreflang('')
 
-  const countryName = country.toUpperCase()
-  const title = country === 'jp' ? `${countryName} ニュース` : `${countryName} News`
+  const siteName = 'The Gentle Light'
+  const brandWord = country.toUpperCase()
+  // ブランディング: サイト名 - ブランドワード（国別）
+  const title = `${siteName} - ${brandWord}`
   const description =
     country === 'jp'
       ? '優しく、静かに、世界のニュースを届けます'
@@ -69,6 +68,14 @@ export default async function CountryHome({
 
   const lang: Locale = getLocaleForCountry(country)
   const gentle = getGentleFromSearchParams(searchParams)
+  const base = getSiteBaseUrl()
+  const isJa = country === 'jp'
+  const breadcrumbJSONLD = generateBreadcrumbListJSONLD({
+    items: [
+      { name: 'The Gentle Light', url: `${base}/` },
+      { name: isJa ? 'トップ' : 'Home', url: `${base}/${country}` },
+    ],
+  })
 
   const sp = new URLSearchParams()
   if (gentle) sp.set('gentle', '1')
@@ -111,17 +118,25 @@ export default async function CountryHome({
   const locale = lang === 'ja' ? 'ja' : 'en'
 
   return (
-    <main>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
-        <h1 style={{ fontSize: '1.5rem' }}>{country === 'jp' ? t.pages.home.title : `${country.toUpperCase()} ${t.pages.home.title}`}</h1>
-        {isPartial ? (
-          <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>
-        ) : (
-          <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
-            updated: {new Date(data.updatedAt).toLocaleString()}
-          </span>
-        )}
-      </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(breadcrumbJSONLD),
+        }}
+      />
+
+      <main>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
+          <h1 style={{ fontSize: '1.5rem' }}>{country === 'jp' ? t.pages.home.title : `${country.toUpperCase()} ${t.pages.home.title}`}</h1>
+          {isPartial ? (
+            <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>
+          ) : (
+            <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
+              updated: {new Date(data.updatedAt).toLocaleString()}
+            </span>
+          )}
+        </div>
 
       <div style={{ height: 12 }} />
 
@@ -272,7 +287,8 @@ export default async function CountryHome({
       </section>
 
       {isPartial && <PartialNotice country={country} />}
-    </main>
+      </main>
+    </>
   )
 }
 

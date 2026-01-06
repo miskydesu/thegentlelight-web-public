@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type DailyDetailResponse } from '../../../../lib/tglApi'
-import { canonicalUrl } from '../../../../lib/seo'
+import { canonicalUrl, getSiteBaseUrl } from '../../../../lib/seo'
 import { getLocaleForCountry, getTranslationsForCountry, type Locale } from '../../../../lib/i18n'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
@@ -12,12 +12,71 @@ import styles from '../../home.module.css'
 import { getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import { formatTopicListDate } from '@/lib/topicDate'
 
-export function generateMetadata({ params }: { params: { country: string; date: string } }) {
+function formatDailyTitleDateJaShort(dateLocal: string): string {
+  const d = new Date(`${dateLocal}T00:00:00.000Z`)
+  return new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(d)
+}
+
+function formatDailyTitleDateEn(dateLocal: string): string {
+  const d = new Date(`${dateLocal}T00:00:00.000Z`)
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'UTC',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(d)
+}
+
+function pickSnippet(s: string, max: number): string {
+  const v = String(s || '').replace(/\s+/g, ' ').trim()
+  if (!v) return ''
+  if (v.length <= max) return v
+  return `${v.slice(0, Math.max(0, max)).trim()}…`
+}
+
+export async function generateMetadata({ params }: { params: { country: string; date: string } }) {
   const { country, date } = params
-  return {
-    alternates: {
-      canonical: canonicalUrl(`/${country}/daily/${date}`),
-    },
+  const canonical = canonicalUrl(`/${country}/daily/${date}`)
+  const siteName = 'The Gentle Light'
+
+  // default (API失敗など)
+  const fallbackTitle =
+    country === 'jp'
+      ? `[GentleNews]${formatDailyTitleDateJaShort(date)}の朝刊 - ${siteName}`
+      : `[GentleNews]Morning Briefing ${formatDailyTitleDateEn(date)} - ${siteName}`
+
+  // country不正・日付不正は最小限（notFoundはpage側で処理）
+  if (!isCountry(country) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return { title: fallbackTitle, alternates: { canonical } }
+  }
+
+  try {
+    const data = await fetchJson<DailyDetailResponse>(`/v1/${country}/daily/${encodeURIComponent(date)}`, { next: { revalidate: 300 } })
+    const lang: Locale = getLocaleForCountry(country)
+    const locale = lang === 'ja' ? 'ja' : 'en'
+    const isJa = locale === 'ja'
+    const msg = (data.messages && data.messages[0]?.message) || data.daily?.summary || ''
+    const snippet = pickSnippet(msg, isJa ? 28 : 50)
+    const title = isJa
+      ? `[GentleNews]${formatDailyTitleDateJaShort(date)}の朝刊${snippet ? ` - ${snippet}` : ''} | ${siteName}`
+      : `[GentleNews]Morning Briefing ${formatDailyTitleDateEn(date)}${snippet ? ` - ${snippet}` : ''} | ${siteName}`
+    const description = msg ? pickSnippet(msg, isJa ? 120 : 170) : undefined
+
+    return {
+      title,
+      description,
+      alternates: { canonical },
+    }
+  } catch {
+    return {
+      title: fallbackTitle,
+      alternates: { canonical },
+    }
   }
 }
 

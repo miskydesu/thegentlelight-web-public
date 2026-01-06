@@ -6,7 +6,7 @@
  */
 
 import type { Metadata } from 'next'
-import { getSiteBaseUrl, canonicalUrl } from './seo'
+import { getSiteBaseUrl, canonicalUrl, isProdSite } from './seo'
 import type { Country } from './tglApi'
 
 export type Locale = 'en' | 'ja'
@@ -30,7 +30,11 @@ export type SEOConfig = {
 export function generateSEOMetadata(config: SEOConfig): Metadata {
   const base = getSiteBaseUrl()
   const canonical = config.canonical || canonicalUrl('/')
-  const isNoindex = process.env.ROBOTS_NOINDEX === 'true' || config.noindex
+  // stg/dev/local はデフォルトで noindex（誤インデックス防止）
+  const isNoindex = process.env.ROBOTS_NOINDEX === 'true' || !isProdSite() || config.noindex
+
+  const hasImage = Boolean(config.image)
+  const twitterCard: 'summary' | 'summary_large_image' = hasImage ? 'summary_large_image' : 'summary'
 
   const metadata: Metadata = {
     title: config.title,
@@ -46,15 +50,15 @@ export function generateSEOMetadata(config: SEOConfig): Metadata {
       description: config.description,
       type: config.type || 'website',
       url: canonical,
-      images: config.image ? [{ url: config.image }] : undefined,
+      images: hasImage ? [{ url: config.image! }] : undefined,
       publishedTime: config.publishedTime,
       modifiedTime: config.modifiedTime,
     },
     twitter: {
-      card: 'summary_large_image',
+      card: twitterCard,
       title: config.title,
       description: config.description,
-      images: config.image ? [config.image] : undefined,
+      images: hasImage ? [config.image!] : undefined,
     },
   }
 
@@ -152,45 +156,69 @@ export function generateQuotationJSONLD(config: {
 }
 
 /**
- * hreflang生成（国×言語の代替）
- * 言語別の同等ページが存在する場合のみ生成
+ * JSON-LD構造化データ生成（WebSite）
  */
-export function generateHreflang(
-  country: Country,
-  path: string,
-  availableLangs: Locale[]
-): Array<{ lang: string; url: string }> {
+export function generateWebSiteJSONLD(config: { url?: string; name?: string }): object {
+  const base = config.url || getSiteBaseUrl()
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: config.name || 'The Gentle Light',
+    url: base,
+  }
+}
+
+/**
+ * JSON-LD構造化データ生成（BreadcrumbList）
+ */
+export function generateBreadcrumbListJSONLD(config: { items: Array<{ name: string; url: string }> }): object {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: config.items.map((it, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      name: it.name,
+      item: it.url,
+    })),
+  }
+}
+
+/**
+ * hreflang生成（4カ国エディションの代替）
+ *
+ * 方針:
+ * - このサイトは「国（=エディション）」が一次軸
+ * - 同一URLの言語違い（/us/ja や ?lang=）は現状採用しない
+ * - そのため hreflang は「4カ国の同じ意図のページ」を相互に結ぶ用途でのみ使う
+ *
+ * 例:
+ * - /{country}（国別トップ）
+ * - /{country}/today, /{country}/latest, /{country}/daily
+ * - /{country}/category/{category}
+ */
+export function generateHreflang(pathWithinCountry: string): Array<{ lang: string; url: string }> {
   const base = getSiteBaseUrl()
-  const hreflang: Array<{ lang: string; url: string }> = []
+  const p = (() => {
+    const raw = String(pathWithinCountry || '')
+    if (!raw) return ''
+    return raw.startsWith('/') ? raw : `/${raw}`
+  })()
 
-  // デフォルト言語（国に応じた標準言語）
-  const defaultLang = country === 'jp' ? 'ja' : 'en'
-  const otherLang = defaultLang === 'en' ? 'ja' : 'en'
+  const countries: Array<{ country: Country; lang: string }> = [
+    { country: 'us', lang: 'en-US' },
+    { country: 'uk', lang: 'en-GB' },
+    { country: 'ca', lang: 'en-CA' },
+    { country: 'jp', lang: 'ja-JP' },
+  ]
 
-  // デフォルト言語版（view無しURL）
-  if (availableLangs.includes(defaultLang)) {
-    hreflang.push({
-      lang: defaultLang === 'en' ? 'en-US' : 'ja-JP',
-      url: `${base}/${country}${path}`,
-    })
-  }
+  const hreflang: Array<{ lang: string; url: string }> = countries.map((c) => ({
+    lang: c.lang,
+    url: `${base}/${c.country}${p}`,
+  }))
 
-  // もう一方の言語版（?lang=パラメータ付きURL）
-  if (availableLangs.includes(otherLang)) {
-    const langParam = otherLang === 'en' ? 'en' : 'ja'
-    hreflang.push({
-      lang: otherLang === 'en' ? 'en-US' : 'ja-JP',
-      url: `${base}/${country}${path}?lang=${langParam}`,
-    })
-  }
-
-  // x-default（デフォルト言語版）
-  if (hreflang.length > 0) {
-    hreflang.push({
-      lang: 'x-default',
-      url: `${base}/${country}${path}`,
-    })
-  }
+  // x-default は国選択ページへ（強制リダイレクトしない入口）
+  hreflang.push({ lang: 'x-default', url: `${base}/` })
 
   return hreflang
 }

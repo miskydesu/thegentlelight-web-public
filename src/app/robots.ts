@@ -1,7 +1,10 @@
 import type { MetadataRoute } from 'next'
+import { getSiteBaseUrl, isProdSite } from '../lib/seo'
 
 export default function robots(): MetadataRoute.Robots {
-  const noindex = process.env.ROBOTS_NOINDEX === 'true'
+  const base = getSiteBaseUrl()
+  // stg/dev/local はデフォルトで noindex（誤インデックス防止）
+  const noindex = process.env.ROBOTS_NOINDEX === 'true' || !isProdSite()
   if (noindex) {
     return {
       rules: [
@@ -10,6 +13,8 @@ export default function robots(): MetadataRoute.Robots {
           disallow: '/',
         },
       ],
+      sitemap: `${base}/sitemap.xml`,
+      host: base,
     }
   }
 
@@ -20,6 +25,8 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
       },
     ],
+    sitemap: `${base}/sitemap.xml`,
+    host: base,
   }
 }
 
