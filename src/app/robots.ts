@@ -1,10 +1,15 @@
 import type { MetadataRoute } from 'next'
 import { getSiteBaseUrl, isProdSite } from '../lib/seo'
+import { COUNTRIES } from '../lib/tglApi'
 
 export default function robots(): MetadataRoute.Robots {
   const base = getSiteBaseUrl()
   // stg/dev/local はデフォルトで noindex（誤インデックス防止）
   const noindex = process.env.ROBOTS_NOINDEX === 'true' || !isProdSite()
+  const sitemaps = [
+    `${base}/sitemap.xml`,
+    ...COUNTRIES.map((c) => `${base}/${c.code}/sitemap.xml`),
+  ]
   if (noindex) {
     return {
       rules: [
@@ -13,7 +18,7 @@ export default function robots(): MetadataRoute.Robots {
           disallow: '/',
         },
       ],
-      sitemap: `${base}/sitemap.xml`,
+      sitemap: sitemaps,
     }
   }
 
@@ -24,7 +29,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
       },
     ],
-    sitemap: `${base}/sitemap.xml`,
+    sitemap: sitemaps,
   }
 }
 
