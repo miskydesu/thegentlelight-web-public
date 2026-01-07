@@ -113,9 +113,15 @@ export function Header({ country, className }: HeaderProps) {
   const menuItems = useMemo(() => {
     if (!country) return []
     const labelTop = t?.nav.top ?? (isJa ? 'トップ' : 'Home')
+    const labelToday = t?.nav.today ?? (isJa ? '今日' : 'Today')
+    const labelLatest = t?.nav.latest ?? (isJa ? '最新' : 'Latest')
+    const labelNews = t?.nav.news ?? (isJa ? 'ニュース' : 'News')
     const labelDaily = t?.nav.daily ?? (isJa ? '日報' : 'Daily')
     return [
       { kind: 'link' as const, label: labelTop, href: `/${country}` },
+      { kind: 'link' as const, label: labelToday, href: `/${country}/today` },
+      { kind: 'link' as const, label: labelLatest, href: `/${country}/latest` },
+      { kind: 'link' as const, label: labelNews, href: `/${country}/news` },
       // 朝刊は「当日ページ」へ（未生成なら /daily/today が案内を表示）
       { kind: 'link' as const, label: labelDaily, href: `/${country}/daily/today` },
       { kind: 'sep' as const },
@@ -363,6 +369,9 @@ export function Header({ country, className }: HeaderProps) {
             borderTop: '1px solid rgba(0,0,0,0.6)',
             borderBottom: '1px solid rgba(0,0,0,0.85)',
             background: '#fff',
+            overflowX: 'auto',
+            overflowY: 'hidden',
+            WebkitOverflowScrolling: 'touch',
           }}
         >
           <div style={{ maxWidth: '100%', margin: 0, padding: '5px 20px' }}>
@@ -370,9 +379,11 @@ export function Header({ country, className }: HeaderProps) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
+                justifyContent: 'flex-start',
                 gap: 10,
-                flexWrap: 'wrap',
+                flexWrap: 'nowrap',
+                width: 'max-content',
+                whiteSpace: 'nowrap',
               }}
             >
               {menuItems.map((it, idx) => {
