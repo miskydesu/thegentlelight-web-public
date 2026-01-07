@@ -113,14 +113,10 @@ export function Header({ country, className }: HeaderProps) {
   const menuItems = useMemo(() => {
     if (!country) return []
     const labelTop = t?.nav.top ?? (isJa ? 'トップ' : 'Home')
-    const labelToday = t?.nav.today ?? (isJa ? '今日' : 'Today')
-    const labelLatest = t?.nav.latest ?? (isJa ? '最新' : 'Latest')
     const labelNews = t?.nav.news ?? (isJa ? 'ニュース' : 'News')
     const labelDaily = t?.nav.daily ?? (isJa ? '日報' : 'Daily')
     return [
       { kind: 'link' as const, label: labelTop, href: `/${country}` },
-      { kind: 'link' as const, label: labelToday, href: `/${country}/today` },
-      { kind: 'link' as const, label: labelLatest, href: `/${country}/latest` },
       { kind: 'link' as const, label: labelNews, href: `/${country}/news` },
       // 朝刊は「当日ページ」へ（未生成なら /daily/today が案内を表示）
       { kind: 'link' as const, label: labelDaily, href: `/${country}/daily/today` },
@@ -374,12 +370,12 @@ export function Header({ country, className }: HeaderProps) {
             WebkitOverflowScrolling: 'touch',
           }}
         >
-          <div style={{ maxWidth: '100%', margin: 0, padding: '5px 20px' }}>
+          <div style={{ maxWidth: '100%', margin: 0, padding: '5px 20px', display: 'flex', justifyContent: 'center' }}>
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'flex-start',
+                justifyContent: 'center',
                 gap: 10,
                 flexWrap: 'nowrap',
                 width: 'max-content',
