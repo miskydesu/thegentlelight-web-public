@@ -1,4 +1,5 @@
 import { headers } from 'next/headers'
+import { cookies } from 'next/headers'
 import type { Metadata } from 'next'
 import styles from './root.module.css'
 import { getSiteBaseUrl } from '../lib/seo'
@@ -52,6 +53,8 @@ export default function Home() {
   const imageBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || process.env.IMAGE_BASE_URL || ''
   const b = imageBase ? imageBase.replace(/\/+$/, '') : ''
   const h = headers()
+  const cookieStore = cookies()
+  const savedCountry = (cookieStore.get('tgl_country')?.value || '').trim().toLowerCase()
   const headerCountry =
     h.get('x-vercel-ip-country') || h.get('cf-ipcountry') || h.get('x-country-code') || ''
   const normalizedCountry = headerCountry.toUpperCase() === 'GB' ? 'UK' : headerCountry.toUpperCase()
@@ -77,8 +80,13 @@ export default function Home() {
     { code: 'jp' as const, href: '/jp' },
   ]
 
-  const ordered = detected
-    ? [defaultOrder.find((x) => x.code === detected)!, ...defaultOrder.filter((x) => x.code !== detected)]
+  // 優先順位: ユーザーの明示選択（cookie） > Geo推定 > デフォルト
+  const preferred =
+    savedCountry === 'jp' || savedCountry === 'us' || savedCountry === 'uk' || savedCountry === 'ca'
+      ? (savedCountry as 'us' | 'uk' | 'ca' | 'jp')
+      : detected
+  const ordered = preferred
+    ? [defaultOrder.find((x) => x.code === preferred)!, ...defaultOrder.filter((x) => x.code !== preferred)]
     : defaultOrder
 
   const base = getSiteBaseUrl()
@@ -86,6 +94,40 @@ export default function Home() {
 
   return (
     <>
+      {/* 選択した国を保存（cookie + localStorage）。/ は noindex だがUX改善のため保持する */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+(() => {
+  const COOKIE = 'tgl_country';
+  const isValid = (v) => v === 'us' || v === 'uk' || v === 'ca' || v === 'jp';
+  const hasCookie = () => (document.cookie || '').split(';').some((x) => x.trim().startsWith(COOKIE + '='));
+  const setCookie = (v) => {
+    try {
+      document.cookie = COOKIE + '=' + encodeURIComponent(v) + '; Max-Age=31536000; Path=/; SameSite=Lax';
+    } catch {}
+  };
+  // cookie が無いが localStorage にある場合、cookie を補完（次回アクセスでサーバ側も参照できる）
+  try {
+    if (!hasCookie()) {
+      const v = (localStorage.getItem(COOKIE) || '').trim().toLowerCase();
+      if (isValid(v)) setCookie(v);
+    }
+  } catch {}
+
+  document.addEventListener('click', (e) => {
+    const a = e.target && e.target.closest ? e.target.closest('a[data-country]') : null;
+    if (!a) return;
+    const v = String(a.getAttribute('data-country') || '').trim().toLowerCase();
+    if (!isValid(v)) return;
+    setCookie(v);
+    try { localStorage.setItem(COOKIE, v); } catch {}
+  }, true);
+})();
+          `.trim(),
+        }}
+      />
+
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -133,7 +175,13 @@ export default function Home() {
                   isJa ? `${label}へ` : `Go to ${label} (${meta})`
 
                 return (
-                  <a key={x.code} className={styles.countryCard} href={x.href} aria-label={aria}>
+                  <a
+                    key={x.code}
+                    className={styles.countryCard}
+                    href={x.href}
+                    aria-label={aria}
+                    data-country={x.code}
+                  >
                     <div>
                       <div className={styles.countryLabel}>{label}</div>
                       <div className={styles.countryMeta}>{meta}</div>

@@ -177,7 +177,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const c of COUNTRIES) {
     fixedRoutes.push(`/${c.code}`)
     fixedRoutes.push(`/${c.code}/news`)
-    fixedRoutes.push(`/${c.code}/today`)
     fixedRoutes.push(`/${c.code}/latest`)
     fixedRoutes.push(`/${c.code}/daily`)
     fixedRoutes.push(`/${c.code}/legal`)
@@ -219,10 +218,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           lastModified = latestLastModByCountry.get(cc) || homeLastModByCountry.get(cc) || now
           changeFrequency = 'hourly'
           priority = 0.9
-        } else if (rest === '/today') {
-          lastModified = dailyIndexLastModByCountry.get(cc) || latestLastModByCountry.get(cc) || now
-          changeFrequency = 'daily'
-          priority = 0.8
         } else if (rest === '/daily') {
           lastModified = dailyIndexLastModByCountry.get(cc) || now
           changeFrequency = 'daily'

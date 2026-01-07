@@ -220,7 +220,7 @@ export default async function CategoryPage({
         <EmptyState
           title={t.empty.noCategoryResults}
           description={t.empty.noCategoryResultsDescription}
-          action={{ label: t.pages.today.title, href: `/${country}/today` }}
+          action={{ label: country === 'jp' ? '本日の朝刊へ' : "Go to today's briefing", href: `/${country}/daily/today` }}
         />
       )}
       </main>

@@ -84,12 +84,6 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
       priority: 0.9,
     },
     {
-      url: `${base}/${country}/today`,
-      lastModified: dailyIndexLastMod || latestMeta || now,
-      changeFrequency: 'daily',
-      priority: 0.8,
-    },
-    {
       url: `${base}/${country}/daily`,
       lastModified: dailyIndexLastMod || now,
       changeFrequency: 'daily',

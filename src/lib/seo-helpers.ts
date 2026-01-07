@@ -194,7 +194,7 @@ export function generateBreadcrumbListJSONLD(config: { items: Array<{ name: stri
  *
  * 例:
  * - /{country}（国別トップ）
- * - /{country}/today, /{country}/latest, /{country}/daily
+ * - /{country}/daily/today, /{country}/latest, /{country}/daily
  * - /{country}/category/{category}
  */
 export function generateHreflang(pathWithinCountry: string): Array<{ lang: string; url: string }> {
