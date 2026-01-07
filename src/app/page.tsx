@@ -26,6 +26,14 @@ export function generateMetadata(): Metadata {
       // 入口（/）と各国トップ（/us,/uk,/ca,/jp）を相互に結ぶ
       languages: Object.fromEntries(hreflang.map((x) => [x.lang, x.url])),
     },
+    // SEO方針:
+    // - `/`（国選択）はUXの入口として残すが、検索結果は各国トップ（/jp,/us,/uk,/ca）を優先したい
+    // - そのため `/` は noindex, follow（リンク評価は渡す）にする
+    robots: {
+      index: false,
+      follow: true,
+      googleBot: { index: false, follow: true },
+    },
     openGraph: {
       title,
       description,

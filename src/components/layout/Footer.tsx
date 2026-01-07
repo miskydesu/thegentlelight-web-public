@@ -33,13 +33,11 @@ export function Footer() {
     if (!country) return []
 
     const labelTop = t?.nav.top ?? (isJa ? 'トップ' : 'Home')
-    const labelToday = (t as any)?.nav?.today ?? (isJa ? '今日' : 'Today')
     const labelLatestNews = isJa ? '最新News' : 'Latest News'
     const labelDaily = t?.nav.daily ?? (isJa ? '日報' : 'Daily')
 
     return [
       { label: labelTop, href: `/${country}` },
-      { label: labelToday, href: `/${country}/today` },
       { label: labelLatestNews, href: `/${country}/news` },
       // 朝刊は「当日ページ」へ（未生成なら /daily/today が案内を表示）
       { label: labelDaily, href: `/${country}/daily/today` },
