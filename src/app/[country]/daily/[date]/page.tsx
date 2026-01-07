@@ -11,6 +11,7 @@ import { MorningMessagesRotator } from '@/components/daily/MorningMessagesRotato
 import styles from '../../home.module.css'
 import { getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import { formatTopicListDate } from '@/lib/topicDate'
+import { CACHE_POLICY } from '@/lib/cache-policy'
 
 function formatDailyTitleDateJaShort(dateLocal: string): string {
   const d = new Date(`${dateLocal}T00:00:00.000Z`)
@@ -56,7 +57,9 @@ export async function generateMetadata({ params }: { params: { country: string; 
   }
 
   try {
-    const data = await fetchJson<DailyDetailResponse>(`/v1/${country}/daily/${encodeURIComponent(date)}`, { next: { revalidate: 300 } })
+    const data = await fetchJson<DailyDetailResponse>(`/v1/${country}/daily/${encodeURIComponent(date)}`, {
+      next: { revalidate: CACHE_POLICY.stable },
+    })
     const lang: Locale = getLocaleForCountry(country)
     const locale = lang === 'ja' ? 'ja' : 'en'
     const isJa = locale === 'ja'

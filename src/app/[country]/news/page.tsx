@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { isCountry, fetchJson, type TopicsResponse } from '@/lib/tglApi'
+import { isCountry, fetchJson, type LatestResponse, type TopicsResponse } from '@/lib/tglApi'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
@@ -12,6 +12,7 @@ import { getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import styles from './news.module.css'
 import { canonicalUrl } from '@/lib/seo'
 import { generateHreflang } from '@/lib/seo-helpers'
+import { CACHE_POLICY } from '@/lib/cache-policy'
 // 表示はsoft一本（UX方針）
 
 // Categories are handled by dedicated category pages (/category/[category]).
@@ -59,13 +60,22 @@ export default async function NewsPage({
 
   const cursor = Number.isFinite(Number(searchParams.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
   const limit = Number.isFinite(Number(searchParams.limit)) ? Math.min(100, Math.max(1, Math.trunc(Number(searchParams.limit)))) : 30
-  const apiPath = `/v1/${country}/topics?limit=${limit}&cursor=${cursor}${gentle ? `&gentle=1` : ''}${query ? `&q=${encodeURIComponent(query)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}`
-  const data = await fetchJson<TopicsResponse>(apiPath, { next: { revalidate: 30 } })
+  // デフォルト表示は「最新（時系列）」を優先し、新しい順を担保する
+  // - q（検索語）がある場合のみ /topics（棚検索）を使う（/latest は q を受けないため）
+  const apiPath = query
+    ? `/v1/${country}/topics?limit=${limit}&cursor=${cursor}${gentle ? `&gentle=1` : ''}${query ? `&q=${encodeURIComponent(query)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}`
+    : `/v1/${country}/latest?limit=${limit}&cursor=${cursor}${gentle ? `&gentle=1` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}`
+
+  const data = query
+    ? await fetchJson<TopicsResponse>(apiPath, { next: { revalidate: CACHE_POLICY.frequent } })
+    : await fetchJson<LatestResponse>(apiPath, { next: { revalidate: CACHE_POLICY.frequent } })
+
+  const topics = data.topics
   const isPartial = Boolean(data.meta?.is_partial)
-  const hasNext = data.topics.length === limit
+  const hasNext = topics.length === limit
   const hasPrev = cursor > 0
-  const start = data.topics.length > 0 ? cursor + 1 : 0
-  const end = cursor + data.topics.length
+  const start = topics.length > 0 ? cursor + 1 : 0
+  const end = cursor + topics.length
 
   const buildUrl = (nextCursor: number) => {
     const sp = new URLSearchParams()
@@ -102,10 +112,10 @@ export default async function NewsPage({
         </div>
       )}
 
-      {data.topics.length > 0 ? (
+      {topics.length > 0 ? (
         <>
           <div className={styles.listGrid}>
-            {data.topics.map((x) => (
+            {topics.map((x) => (
               <Link key={x.topic_id} href={`/${country}/news/n/${x.topic_id}`}>
                 {(() => {
                   const theme = getCategoryBadgeTheme(x.category)
@@ -164,7 +174,7 @@ export default async function NewsPage({
                 </span>
               )}
               {hasNext ? (
-                <Link className="tglButton" href={buildUrl(cursor + data.topics.length)}>
+                <Link className="tglButton" href={buildUrl(cursor + topics.length)}>
                   {locale === 'ja' ? '次へ' : 'Next'}
                 </Link>
               ) : (

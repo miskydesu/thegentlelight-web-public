@@ -301,7 +301,7 @@ export function Header({ country, className }: HeaderProps) {
         </div>
 
         {/* ロゴ（画面中央） */}
-        <div style={{ justifySelf: 'center' }}>
+        <div style={{ justifySelf: 'center', maxWidth: '100%', minWidth: 0 }}>
           <Link
             href={withGentle(country ? `/${country}` : '/')}
             style={{
@@ -310,11 +310,12 @@ export function Header({ country, className }: HeaderProps) {
               gap: 8,
               textDecoration: 'none',
               color: 'inherit',
+              maxWidth: '100%',
             }}
             aria-label="The Gentle Light"
             title="The Gentle Light"
           >
-            <span className={styles.logoGlow}>
+            <span className={styles.logoGlow} style={{ maxWidth: '100%' }}>
               <img
                 src={logoSrc}
                 alt="The Gentle Light"
@@ -365,9 +366,6 @@ export function Header({ country, className }: HeaderProps) {
             borderTop: '1px solid rgba(0,0,0,0.6)',
             borderBottom: '1px solid rgba(0,0,0,0.85)',
             background: '#fff',
-            overflowX: 'auto',
-            overflowY: 'hidden',
-            WebkitOverflowScrolling: 'touch',
           }}
         >
           <div style={{ maxWidth: '100%', margin: 0, padding: '5px 20px', display: 'flex', justifyContent: 'center' }}>
@@ -377,9 +375,8 @@ export function Header({ country, className }: HeaderProps) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 10,
-                flexWrap: 'nowrap',
-                width: 'max-content',
-                whiteSpace: 'nowrap',
+                flexWrap: 'wrap',
+                width: '100%',
               }}
             >
               {menuItems.map((it, idx) => {

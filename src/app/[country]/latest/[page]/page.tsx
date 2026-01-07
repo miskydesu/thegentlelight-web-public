@@ -8,6 +8,7 @@ import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/l
 import { formatTopicListDate } from '@/lib/topicDate'
 import { canonicalUrl } from '@/lib/seo'
 import { generateHreflang } from '@/lib/seo-helpers'
+import { CACHE_POLICY } from '@/lib/cache-policy'
 // 表示はsoft一本（UX方針）
 
 export function generateMetadata({
@@ -45,7 +46,7 @@ export default async function LatestPagePage({
   const cursor = (pageNum - 1) * 30
   const data = await fetchJson<LatestResponse>(
     `/v1/${country}/latest?limit=30&cursor=${cursor}`,
-    { next: { revalidate: 30 } }
+    { next: { revalidate: CACHE_POLICY.frequent } }
   )
   const isPartial = Boolean(data.meta?.is_partial)
 

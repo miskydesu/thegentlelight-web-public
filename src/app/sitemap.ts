@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { COUNTRIES, fetchJson } from '../lib/tglApi'
 import { getSiteBaseUrl } from '../lib/seo'
+import { CACHE_POLICY } from '../lib/cache-policy'
 
 type TopicItem = {
   topic_id: string
@@ -42,7 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const homeLastModByCountry = new Map<string, Date>()
   for (const c of COUNTRIES) {
     try {
-      const r = await fetchJson<{ updatedAt?: string }>(`/v1/${c.code}/home?limit=1`, { next: { revalidate: 3600 } })
+      const r = await fetchJson<{ updatedAt?: string }>(`/v1/${c.code}/home?limit=1`, { next: { revalidate: CACHE_POLICY.meta } })
       if (r?.updatedAt) homeLastModByCountry.set(c.code, new Date(r.updatedAt))
     } catch (error) {
       console.error(`Failed to fetch home updatedAt for ${c.code}:`, error)
@@ -58,7 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // 最新トピックを取得（過去30日以内、または上位5000件）
       const topicsResponse = await fetchJson<{ topics: TopicItem[]; meta: any }>(
         `/v1/${c.code}/latest?limit=5000`,
-        { next: { revalidate: 3600 } } // 1時間キャッシュ
+        { next: { revalidate: CACHE_POLICY.meta } } // キャッシュ（メタ系）
       )
 
       const first = topicsResponse.topics?.[0] || null
@@ -91,7 +92,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     try {
       const columnsResponse = await fetchJson<{ columns: ColumnItem[]; meta: any }>(
         `${apiBase}/v1/${c.code}/columns?limit=1000`,
-        { next: { revalidate: 3600 } } // 1時間キャッシュ
+        { next: { revalidate: CACHE_POLICY.meta } } // キャッシュ（メタ系）
       )
 
       for (const column of columnsResponse.columns) {
@@ -113,7 +114,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     try {
       const quotesResponse = await fetchJson<{ quotes: QuoteItem[]; meta: any }>(
         `${apiBase}/v1/${c.code}/quotes?limit=1000`,
-        { next: { revalidate: 3600 } } // 1時間キャッシュ
+        { next: { revalidate: CACHE_POLICY.meta } } // キャッシュ（メタ系）
       )
 
       for (const quote of quotesResponse.quotes) {
@@ -143,7 +144,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       const dailyResponse = await fetchJson<{ days: DailyItem[]; meta: any }>(
         `/v1/${c.code}/daily?year=${year}&month=${month}`,
-        { next: { revalidate: 3600 } } // 1時間キャッシュ
+        { next: { revalidate: CACHE_POLICY.meta } } // キャッシュ（メタ系）
       )
 
       const maxUpdatedAt = (() => {
@@ -171,13 +172,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 3. 固定ページ（changefreq は雑でも揃える。priorityは過信しないがヒントとして記載）
   // NOTE: /saved はユーザー個人の保存リスト（クローラ非対象）なので sitemap から除外する
-  const fixedRoutes: string[] = ['/', '/about', '/legal']
+  // NOTE: /legal は /jp/legal へリダイレクト（互換）なので、sitemap には国別URLを載せる
+  const fixedRoutes: string[] = ['/', '/about']
   for (const c of COUNTRIES) {
     fixedRoutes.push(`/${c.code}`)
     fixedRoutes.push(`/${c.code}/news`)
     fixedRoutes.push(`/${c.code}/today`)
     fixedRoutes.push(`/${c.code}/latest`)
     fixedRoutes.push(`/${c.code}/daily`)
+    fixedRoutes.push(`/${c.code}/legal`)
     // カテゴリページ（Event Registry news/* に揃えたサイト内部カテゴリ）
     const categories = ['heartwarming', 'science_earth', 'politics', 'health', 'technology', 'arts', 'business', 'sports']
     for (const cat of categories) {
@@ -195,7 +198,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified = now
       changeFrequency = 'monthly'
       priority = 0.7
-    } else if (path === '/about' || path === '/legal') {
+    } else if (path === '/about') {
       lastModified = now
       changeFrequency = 'yearly'
       priority = 0.3
@@ -224,6 +227,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           lastModified = dailyIndexLastModByCountry.get(cc) || now
           changeFrequency = 'daily'
           priority = 0.8
+        } else if (rest === '/legal') {
+          lastModified = now
+          changeFrequency = 'yearly'
+          priority = 0.3
         } else if (rest.startsWith('/category/')) {
           lastModified = latestLastModByCountry.get(cc) || homeLastModByCountry.get(cc) || now
           changeFrequency = 'daily'

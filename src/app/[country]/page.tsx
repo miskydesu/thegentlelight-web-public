@@ -12,6 +12,7 @@ import styles from './home.module.css'
 import type { TopicsResponse } from '../../lib/tglApi'
 import { getCategoryBadgeTheme, getCategoryLabel } from '../../lib/categories'
 import { formatTopicListDate } from '@/lib/topicDate'
+import { CACHE_POLICY } from '@/lib/cache-policy'
 
 function uniqByTopicId<T extends { topic_id: string }>(xs: T[]): T[] {
   const seen = new Set<string>()
@@ -82,16 +83,20 @@ export default async function CountryHome({
   // important: heartwarming を除外しても「重要トピック」は最低8件を満たしたいので、/home は多めに取る
   sp.set('limit', '30')
   const qs = sp.toString()
-  const data = await fetchJson<HomeResponse>(`/v1/${country}/home${qs ? `?${qs}` : ''}`, { next: { revalidate: 30 } })
+  const data = await fetchJson<HomeResponse>(`/v1/${country}/home${qs ? `?${qs}` : ''}`, {
+    next: { revalidate: CACHE_POLICY.frequent },
+  })
   // PickupHeartwarming は常に4件（GentleModeに依存しない）。選定は専用APIで行う。
-  const heartwarming = await fetchJson<TopicsResponse>(`/v1/${country}/pickup/heartwarming?limit=4`, { next: { revalidate: 30 } })
+  const heartwarming = await fetchJson<TopicsResponse>(`/v1/${country}/pickup/heartwarming?limit=4`, {
+    next: { revalidate: CACHE_POLICY.frequent },
+  })
   const heroNonHW = (data.hero_topics || []).filter((x) => x.category !== 'heartwarming')
   const heroTopicLimit = gentle ? 6 : 8
   const need = Math.max(0, heroTopicLimit - heroNonHW.length)
   const extraCandidates = need
     ? await fetchJson<TopicsResponse>(
         `/v1/${country}/topics?limit=${Math.min(30, need + 12)}${gentle ? `&gentle=1` : ''}`,
-        { next: { revalidate: 30 } }
+        { next: { revalidate: CACHE_POLICY.frequent } }
       )
     : null
 

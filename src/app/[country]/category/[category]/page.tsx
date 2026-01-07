@@ -11,6 +11,7 @@ import styles from './category.module.css'
 import { formatTopicListDate } from '@/lib/topicDate'
 import { canonicalUrl, getSiteBaseUrl } from '@/lib/seo'
 import { generateHreflang, generateBreadcrumbListJSONLD } from '@/lib/seo-helpers'
+import { CACHE_POLICY } from '@/lib/cache-policy'
 // 表示はsoft一本（UX方針）
 
 export function generateMetadata({
@@ -65,7 +66,7 @@ export default async function CategoryPage({
 
   const data = await fetchJson<TopicsResponse>(
     `/v1/${country}/topics?category=${encodeURIComponent(category.code)}&limit=${limit}&cursor=${cursor}${gentle ? `&gentle=1` : ''}`,
-    { next: { revalidate: 30 } }
+    { next: { revalidate: CACHE_POLICY.frequent } }
   )
   const isPartial = Boolean(data.meta?.is_partial)
   const hasNext = data.topics.length === limit

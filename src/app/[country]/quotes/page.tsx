@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import styles from './quotes.module.css'
+import { CACHE_POLICY } from '@/lib/cache-policy'
 
 type QuotesResponse = {
   quotes: Array<{
@@ -50,8 +51,8 @@ export default async function QuotesPage({
   const apiPath = `/v1/${country}/quotes?limit=30${q ? `&q=${encodeURIComponent(q)}` : ''}${theme ? `&theme=${encodeURIComponent(theme)}` : ''}`
 
   const [data, themesData] = await Promise.all([
-    fetchJson<QuotesResponse>(apiPath, { next: { revalidate: 60 } }),
-    fetchJson<QuoteThemesResponse>(`/v1/${country}/quotes/themes`, { next: { revalidate: 60 } }),
+    fetchJson<QuotesResponse>(apiPath, { next: { revalidate: CACHE_POLICY.stable } }),
+    fetchJson<QuoteThemesResponse>(`/v1/${country}/quotes/themes`, { next: { revalidate: CACHE_POLICY.stable } }),
   ])
 
   const themes = (themesData.themes || []).filter((x) => (x.count || 0) > 0).slice(0, 24)

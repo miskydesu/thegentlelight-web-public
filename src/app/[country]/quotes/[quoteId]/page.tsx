@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { isCountry, fetchJson, type ApiMeta } from '@/lib/tglApi'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import styles from '../quotes.module.css'
+import { CACHE_POLICY } from '@/lib/cache-policy'
 
 type QuoteDetailResponse = {
   quote: {
@@ -37,8 +38,8 @@ export default async function QuoteDetailPage({ params }: { params: { country: s
   const t = getTranslationsForCountry(country, lang)
 
   const [data, themesData] = await Promise.all([
-    fetchJson<QuoteDetailResponse>(`/v1/${country}/quotes/${encodeURIComponent(params.quoteId)}`, { next: { revalidate: 60 } }),
-    fetchJson<QuoteThemesResponse>(`/v1/${country}/quotes/themes`, { next: { revalidate: 60 } }),
+    fetchJson<QuoteDetailResponse>(`/v1/${country}/quotes/${encodeURIComponent(params.quoteId)}`, { next: { revalidate: CACHE_POLICY.stable } }),
+    fetchJson<QuoteThemesResponse>(`/v1/${country}/quotes/themes`, { next: { revalidate: CACHE_POLICY.stable } }),
   ])
   const q = data.quote
   if (!q) return notFound()

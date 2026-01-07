@@ -99,7 +99,7 @@ const translations: Record<Locale, Translations> = {
     },
     common: {
       search: 'Search',
-      searchPlaceholder: 'Search quietly...',
+      searchPlaceholder: "Search for news you're curious about",
       more: 'More',
       back: 'Back',
       next: 'Next',
@@ -172,7 +172,7 @@ const translations: Record<Locale, Translations> = {
     },
     common: {
       search: '検索',
-      searchPlaceholder: '気になる言葉を静かに探す',
+      searchPlaceholder: '気になるニュースを探してみよう',
       more: 'もっと見る',
       back: '戻る',
       next: '次',

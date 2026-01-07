@@ -3,6 +3,7 @@ import { fetchJson, type DailyListResponse, type ApiMeta } from '@/lib/tglApi'
 import { ViewSwitch } from '@/components/layout/ViewSwitch'
 import viewSwitchStyles from '@/components/layout/ViewSwitch.module.css'
 import styles from '../layout.module.css'
+import { CACHE_POLICY } from '@/lib/cache-policy'
 
 type ColumnsResponse = {
   columns: Array<{
@@ -98,7 +99,7 @@ export function SidebarGentleIntro({ country }: { country: 'us' | 'uk' | 'ca' | 
 }
 
 export async function SidebarLatestColumns({ country }: { country: 'us' | 'uk' | 'ca' | 'jp' }) {
-  const data = await fetchJson<ColumnsResponse>(`/v1/${country}/columns?limit=3`, { next: { revalidate: 60 } })
+  const data = await fetchJson<ColumnsResponse>(`/v1/${country}/columns?limit=3`, { next: { revalidate: CACHE_POLICY.stable } })
   const heading = country === 'jp' ? '最新コラム' : 'Latest columns'
   const more = country === 'jp' ? '一覧へ' : 'See all'
   const imageBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || process.env.IMAGE_BASE_URL || ''
@@ -146,7 +147,7 @@ export async function SidebarLatestColumns({ country }: { country: 'us' | 'uk' |
 
 export async function SidebarQuoteOfDay({ country }: { country: 'us' | 'uk' | 'ca' | 'jp' }) {
   // ある程度の件数を取得して、その中から日替わりで1つ選ぶ（APIにランダム取得が無い想定）
-  const data = await fetchJson<QuotesResponse>(`/v1/${country}/quotes?limit=50`, { next: { revalidate: 3600 } })
+  const data = await fetchJson<QuotesResponse>(`/v1/${country}/quotes?limit=50`, { next: { revalidate: CACHE_POLICY.stable } })
   const heading = country === 'jp' ? '今日の名言' : 'Quote of the day'
   const more = country === 'jp' ? '検索へ' : 'Search'
 

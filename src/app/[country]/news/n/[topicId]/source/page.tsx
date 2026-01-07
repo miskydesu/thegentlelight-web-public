@@ -4,6 +4,7 @@ import { fetchJson, isCountry, type TopicSourcesResponse } from '../../../../../
 import { canonicalUrl } from '../../../../../../lib/seo'
 import { getLocaleForCountry } from '../../../../../../lib/i18n'
 import { getGentleFromSearchParams } from '../../../../../../lib/view-switch'
+import { CACHE_POLICY } from '@/lib/cache-policy'
 
 export function generateMetadata({ params }: { params: { country: string; topicId: string } }) {
   const { country, topicId } = params
@@ -28,7 +29,7 @@ export default async function TopicSourcesPage({
   const isJa = getLocaleForCountry(country) === 'ja'
   const data = await fetchJson<TopicSourcesResponse>(
     `/v1/${country}/topics/${encodeURIComponent(topicId)}/sources${gentle ? '?gentle=1' : ''}`,
-    { next: { revalidate: 30 } }
+    { next: { revalidate: CACHE_POLICY.stable } }
   )
 
   const pickSourceBadgeLabel = (s: { source_name: string | null; source_domain: string | null }) => {

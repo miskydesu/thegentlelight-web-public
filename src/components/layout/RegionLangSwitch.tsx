@@ -8,7 +8,13 @@ import { getCountrySwitchUrl } from '@/lib/country-switch'
 import { addGentleToUrl } from '@/lib/view-switch'
 import * as Dialog from '@radix-ui/react-dialog'
 
-export function RegionLangSwitch({ currentCountry }: { currentCountry: Country }) {
+export function RegionLangSwitch({
+  currentCountry,
+  className,
+}: {
+  currentCountry: Country
+  className?: string
+}) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -48,24 +54,36 @@ export function RegionLangSwitch({ currentCountry }: { currentCountry: Country }
     })
   }, [category, currentCountry, gentle, pathname])
 
+  const defaultButtonStyle: React.CSSProperties = {
+    background: 'transparent',
+    border: 'none',
+    padding: 0,
+    color: 'var(--muted)',
+    cursor: 'pointer',
+    textDecorationLine: 'underline',
+    textDecorationStyle: 'dotted',
+    textDecorationThickness: '1px',
+    textUnderlineOffset: 3,
+  }
+
   return (
     <>
       <Dialog.Root>
         <Dialog.Trigger asChild>
           <button
             type="button"
-            className="text-sm"
+            className={className ?? 'text-sm'}
             title={label}
             style={{
-              background: 'transparent',
-              border: 'none',
-              padding: 0,
-              color: 'var(--muted)',
-              cursor: 'pointer',
-              textDecorationLine: 'underline',
-              textDecorationStyle: 'dotted',
-              textDecorationThickness: '1px',
-              textUnderlineOffset: 3,
+              ...(className
+                ? {
+                    // フッター等で className を当てたいときは、見た目は CSS に寄せる
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'inherit',
+                  }
+                : defaultButtonStyle),
             }}
           >
             {label}

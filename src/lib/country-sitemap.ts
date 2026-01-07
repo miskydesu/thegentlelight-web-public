@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next'
 import type { Country } from './tglApi'
 import { fetchJson } from './tglApi'
 import { getSiteBaseUrl } from './seo'
+import { CACHE_POLICY } from './cache-policy'
 
 type TopicItem = {
   topic_id: string
@@ -27,7 +28,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
   // lastmod をできる範囲で正しく
   const homeLastMod = await (async () => {
     try {
-      const r = await fetchJson<{ updatedAt?: string }>(`/v1/${country}/home?limit=1`, { next: { revalidate: 3600 } })
+      const r = await fetchJson<{ updatedAt?: string }>(`/v1/${country}/home?limit=1`, { next: { revalidate: CACHE_POLICY.meta } })
       return r?.updatedAt ? new Date(r.updatedAt) : null
     } catch {
       return null
@@ -36,7 +37,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
 
   const latestMeta = await (async () => {
     try {
-      const r = await fetchJson<{ topics: TopicItem[] }>(`/v1/${country}/latest?limit=1`, { next: { revalidate: 3600 } })
+      const r = await fetchJson<{ topics: TopicItem[] }>(`/v1/${country}/latest?limit=1`, { next: { revalidate: CACHE_POLICY.meta } })
       const first = r?.topics?.[0] || null
       return first ? getLastModForTopic(first) : null
     } catch {
@@ -49,7 +50,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
       const today = new Date()
       const year = today.getFullYear()
       const month = today.getMonth() + 1
-      const r = await fetchJson<{ days: DailyItem[] }>(`/v1/${country}/daily?year=${year}&month=${month}`, { next: { revalidate: 3600 } })
+      const r = await fetchJson<{ days: DailyItem[] }>(`/v1/${country}/daily?year=${year}&month=${month}`, { next: { revalidate: CACHE_POLICY.meta } })
       const xs = (r.days || []).map((d) => (d.updatedAt ? new Date(d.updatedAt) : null)).filter(Boolean) as Date[]
       if (!xs.length) return null
       return xs.reduce((a, b) => (a.getTime() >= b.getTime() ? a : b))
@@ -96,6 +97,14 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     }
   )
 
+  // 利用規約・プライバシー（国別）
+  fixed.push({
+    url: `${base}/${country}/legal`,
+    lastModified: now,
+    changeFrequency: 'yearly',
+    priority: 0.3,
+  })
+
   for (const cat of CATEGORIES) {
     fixed.push({
       url: `${base}/${country}/category/${cat}`,
@@ -109,7 +118,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
   const topicEntries: MetadataRoute.Sitemap = []
   try {
     const topicsResponse = await fetchJson<{ topics: TopicItem[]; meta: any }>(`/v1/${country}/latest?limit=5000`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: CACHE_POLICY.meta },
     })
     for (const t of (topicsResponse.topics || []).slice(0, 5000)) {
       topicEntries.push({
@@ -131,7 +140,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     const year = today.getFullYear()
     const month = today.getMonth() + 1
     const r = await fetchJson<{ days: DailyItem[]; meta: any }>(`/v1/${country}/daily?year=${year}&month=${month}`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: CACHE_POLICY.meta },
     })
     for (const day of r.days || []) {
       const dayDate = new Date(day.dateLocal)

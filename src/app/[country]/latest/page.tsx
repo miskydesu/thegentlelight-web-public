@@ -9,6 +9,7 @@ import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/l
 import { formatTopicListDate } from '@/lib/topicDate'
 import { canonicalUrl, getSiteBaseUrl } from '@/lib/seo'
 import { generateHreflang, generateBreadcrumbListJSONLD } from '@/lib/seo-helpers'
+import { CACHE_POLICY } from '@/lib/cache-policy'
 // 表示はsoft一本（UX方針）
 
 export function generateMetadata({ params }: { params: { country: string } }) {
@@ -42,7 +43,9 @@ export default async function LatestPage({
       { name: isJa ? '最新' : 'Latest', url: `${base}/${country}/latest` },
     ],
   })
-  const data = await fetchJson<LatestResponse>(`/v1/${country}/latest?limit=30`, { next: { revalidate: 30 } })
+  const data = await fetchJson<LatestResponse>(`/v1/${country}/latest?limit=30`, {
+    next: { revalidate: CACHE_POLICY.frequent },
+  })
   const isPartial = Boolean(data.meta?.is_partial)
   const t = getTranslationsForCountry(country, lang)
   const locale = lang === 'ja' ? 'ja' : 'en'

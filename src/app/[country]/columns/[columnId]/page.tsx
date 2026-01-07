@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { isCountry, fetchJson, type ApiMeta } from '@/lib/tglApi'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
+import { CACHE_POLICY } from '@/lib/cache-policy'
 
 type ColumnDetailResponse = {
   column: {
@@ -30,7 +31,9 @@ export default async function ColumnDetailPage({ params }: { params: { country: 
   const lang: Locale = getLocaleForCountry(country)
   const t = getTranslationsForCountry(country, lang)
 
-  const data = await fetchJson<ColumnDetailResponse>(`/v1/${country}/columns/${encodeURIComponent(params.columnId)}`, { next: { revalidate: 60 } })
+  const data = await fetchJson<ColumnDetailResponse>(`/v1/${country}/columns/${encodeURIComponent(params.columnId)}`, {
+    next: { revalidate: CACHE_POLICY.stable },
+  })
   const c = data.column
   if (!c) return notFound()
 

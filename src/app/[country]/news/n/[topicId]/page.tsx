@@ -10,6 +10,7 @@ import { Card, CardContent, CardMeta, CardTitle } from '../../../../../component
 import { getCategoryBadgeTheme, getCategoryLabel } from '../../../../../lib/categories'
 import styles from './topic.module.css'
 import { SaveTopicButton } from '../../../../../components/topic/SaveTopicButton'
+import { CACHE_POLICY } from '@/lib/cache-policy'
 // 表示はsoft一本（UX方針）
 
 export async function generateMetadata({
@@ -27,7 +28,7 @@ export async function generateMetadata({
   try {
     // トピックデータを取得（metadata生成用）
     const data = await fetchJson<TopicDetailResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}`, {
-      next: { revalidate: 300 }, // 5分キャッシュ
+      next: { revalidate: CACHE_POLICY.stable },
     })
     const t = data.topic
 
@@ -66,10 +67,10 @@ export default async function TopicPage({
 
   const [data, sourcesData] = await Promise.all([
     fetchJson<TopicDetailResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}${gentle ? '?gentle=1' : ''}`, {
-      next: { revalidate: 30 },
+      next: { revalidate: CACHE_POLICY.stable },
     }),
     fetchJson<TopicSourcesResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}/sources${gentle ? '?gentle=1' : ''}`, {
-      next: { revalidate: 30 },
+      next: { revalidate: CACHE_POLICY.stable },
     }),
   ])
   const topic = data.topic

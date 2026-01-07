@@ -11,6 +11,7 @@ import { formatTopicListDate } from '@/lib/topicDate'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { canonicalUrl, getSiteBaseUrl } from '@/lib/seo'
 import { generateHreflang, generateBreadcrumbListJSONLD } from '@/lib/seo-helpers'
+import { CACHE_POLICY } from '@/lib/cache-policy'
 // 表示はsoft一本（UX方針）
 
 export function generateMetadata({ params }: { params: { country: string } }) {
@@ -47,7 +48,7 @@ export default async function TodayPage({
   let data: TodayResponse
   let pickup: TopicsResponse
   try {
-    data = await fetchJson<TodayResponse>(`/v1/${country}/today`, { next: { revalidate: 30 } })
+    data = await fetchJson<TodayResponse>(`/v1/${country}/today`, { next: { revalidate: CACHE_POLICY.frequent } })
     pickup = await fetchJson<TopicsResponse>(`/v1/${country}/pickup/heartwarming?limit=4`, { cache: 'no-store' })
   } catch (e: any) {
     return (

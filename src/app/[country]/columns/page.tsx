@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import styles from './columns.module.css'
+import { CACHE_POLICY } from '@/lib/cache-policy'
 
 function joinUrl(base: string, key: string): string {
   const b = base.replace(/\/+$/, '')
@@ -42,7 +43,9 @@ export default async function ColumnsPage({ params }: { params: { country: strin
   const t = getTranslationsForCountry(country, lang)
   const imageBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || process.env.IMAGE_BASE_URL || ''
 
-  const data = await fetchJson<ColumnsResponse>(`/v1/${country}/columns?limit=30`, { next: { revalidate: 60 } })
+  const data = await fetchJson<ColumnsResponse>(`/v1/${country}/columns?limit=30`, {
+    next: { revalidate: CACHE_POLICY.stable },
+  })
 
   const groups = (() => {
     const map = new Map<
