@@ -16,8 +16,15 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   const country = params.country
   const canonical = canonicalUrl(`/${country}/latest`)
   const hreflang = generateHreflang('/latest')
+  const isJa = country === 'jp'
   return {
-    title: `Latest - ${country.toUpperCase()}`,
+    title: isJa ? '最新ニュース｜The Gentle Light' : 'Latest World News | The Gentle Light',
+    description: isJa
+      ? '最新の世界ニュースを穏やかでやさしい言葉で。不安やニュース疲れなしで情報を得る。'
+      : 'Latest world news in calm, gentle language. Stay informed without anxiety or news fatigue.',
+    keywords: isJa
+      ? ['最新ニュース', '世界のニュース', '速報', '穏やかなニュース', '不安のないニュース']
+      : ['latest news', 'world news', 'breaking news calm', 'gentle news updates', 'news without anxiety'],
     alternates: {
       canonical,
       languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
@@ -60,7 +67,7 @@ export default async function LatestPage({
       />
       <main>
         <div style={{ marginBottom: '1rem' }}>
-          <h1 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>{t.pages.latest.title}</h1>
+          <h1 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>{country === 'jp' ? '最新ニュース' : 'Latest News'}</h1>
           <p style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
             {t.pages.latest.description}
           </p>

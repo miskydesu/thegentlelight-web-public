@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { isCountry, fetchJson, type ApiMeta } from '@/lib/tglApi'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { CACHE_POLICY } from '@/lib/cache-policy'
+import { canonicalUrl } from '@/lib/seo'
+import { generateSEOMetadata } from '@/lib/seo-helpers'
 
 type ColumnDetailResponse = {
   column: {
@@ -22,6 +24,36 @@ type ColumnDetailResponse = {
     updated_at: string | null
   }
   meta: ApiMeta
+}
+
+export async function generateMetadata({ params }: { params: { country: string; columnId: string } }) {
+  const { country, columnId } = params
+  if (!isCountry(country)) return {}
+  const canonical = canonicalUrl(`/${country}/columns/${encodeURIComponent(columnId)}`)
+  const lang: Locale = getLocaleForCountry(country)
+  const isJa = lang === 'ja'
+  const siteName = 'The Gentle Light'
+
+  try {
+    const data = await fetchJson<ColumnDetailResponse>(`/v1/${country}/columns/${encodeURIComponent(columnId)}`, {
+      next: { revalidate: CACHE_POLICY.stable },
+    })
+    const c = data.column
+    const titleCore = String(c?.seo_title || c?.title || '').trim()
+    const desc = String(c?.seo_description || c?.excerpt || '').trim()
+    return generateSEOMetadata({
+      title: titleCore ? `${titleCore}｜${siteName}` : `Columns｜${siteName}`,
+      description: desc || undefined,
+      keywords: isJa ? ['コラム', '一次コンテンツ'] : ['columns', 'original content'],
+      type: 'article',
+      canonical,
+    })
+  } catch {
+    return generateSEOMetadata({
+      title: `Columns｜${siteName}`,
+      canonical,
+    })
+  }
 }
 
 export default async function ColumnDetailPage({ params }: { params: { country: string; columnId: string } }) {

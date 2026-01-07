@@ -13,73 +13,26 @@ import { getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import { formatTopicListDate } from '@/lib/topicDate'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 
-function formatDailyTitleDateJaShort(dateLocal: string): string {
-  const d = new Date(`${dateLocal}T00:00:00.000Z`)
-  return new Intl.DateTimeFormat('ja-JP', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(d)
-}
-
-function formatDailyTitleDateEn(dateLocal: string): string {
-  const d = new Date(`${dateLocal}T00:00:00.000Z`)
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: 'UTC',
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(d)
-}
-
-function pickSnippet(s: string, max: number): string {
-  const v = String(s || '').replace(/\s+/g, ' ').trim()
-  if (!v) return ''
-  if (v.length <= max) return v
-  return `${v.slice(0, Math.max(0, max)).trim()}…`
-}
-
 export async function generateMetadata({ params }: { params: { country: string; date: string } }) {
   const { country, date } = params
   const canonical = canonicalUrl(`/${country}/daily/${date}`)
   const siteName = 'The Gentle Light'
-
-  // default (API失敗など)
-  const fallbackTitle =
-    country === 'jp'
-      ? `[GentleNews]${formatDailyTitleDateJaShort(date)}の朝刊 - ${siteName}`
-      : `[GentleNews]Morning Briefing ${formatDailyTitleDateEn(date)} - ${siteName}`
+  const isJa = country === 'jp'
 
   // country不正・日付不正は最小限（notFoundはpage側で処理）
   if (!isCountry(country) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return { title: fallbackTitle, alternates: { canonical } }
+    return { title: `${siteName}`, alternates: { canonical } }
   }
 
-  try {
-    const data = await fetchJson<DailyDetailResponse>(`/v1/${country}/daily/${encodeURIComponent(date)}`, {
-      next: { revalidate: CACHE_POLICY.stable },
-    })
-    const lang: Locale = getLocaleForCountry(country)
-    const locale = lang === 'ja' ? 'ja' : 'en'
-    const isJa = locale === 'ja'
-    const msg = (data.messages && data.messages[0]?.message) || data.daily?.summary || ''
-    const snippet = pickSnippet(msg, isJa ? 28 : 50)
-    const title = isJa
-      ? `[GentleNews]${formatDailyTitleDateJaShort(date)}の朝刊${snippet ? ` - ${snippet}` : ''} | ${siteName}`
-      : `[GentleNews]Morning Briefing ${formatDailyTitleDateEn(date)}${snippet ? ` - ${snippet}` : ''} | ${siteName}`
-    const description = msg ? pickSnippet(msg, isJa ? 120 : 170) : undefined
-
-    return {
-      title,
-      description,
-      alternates: { canonical },
-    }
-  } catch {
-    return {
-      title: fallbackTitle,
-      alternates: { canonical },
-    }
+  return {
+    title: isJa ? `${date}の朝刊｜${siteName}` : `Daily Briefing - ${date} | ${siteName}`,
+    description: isJa
+      ? `${date}の主要ニュースを静かな言葉でまとめた朝刊。不安を感じずに世界を知る。`
+      : `Daily news briefing for ${date}. Calm, fact-based summary of world events without sensationalism or anxiety.`,
+    keywords: isJa
+      ? ['朝刊', 'デイリーニュース', '穏やかなニュース', '不安のないニュース']
+      : ['daily briefing', 'morning news', 'calm news', 'news without anxiety'],
+    alternates: { canonical },
   }
 }
 

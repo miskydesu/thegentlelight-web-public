@@ -39,18 +39,32 @@ export async function generateMetadata({
   // hreflang（4カ国エディションの代替リンク）
   const hreflang = generateHreflang('')
 
-  const siteName = 'The Gentle Light'
-  const brandWord = country.toUpperCase()
-  // ブランディング: サイト名 - ブランドワード（国別）
-  const title = `${siteName} - ${brandWord}`
-  const description =
-    country === 'jp'
-      ? '優しく、静かに、世界のニュースを届けます'
-      : 'Gentle news from around the world'
+  const isJa = country === 'jp'
+  const title = isJa
+    ? 'The Gentle Light｜やさしく、静かに世界を知るためのニュースサイト'
+    : 'The Gentle Light | Calm News Without Anxiety'
+  const description = isJa
+    ? 'やさしいニュース。煽りがない穏やかな言葉に編集したニュースをお届けする、やさしいニュースサイト。'
+    : "Gentle news for your mental health. World news without doomscrolling, anxiety, or sensationalism. Calm daily briefings that keep you informed."
+  const keywords = isJa
+    ? [
+        'やさしいニュース',
+        '優しいニュース',
+        '穏やかなニュース',
+        '煽られないニュース',
+        '不安にならないニュース',
+        '心が落ち着くニュース',
+        '静かなニュース',
+        'ニュース疲れ',
+        '情報過多',
+        'メンタルヘルス',
+      ]
+    : ['gentle news', 'calm news', 'news without anxiety', 'mental health news', 'news fatigue solution']
 
   return generateSEOMetadata({
     title,
     description,
+    keywords,
     type: 'website',
     canonical: `${base}${canonicalPath}`,
     hreflang,
@@ -133,7 +147,7 @@ export default async function CountryHome({
 
       <main>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
-          <h1 style={{ fontSize: '1.5rem' }}>{t.pages.home.title}</h1>
+          <h1 style={{ fontSize: '1.5rem' }}>{country === 'jp' ? '穏やかに世界を知る' : 'Gentle World News'}</h1>
           {isPartial ? (
             <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>
           ) : (

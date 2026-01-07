@@ -6,6 +6,8 @@ import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import styles from './quotes.module.css'
 import { CACHE_POLICY } from '@/lib/cache-policy'
+import { canonicalUrl } from '@/lib/seo'
+import { generateHreflang } from '@/lib/seo-helpers'
 
 type QuotesResponse = {
   quotes: Array<{
@@ -30,6 +32,52 @@ type QuoteThemesResponse = {
     display_order: number | null
   }>
   meta: ApiMeta
+}
+
+export function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: { country: string }
+  searchParams: { q?: string; theme?: string }
+}) {
+  const country = params.country
+  if (!isCountry(country)) return {}
+  const isJa = country === 'jp'
+  const q = typeof searchParams.q === 'string' ? searchParams.q.trim() : ''
+  const theme = typeof searchParams.theme === 'string' ? searchParams.theme.trim() : ''
+
+  const hreflang = (q || theme) ? null : generateHreflang('/quotes')
+  const canonical = canonicalUrl(`/${country}/quotes${theme ? `?theme=${encodeURIComponent(theme)}` : ''}`)
+
+  // q は無限に増えるため noindex（follow は維持）
+  if (q) {
+    return {
+      title: isJa ? `検索結果：${q}｜The Gentle Light` : `Search Results: ${q} | The Gentle Light`,
+      robots: { index: false, follow: true, googleBot: { index: false, follow: true } },
+      alternates: { canonical: canonicalUrl(`/${country}/quotes`) },
+    }
+  }
+
+  // theme は固定語彙なら index も検討可（現状は canonical をクエリ込みにする）
+  if (theme) {
+    return {
+      title: isJa ? `${theme}の名言｜The Gentle Light` : `${theme} Quotes | The Gentle Light`,
+      alternates: { canonical },
+    }
+  }
+
+  return {
+    title: isJa ? '癒しの名言・言葉｜The Gentle Light' : 'Calming Quotes & Inspiration | The Gentle Light',
+    description: isJa ? 'ニュースと共に心を落ち着かせる名言と癒しの言葉。' : 'Calming quotes and inspirational words to help you reflect and find peace alongside the news.',
+    keywords: isJa
+      ? ['癒しの名言', '心に響く言葉', '穏やかな言葉', 'メンタルウェルネス', 'マインドフルネス']
+      : ['calming quotes', 'inspirational quotes', 'peaceful words', 'mental wellness', 'mindfulness'],
+    alternates: {
+      canonical: canonicalUrl(`/${country}/quotes`),
+      ...(hreflang ? { languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])) } : {}),
+    },
+  }
 }
 
 export default async function QuotesPage({
@@ -67,7 +115,7 @@ export default async function QuotesPage({
   return (
     <main>
       <div className={styles.shelfHeader}>
-        <h1 style={{ fontSize: '1.4rem' }}>{t.pages.quotes.title}</h1>
+        <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? '名言・癒しの言葉' : 'Inspirational Quotes'}</h1>
         <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>{t.pages.quotes.subtitle}</span>
       </div>
 

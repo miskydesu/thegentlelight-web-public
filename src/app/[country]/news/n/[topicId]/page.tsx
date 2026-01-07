@@ -37,7 +37,7 @@ export async function generateMetadata({
     const canonicalPath = `/${country}${path}`
 
     return generateSEOMetadata({
-      title: [t.title || `${country.toUpperCase()} News`, getCategoryLabel(t.category, locale), siteName].filter(Boolean).join(' | '),
+      title: `${t.title || `${country.toUpperCase()} News`}｜${siteName}`,
       description: t.summary || undefined,
       type: 'article',
       publishedTime: t.last_source_published_at || undefined,

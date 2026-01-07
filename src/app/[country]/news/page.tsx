@@ -26,14 +26,40 @@ export function generateMetadata({
 }) {
   const country = params.country
   const query = searchParams.q || ''
-  const title = query ? (country === 'jp' ? `検索: ${query}` : `Search: ${query}`) : (country === 'jp' ? 'ニュース検索' : 'News')
+  const isJa = country === 'jp'
   const canonical = canonicalUrl(`/${country}/news`)
 
   // フィルタ付き（検索語や絞り込み等）は hreflang を付けない（意図の同一性が担保しにくい）
   const hasFilter = Boolean(searchParams.q || searchParams.category || searchParams.gentle || searchParams.cursor || searchParams.limit)
   const hreflang = hasFilter ? null : generateHreflang('/news')
+  if (hasFilter) {
+    return {
+      title: query ? (isJa ? `検索: ${query}｜The Gentle Light` : `Search: ${query} | The Gentle Light`) : (isJa ? 'ニュース検索｜The Gentle Light' : 'Search | The Gentle Light'),
+      description: query ? (isJa ? `検索結果: ${query}` : `Search results for: ${query}`) : undefined,
+      robots: { index: false, follow: true, googleBot: { index: false, follow: true } }, // クエリ無限のため noindex 推奨
+      alternates: { canonical },
+    }
+  }
+
   return {
-    title: `${title} - ${country.toUpperCase()}`,
+    title: isJa ? 'The Gentle Light｜ニュース一覧' : 'The Gentle Light | Browse Calm News by Topic',
+    description: isJa
+      ? 'やさしいニュース一覧。穏やかで、煽られない・不安にならない。心が落ち着く、静かなニュースをカテゴリ別に。'
+      : 'Browse gentle news organized by category. World news without anxiety, stress, or doomscrolling.',
+    keywords: isJa
+      ? [
+          'やさしいニュース',
+          '優しいニュース',
+          '穏やかなニュース',
+          '煽られないニュース',
+          '不安にならないニュース',
+          '心が落ち着くニュース',
+          '静かなニュース',
+          'ニュース一覧',
+          'カテゴリ別ニュース',
+          'ニュース疲れ',
+        ]
+      : ['browse news', 'organized news', 'news by topic', 'gentle news', 'calm news alternatives'],
     alternates: {
       canonical,
       ...(hreflang ? { languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])) } : {}),
@@ -91,7 +117,7 @@ export default async function NewsPage({
   return (
     <main>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
-        <h1 style={{ fontSize: '1.4rem' }}>{t.pages.news.title}</h1>
+        <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? 'ニュース一覧' : 'Browse News'}</h1>
         {isPartial && <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>}
       </div>
 

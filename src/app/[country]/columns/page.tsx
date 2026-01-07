@@ -6,6 +6,8 @@ import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import styles from './columns.module.css'
 import { CACHE_POLICY } from '@/lib/cache-policy'
+import { canonicalUrl } from '@/lib/seo'
+import { generateHreflang } from '@/lib/seo-helpers'
 
 function joinUrl(base: string, key: string): string {
   const b = base.replace(/\/+$/, '')
@@ -33,6 +35,36 @@ type ColumnsResponse = {
     updated_at: string | null
   }>
   meta: ApiMeta
+}
+
+export function generateMetadata({ params }: { params: { country: string } }) {
+  const country = params.country
+  if (!isCountry(country)) return {}
+  const isJa = country === 'jp'
+  const hreflang = generateHreflang('/columns')
+  return {
+    title: isJa ? 'コラム・考察｜The Gentle Light' : 'Thoughtful Columns | The Gentle Light',
+    description: isJa
+      ? 'ニュースと付き合うためのコラム。不安にならない、煽られない、心が落ち着く“静かさ”の考察（メンタルヘルスにも配慮）。'
+      : 'Thoughtful columns on news, mental health, and how to stay informed without anxiety or doomscrolling.',
+    keywords: isJa
+      ? [
+          'ニュース疲れ',
+          '情報過多',
+          '不安にならない',
+          '煽られない',
+          '心が落ち着く',
+          '静かなニュース',
+          'ニュースコラム',
+          '健康的なニュース消費',
+          'メンタルヘルス',
+        ]
+      : ['news columns', 'mental health news', 'how to stay informed', 'news without anxiety', 'healthy news consumption'],
+    alternates: {
+      canonical: canonicalUrl(`/${country}/columns`),
+      languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
+    },
+  }
 }
 
 export default async function ColumnsPage({ params }: { params: { country: string } }) {
@@ -109,7 +141,7 @@ export default async function ColumnsPage({ params }: { params: { country: strin
           marginBottom: 2,
         }}
       >
-        <h1 style={{ fontSize: '1.4rem' }}>{lang === 'ja' ? 'コラム' : 'Columns'}</h1>
+        <h1 style={{ fontSize: '1.4rem' }}>{lang === 'ja' ? 'コラム一覧' : 'Columns'}</h1>
         <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>{lang === 'ja' ? '公開' : 'published'}</span>
       </div>
 

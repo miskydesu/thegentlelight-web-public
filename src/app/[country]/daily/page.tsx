@@ -27,7 +27,15 @@ function getLocalYmdForCountry(country: 'us' | 'uk' | 'ca' | 'jp', now: Date = n
 export function generateMetadata({ params }: { params: { country: string } }) {
   const country = params.country
   const hreflang = generateHreflang('/daily')
+  const isJa = country === 'jp'
   return {
+    title: isJa ? '朝刊一覧｜The Gentle Light' : 'Daily Briefings | The Gentle Light',
+    description: isJa
+      ? '朝刊（デイリー）を日付ごとに一覧で。気になる日だけ落ち着いて振り返れます。'
+      : 'Browse daily briefings by date. Catch up calmly, one day at a time.',
+    keywords: isJa
+      ? ['朝刊', 'デイリーニュース', '穏やかなニュース', '不安のないニュース']
+      : ['daily briefing', 'morning news', 'calm news', 'news without anxiety'],
     alternates: {
       canonical: canonicalUrl(`/${country}/daily`),
       languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
@@ -123,7 +131,7 @@ export default async function DailyIndex({
       />
       <main>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
-          <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? '朝刊' : 'Morning Briefing'}</h1>
+          <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? '朝刊一覧' : 'Daily Briefings'}</h1>
           {isPartial && <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>}
         </div>
 

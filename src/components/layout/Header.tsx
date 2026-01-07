@@ -113,11 +113,9 @@ export function Header({ country, className }: HeaderProps) {
   const menuItems = useMemo(() => {
     if (!country) return []
     const labelTop = t?.nav.top ?? (isJa ? 'トップ' : 'Home')
-    const labelNews = t?.nav.news ?? (isJa ? 'ニュース' : 'News')
     const labelDaily = t?.nav.daily ?? (isJa ? '日報' : 'Daily')
     return [
       { kind: 'link' as const, label: labelTop, href: `/${country}` },
-      { kind: 'link' as const, label: labelNews, href: `/${country}/news` },
       // 朝刊は「当日ページ」へ（未生成なら /daily/today が案内を表示）
       { kind: 'link' as const, label: labelDaily, href: `/${country}/daily/today` },
       { kind: 'sep' as const },

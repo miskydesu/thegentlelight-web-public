@@ -2,11 +2,25 @@ import Link from 'next/link'
 import type { Country } from '@/lib/tglApi'
 import { isCountry } from '@/lib/tglApi'
 import { getLocaleForCountry } from '@/lib/i18n'
+import { canonicalUrl } from '@/lib/seo'
+import { generateHreflang } from '@/lib/seo-helpers'
 
 export const runtime = 'edge'
 
-export const metadata = {
-  title: 'Legal | The Gentle Light',
+export function generateMetadata({ params }: { params: { country: string } }) {
+  const country = params.country
+  if (!isCountry(country)) return {}
+  const isJa = getLocaleForCountry(country) === 'ja' || country === 'jp'
+  const hreflang = generateHreflang('/legal')
+  return {
+    title: isJa ? '利用規約・プライバシーポリシー｜The Gentle Light' : 'Terms of Service & Privacy Policy | The Gentle Light',
+    description: isJa ? 'サービス利用規約とプライバシーポリシーの詳細です。' : 'Detailed terms of service and privacy policy for The Gentle Light.',
+    keywords: isJa ? ['利用規約', 'プライバシー'] : ['terms', 'privacy'],
+    alternates: {
+      canonical: canonicalUrl(`/${country}/legal`),
+      languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
+    },
+  }
 }
 
 function getText(country: Country) {
@@ -57,7 +71,10 @@ export default function CountryLegalPage({
 
   return (
     <main>
-      <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>{t.title}</h1>
+      <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{t.termsTitle}</h1>
+      <div className="tglMuted" style={{ marginBottom: '1rem' }}>
+        {country === 'jp' ? '（プライバシーポリシーを含む）' : '(Includes privacy policy)'}
+      </div>
 
       <section style={{ marginBottom: '2rem' }}>
         <h2 style={{ fontSize: '1.2rem', marginBottom: '0.75rem' }}>{t.termsTitle}</h2>

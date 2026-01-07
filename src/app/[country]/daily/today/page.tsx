@@ -3,6 +3,8 @@ import { redirect, notFound } from 'next/navigation'
 import { fetchJson, isCountry, type TodayResponse, type DailyListResponse } from '@/lib/tglApi'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Card, CardContent, CardMeta, CardTitle } from '@/components/ui/Card'
+import { canonicalUrl } from '@/lib/seo'
+import { generateHreflang } from '@/lib/seo-helpers'
 
 function ymdMinusDays(ymd: string, days: number): string {
   const d = new Date(`${ymd}T00:00:00.000Z`)
@@ -24,6 +26,26 @@ function getLocalYmdForCountry(country: 'us' | 'uk' | 'ca' | 'jp', now: Date = n
     month: '2-digit',
     day: '2-digit',
   }).format(now)
+}
+
+export function generateMetadata({ params }: { params: { country: string } }) {
+  const country = params.country
+  if (!isCountry(country)) return {}
+  const isJa = country === 'jp'
+  const hreflang = generateHreflang('/daily/today')
+  return {
+    title: isJa ? '今日の朝刊｜The Gentle Light' : "Today's Daily Briefing | The Gentle Light",
+    description: isJa
+      ? '今日の穏やかな朝刊。不安やニュース疲れに疲れず、必要なことを静かに把握する。'
+      : "Today's calm news briefing. Stay informed without anxiety, doomscrolling, or news fatigue.",
+    keywords: isJa
+      ? ['今日のニュース', '朝刊', 'デイリーブリーフィング', '穏やかなニュース', '不安のないニュース']
+      : ["today's news", 'daily briefing', 'morning briefing', 'calm news today', 'news without anxiety'],
+    alternates: {
+      canonical: canonicalUrl(`/${country}/daily/today`),
+      languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
+    },
+  }
 }
 
 export default async function DailyTodayPage({ params }: { params: { country: string } }) {
@@ -80,11 +102,84 @@ export default async function DailyTodayPage({ params }: { params: { country: st
       <h1 style={{ fontSize: '1.45rem' }}>{country === 'jp' ? '本日の朝刊' : "Today's briefing"}</h1>
       <div style={{ height: 10 }} />
 
-      <EmptyState
-        title={country === 'jp' ? '本日の朝刊はまだ作成されていません。' : "Today's briefing is not ready yet."}
-        description={country === 'jp' ? '朝刊は7時に生成されます。' : 'The briefing is generated at 7:00.'}
-        action={{ label: country === 'jp' ? '昨日の朝刊を見る' : "View yesterday's briefing", href: `/${country}/daily/${yesterday}` }}
-      />
+      <div
+        style={{
+          border: '1px solid var(--border)',
+          borderRadius: 16,
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.76))',
+          boxShadow: '0 10px 34px rgba(31,42,46,0.10)',
+          padding: 18,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <div
+            aria-hidden="true"
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 14,
+              border: '1px solid rgba(0,0,0,0.10)',
+              background: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 20,
+            }}
+          >
+            🗞️
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 16, fontWeight: 900, letterSpacing: '-0.01em' }}>
+              {country === 'jp' ? '本日の朝刊はまだ作成されていません。' : "Today's briefing is not ready yet."}
+            </div>
+            <div className="tglMuted" style={{ marginTop: 6, lineHeight: 1.65 }}>
+              {country === 'jp' ? '朝刊は7時に生成されます。' : 'The briefing is generated at 7:00.'}
+            </div>
+
+            <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <Link
+                href={`/${country}/daily/${yesterday}`}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(0,0,0,0.12)',
+                  background: '#fff',
+                  textDecoration: 'none',
+                  color: 'var(--text)',
+                  fontWeight: 800,
+                }}
+              >
+                ← {country === 'jp' ? '昨日の朝刊を見る' : "View yesterday's briefing"}
+              </Link>
+              <Link
+                href={`/${country}/daily`}
+                className="tglMuted"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(0,0,0,0.08)',
+                  background: 'rgba(255,255,255,0.6)',
+                  textDecoration: 'none',
+                  fontWeight: 700,
+                }}
+              >
+                {country === 'jp' ? '朝刊一覧へ' : 'Browse briefings'}
+              </Link>
+            </div>
+
+            <div className="tglMuted" style={{ marginTop: 10, fontSize: 12.5 }}>
+              {country === 'jp' ? '生成完了まで、少しだけお待ちください。' : 'Please wait a moment until it’s generated.'}
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div style={{ height: 16 }} />
 

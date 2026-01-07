@@ -13,15 +13,33 @@ export function generateMetadata(): Metadata {
   const base = getSiteBaseUrl()
   const hreflang = generateHreflang('')
 
-  // `/` は「国選択ページ」であることを明確化して、各国トップ（/us 等）が検索意図の入口になりやすいようにする
-  const title = isJa ? '国と言語を選ぶ | The Gentle Light' : 'Choose your country | The Gentle Light'
+  // NOTE: `/` は noindex, follow（検索結果は各国トップへ寄せる）だが、
+  // 設計ファイル（SEO特化）の方針に合わせて title/description はブランド訴求に寄せる。
+  const title = isJa
+    ? 'The Gentle Light｜やさしく、静かに世界を知るためのニュースサイト'
+    : 'The Gentle Light | Calm News Without Anxiety'
   const description = isJa
-    ? 'US/UK/CA/JP の4つのエディションから選べます。'
-    : 'Choose an edition: US, UK, CA, or JP.'
+    ? 'やさしいニュース。煽りがない穏やかな言葉に編集したニュースをお届けする、やさしいニュースサイト。'
+    : "Gentle news for your mental health. World news without doomscrolling, anxiety, or sensationalism. Calm daily briefings that keep you informed."
+  const keywords = isJa
+    ? [
+        'やさしいニュース',
+        '優しいニュース',
+        '穏やかなニュース',
+        '煽られないニュース',
+        '不安にならないニュース',
+        '心が落ち着くニュース',
+        '静かなニュース',
+        'ニュース疲れ',
+        '情報過多',
+        'メンタルヘルス',
+      ]
+    : ['gentle news', 'calm news', 'news without anxiety', 'mental health news', 'news fatigue solution']
 
   return {
     title,
     description,
+    keywords,
     alternates: {
       canonical: base,
       // 入口（/）と各国トップ（/us,/uk,/ca,/jp）を相互に結ぶ
@@ -141,6 +159,7 @@ export default function Home() {
             <div className={styles.logoRow}>
               <img className={styles.logo} src={logoSrc} alt="The Gentle Light" />
             </div>
+            <h1 className={styles.headline}>{isJa ? '穏やかに世界を知る' : 'Gentle World News'}</h1>
             <p className={styles.tagline}>煽られない。でも世界に置いていかれない情報サイト</p>
           </section>
 

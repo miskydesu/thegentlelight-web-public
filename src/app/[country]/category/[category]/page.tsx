@@ -24,10 +24,14 @@ export function generateMetadata({
   const hreflang = generateHreflang(`/category/${params.category}`)
   const isJa = params.country === 'jp'
   const catLabel = isJa ? (category?.labelJa || category?.label || params.category) : (category?.label || category?.labelJa || params.category)
-  const siteName = 'The Gentle Light'
   return {
-    // ブランディング: [カテゴリ名]のトピック The Gentle Light
-    title: isJa ? `${catLabel}のトピック | ${siteName}` : `${catLabel} Topics | ${siteName}`,
+    title: isJa ? `${catLabel}ニュース｜The Gentle Light` : `${catLabel} News | The Gentle Light`,
+    description: isJa
+      ? `不安のない${catLabel}ニュース。穏やかで、煽られない言葉で整理。`
+      : `Calm ${catLabel} news without anxiety. Fact-based reporting that protects your mental health.`,
+    keywords: isJa
+      ? [`${catLabel}ニュース`, `穏やかな${catLabel}`, 'やさしいニュース', '不安のないニュース', '煽られないニュース']
+      : [`${catLabel} news`, `calm ${catLabel}`, 'gentle news', 'news without anxiety'],
     alternates: {
       canonical,
       languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),

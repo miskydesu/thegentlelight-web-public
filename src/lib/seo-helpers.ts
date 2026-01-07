@@ -14,6 +14,7 @@ export type Locale = 'en' | 'ja'
 export type SEOConfig = {
   title: string
   description?: string
+  keywords?: string[] | string
   image?: string
   type?: 'website' | 'article'
   publishedTime?: string
@@ -39,6 +40,7 @@ export function generateSEOMetadata(config: SEOConfig): Metadata {
   const metadata: Metadata = {
     title: config.title,
     description: config.description,
+    keywords: config.keywords,
     alternates: {
       canonical,
     },

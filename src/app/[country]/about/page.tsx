@@ -13,7 +13,25 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   const canonical = canonicalUrl(`/${country}/about`)
   const hreflang = generateHreflang('/about')
   return {
-    title: `${isJa ? 'このサイトについて' : 'About'} - The Gentle Light`,
+    title: isJa ? 'The Gentle Lightについて｜不安のないニュース' : 'About The Gentle Light | News Without Anxiety',
+    description: isJa
+      ? 'やさしいニュースの方針。穏やかで、煽られない・不安にならない。心が落ち着く、静かなニュース体験を目指します（メンタルヘルスにも配慮）。'
+      : 'Learn how The Gentle Light delivers calm, fact-based news for mental health. Our approach to fighting news anxiety, doomscrolling, and news fatigue.',
+    keywords: isJa
+      ? [
+          'やさしいニュース',
+          '優しいニュース',
+          '穏やかなニュース',
+          '煽られないニュース',
+          '不安にならないニュース',
+          '心が落ち着くニュース',
+          '静かなニュース',
+          'ニュース疲れ',
+          '情報過多',
+          'メンタルヘルス',
+          'ジェントルライトについて',
+        ]
+      : ['about gentle light', 'news without anxiety', 'mental health news', 'doomscrolling solution', 'news fatigue', 'calm news philosophy'],
     alternates: {
       canonical,
       languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
@@ -59,7 +77,7 @@ export default function AboutPage({ params }: { params: { country: string } }) {
 
       <Card className={styles.topCard}>
         <CardTitle as="h1" style={{ fontSize: '1.45rem', marginBottom: 10 }}>
-          <span className={styles.cardTitleAccent}>{isJa ? 'このサイトについて' : 'About this site'}</span>
+          <span className={styles.cardTitleAccent}>{isJa ? 'やさしいニュースについて' : 'About Us'}</span>
         </CardTitle>
         <CardContent className={styles.bodyText}>
           {isJa
