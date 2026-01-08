@@ -1,7 +1,9 @@
 .page {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 20px;
+  /* Country layout already controls the main column width (up to 1000px on desktop).
+     This page-level max-width/padding made the column detail look narrower than topic detail. */
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 .pageHeader {

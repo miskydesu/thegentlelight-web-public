@@ -148,9 +148,6 @@ export default async function ColumnDetailPage({ params }: { params: { country: 
       <div style={{ height: 12 }} />
 
       <Card className={styles.topCard}>
-        <CardTitle className={styles.sectionTitle}>
-          <span className={styles.cardTitleAccent}>{isJa ? '本文' : 'Content'}</span>
-        </CardTitle>
         <CardContent>
           {c.body_md ? (
             <div className={styles.markdown} dangerouslySetInnerHTML={{ __html: html }} />
