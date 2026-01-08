@@ -5,6 +5,9 @@ import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/l
 import { CACHE_POLICY } from '@/lib/cache-policy'
 import { canonicalUrl } from '@/lib/seo'
 import { generateSEOMetadata } from '@/lib/seo-helpers'
+import { marked } from 'marked'
+import styles from './columnDetail.module.css'
+import { Card, CardContent, CardMeta, CardTitle } from '@/components/ui/Card'
 
 type ColumnDetailResponse = {
   column: {
@@ -24,6 +27,32 @@ type ColumnDetailResponse = {
     updated_at: string | null
   }
   meta: ApiMeta
+}
+
+function joinUrl(base: string, key: string): string {
+  const b = base.replace(/\/+$/, '')
+  const k = key.replace(/^\/+/, '')
+  return `${b}/${k}`
+}
+
+function sanitizeHtmlLoosely(html: string): string {
+  let s = String(html || '')
+  // Remove script/style/iframe/object/embed tags and their contents (very defensive)
+  s = s.replace(/<\s*(script|style|iframe|object|embed)\b[\s\S]*?>[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+  // Remove on* handlers
+  s = s.replace(/\son\w+\s*=\s*(".*?"|'.*?'|[^\s>]+)/gi, '')
+  // Disallow javascript: URLs in href/src
+  s = s.replace(/\s(href|src)\s*=\s*("|\')\s*javascript:[\s\S]*?\2/gi, ' $1="#"')
+  return s
+}
+
+function renderMarkdownToSafeishHtml(md: string): string {
+  marked.setOptions({
+    gfm: true,
+    breaks: false, // keep markdown semantics; "two spaces + newline" will still create <br>
+  })
+  const raw = marked.parse(String(md || '')) as string
+  return sanitizeHtmlLoosely(raw)
 }
 
 export async function generateMetadata({ params }: { params: { country: string; columnId: string } }) {
@@ -62,6 +91,8 @@ export default async function ColumnDetailPage({ params }: { params: { country: 
 
   const lang: Locale = getLocaleForCountry(country)
   const t = getTranslationsForCountry(country, lang)
+  const imageBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || process.env.IMAGE_BASE_URL || ''
+  const isJa = lang === 'ja'
 
   const data = await fetchJson<ColumnDetailResponse>(`/v1/${country}/columns/${encodeURIComponent(params.columnId)}`, {
     next: { revalidate: CACHE_POLICY.stable },
@@ -69,29 +100,69 @@ export default async function ColumnDetailPage({ params }: { params: { country: 
   const c = data.column
   if (!c) return notFound()
 
+  const coverSrc = imageBase && c.cover_image_key ? joinUrl(imageBase, c.cover_image_key) : null
+  const html = c.body_md ? renderMarkdownToSafeishHtml(c.body_md) : ''
+
   return (
-    <main>
-      <div style={{ marginBottom: 12 }}>
-        <Link href={`/${country}/columns`} style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}>
-          {lang === 'ja' ? '← コラム一覧へ' : '← Back to columns'}
+    <main className={styles.page}>
+      <div className={styles.pageHeader}>
+        <Link href={`/${country}/columns`} style={{ fontSize: '0.95rem', color: 'var(--muted)', textDecoration: 'none' }}>
+          {isJa ? '← コラム' : '← Columns'}
         </Link>
+        <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>{isJa ? '読みもの' : 'Reading'}</span>
       </div>
 
-      <h1 style={{ fontSize: '1.6rem', marginBottom: 10 }}>{c.title || '(no title)'}</h1>
-      <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginBottom: 18 }}>
-        {c.writer_name ? <span>{c.writer_name}</span> : null}
-        {c.writer_name && c.published_at ? <span>{' · '}</span> : null}
-        {c.published_at ? new Date(c.published_at).toLocaleString() : null}
-      </div>
+      <Card className={styles.topCard} style={{ ['--cat-color' as any]: '#d63384' } as any}>
+        <CardTitle as="h1" style={{ fontSize: '1.45rem', marginBottom: 10 }}>
+          <span className={styles.cardTitleAccent}>{c.title || '—'}</span>
+        </CardTitle>
+        <CardMeta className={styles.metaRow}>
+          <span className={styles.metaLeft}>
+            {c.writer_name ? <span className={styles.countPill}>{c.writer_name}</span> : null}
+            {c.tags?.length
+              ? c.tags.slice(0, 8).map((tag) => (
+                  <span key={tag} className={styles.categoryBadge}>
+                    {tag}
+                  </span>
+                ))
+              : null}
+          </span>
+          {c.published_at ? <span className={styles.metaRight}>{new Date(c.published_at).toLocaleString()}</span> : null}
+        </CardMeta>
+        {c.excerpt ? (
+          <CardContent style={{ marginTop: 8 }}>
+            <div className={styles.bodyText}>{c.excerpt}</div>
+          </CardContent>
+        ) : null}
+      </Card>
 
-      {c.body_md ? (
-        <article style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{c.body_md}</article>
-      ) : (
-        <div style={{ color: 'var(--muted)' }}>{lang === 'ja' ? '本文がありません。' : 'No content.'}</div>
-      )}
+      {coverSrc ? (
+        <>
+          <div style={{ height: 12 }} />
+          <Card className={`${styles.topCard} ${styles.coverCard}`}>
+            <img className={styles.cover} src={coverSrc} alt="" loading="lazy" />
+          </Card>
+        </>
+      ) : null}
 
-      <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
-        <Link href={`/${country}`} style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}>
+      <div style={{ height: 12 }} />
+
+      <Card className={styles.topCard}>
+        <CardTitle className={styles.sectionTitle}>
+          <span className={styles.cardTitleAccent}>{isJa ? '本文' : 'Content'}</span>
+        </CardTitle>
+        <CardContent>
+          {c.body_md ? (
+            <div className={styles.markdown} dangerouslySetInnerHTML={{ __html: html }} />
+          ) : (
+            <div className={styles.mutedText}>{isJa ? '（本文がありません）' : '(No content.)'}</div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div style={{ height: 12 }} />
+      <div className={styles.bottomNav}>
+        <Link href={`/${country}`} className={styles.bottomLink}>
           ← {t.nav.top}
         </Link>
       </div>

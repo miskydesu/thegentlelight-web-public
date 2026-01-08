@@ -7,10 +7,10 @@ import { confirmEmailChange } from '@/lib/userAuth'
 
 export default function ConfirmEmailChangePage() {
   const params = useParams<{ country: string }>()
-  const country = params.country
+  const country = params?.country || 'us'
   const sp = useSearchParams()
   const router = useRouter()
-  const [token, setToken] = useState(sp.get('token') || '')
+  const [token, setToken] = useState(sp?.get('token') || '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

@@ -20,7 +20,7 @@ import { CoverImageCropperModal } from '@/components/admin/CoverImageCropperModa
 export default function AdminColumnNameEditPage() {
   const router = useRouter()
   const params = useParams<{ columnNameId: string }>()
-  const columnNameId = params.columnNameId
+  const columnNameId = params?.columnNameId || ''
 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -45,6 +45,11 @@ export default function AdminColumnNameEditPage() {
   const [cropSrc, setCropSrc] = useState<string | null>(null)
 
   const load = async () => {
+    if (!columnNameId) {
+      setError('invalid id')
+      setRow(null)
+      return
+    }
     setError(null)
     setBusy(true)
     try {

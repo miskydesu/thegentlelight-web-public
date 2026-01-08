@@ -7,7 +7,7 @@ import { forgotPassword } from '@/lib/userAuth'
 
 export default function ForgotPasswordPage() {
   const params = useParams<{ country: string }>()
-  const country = params.country
+  const country = params?.country || 'us'
   const isJp = country === 'jp'
   const showDev = process.env.NODE_ENV !== 'production'
   const [email, setEmail] = useState('')

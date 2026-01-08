@@ -18,11 +18,11 @@ export function RegionLangSwitch({
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const gentleParam = searchParams.get('gentle')
+  const gentleParam = searchParams?.get('gentle')
   const gentle = gentleParam === '1' || gentleParam === 'true'
 
   // カテゴリを抽出（/category/... のときだけ維持）
-  const categoryMatch = pathname.match(/\/category\/([^/]+)/)
+  const categoryMatch = (pathname || '').match(/\/category\/([^/]+)/)
   const category = categoryMatch ? categoryMatch[1] : undefined
 
   const label = currentCountry === 'jp' ? '地域と言語' : 'Region & Language'
@@ -43,7 +43,7 @@ export function RegionLangSwitch({
     const isJa = currentCountry === 'jp'
     return COUNTRIES.map((c) => {
       const to = c.code
-      const baseUrl = getCountrySwitchUrl(currentCountry, to, pathname, category, null)
+      const baseUrl = getCountrySwitchUrl(currentCountry, to, pathname || `/${currentCountry}`, category, null)
       const href = addGentleToUrl(baseUrl, gentle)
       return {
         code: to,

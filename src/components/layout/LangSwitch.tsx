@@ -20,12 +20,12 @@ export function LangSwitch({ country }: LangSwitchProps) {
   const searchParams = useSearchParams()
   
   const defaultLang = getLocaleForCountry(country)
-  const currentLang = getLangFromUrl(`${pathname}?${searchParams.toString()}`, country)
+  const currentLang = getLangFromUrl(`${pathname || ''}?${searchParams?.toString() || ''}`, country)
   
   const handleLangChange = (targetLang: Locale) => {
     if (targetLang === currentLang) return
     
-    const currentPath = `${pathname}?${searchParams.toString()}`
+    const currentPath = `${pathname || ''}?${searchParams?.toString() || ''}`
     const newUrl = getLangSwitchedUrl(currentPath, country, targetLang)
     
     setPreferredLang(targetLang)

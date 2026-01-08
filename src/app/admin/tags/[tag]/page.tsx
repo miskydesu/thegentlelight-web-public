@@ -8,7 +8,7 @@ import { adminListQuoteTags, adminUpdateQuoteTag, clearAdminToken } from '../../
 export default function AdminTagEditPage() {
   const router = useRouter()
   const params = useParams<{ tag: string }>()
-  const tag = decodeURIComponent(params.tag)
+  const tag = decodeURIComponent(params?.tag || '')
 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,6 +31,11 @@ export default function AdminTagEditPage() {
   const [displayOrder, setDisplayOrder] = useState('')
 
   const load = async () => {
+    if (!tag) {
+      setError('invalid tag')
+      setBusy(false)
+      return
+    }
     setError(null)
     setBusy(true)
     try {

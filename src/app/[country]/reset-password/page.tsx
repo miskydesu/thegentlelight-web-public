@@ -7,13 +7,13 @@ import { resetPassword } from '@/lib/userAuth'
 
 export default function ResetPasswordPage() {
   const params = useParams<{ country: string }>()
-  const country = params.country
+  const country = params?.country || 'us'
   const isJp = country === 'jp'
   const sp = useSearchParams()
   const router = useRouter()
 
-  const [email, setEmail] = useState(sp.get('email') || '')
-  const [token, setToken] = useState(sp.get('token') || '')
+  const [email, setEmail] = useState(sp?.get('email') || '')
+  const [token, setToken] = useState(sp?.get('token') || '')
   const [pw, setPw] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)

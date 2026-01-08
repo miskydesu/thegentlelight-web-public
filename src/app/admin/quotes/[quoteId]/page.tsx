@@ -9,8 +9,8 @@ export default function AdminQuoteDetailPage() {
   const params = useParams<{ quoteId: string }>()
   const sp = useSearchParams()
 
-  const quoteId = params.quoteId
-  const langParam = sp.get('lang') || 'en'
+  const quoteId = params?.quoteId || ''
+  const langParam = sp?.get('lang') || 'en'
   const lang = langParam === 'en' || langParam === 'ja' ? langParam : 'en'
 
   const [busy, setBusy] = useState(false)
@@ -31,6 +31,11 @@ export default function AdminQuoteDetailPage() {
   })
 
   const load = async () => {
+    if (!quoteId) {
+      setError('invalid id')
+      setBusy(false)
+      return
+    }
     setError(null)
     setBusy(true)
     try {

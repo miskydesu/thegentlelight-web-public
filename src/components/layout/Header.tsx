@@ -28,6 +28,7 @@ export interface HeaderProps {
 export function Header({ country, className }: HeaderProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const safePathname = pathname || ''
 
   // メイン言語固定（URLの ?lang= 切替は廃止）
   const lang: Locale | null = country ? getLocaleForCountry(country) : null
@@ -40,9 +41,9 @@ export function Header({ country, className }: HeaderProps) {
   // - URLにgentleが無い場合、localStorageに保存された前回設定を見て gentle=1 を自動付与
   // - これにより、リンク側でgentleを付け忘れてもページ遷移でリセットされない
   useEffect(() => {
-    const qs = searchParams.toString()
-    const currentUrl = `${pathname}${qs ? `?${qs}` : ''}`
-    const hasGentleParam = searchParams.get('gentle') != null
+    const qs = searchParams?.toString() || ''
+    const currentUrl = `${safePathname}${qs ? `?${qs}` : ''}`
+    const hasGentleParam = searchParams?.get('gentle') != null
     if (hasGentleParam) return
 
     const preferred = getPreferredGentle()
@@ -55,15 +56,15 @@ export function Header({ country, className }: HeaderProps) {
     }
   }, [pathname, searchParams])
 
-  const gentle = getGentleFromUrl(`${pathname}?${searchParams.toString()}`)
+  const gentle = getGentleFromUrl(`${safePathname}?${searchParams?.toString() || ''}`)
   const withGentle = (url: string) => addGentleToUrl(url, gentle)
 
   // mobile menu: Region & Language items (Dialog内に直接表示したいので、RegionLangSwitchのロジックをここでも生成)
   const regionItems = useMemo(() => {
     if (!country) return []
-    const gentleParam = searchParams.get('gentle')
+    const gentleParam = searchParams?.get('gentle')
     const gentle2 = gentleParam === '1' || gentleParam === 'true'
-    const categoryMatch = pathname.match(/\/category\/([^/]+)/)
+    const categoryMatch = safePathname.match(/\/category\/([^/]+)/)
     const category = categoryMatch ? categoryMatch[1] : undefined
 
     const labelsJa: Record<Country, string> = {
@@ -81,11 +82,11 @@ export function Header({ country, className }: HeaderProps) {
     const isJa2 = country === 'jp'
     return COUNTRIES.map((c) => {
       const to = c.code
-      const baseUrl = getCountrySwitchUrl(country, to, pathname, category, null)
+      const baseUrl = getCountrySwitchUrl(country, to, safePathname || `/${country}`, category, null)
       const href = addGentleToUrl(baseUrl, gentle2)
       return { code: to, label: isJa2 ? labelsJa[to] : labelsEn[to], href, active: to === country }
     })
-  }, [country, pathname, searchParams])
+  }, [country, safePathname, searchParams])
 
   const getMenuTextColor = (href: string): string | null => {
     if (!country) return null
@@ -100,7 +101,7 @@ export function Header({ country, className }: HeaderProps) {
     if (!clean) return false
     // 国トップは prefix 判定にすると常に当たるので「完全一致」のみ
     if (country && clean === `/${country}`) return pathname === clean
-    return pathname === clean || pathname.startsWith(`${clean}/`)
+    return safePathname === clean || safePathname.startsWith(`${clean}/`)
   }
 
   const logoSrc = useMemo(() => {

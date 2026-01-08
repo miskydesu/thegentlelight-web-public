@@ -21,8 +21,8 @@ export default function AdminColumnDetailPage() {
   const params = useParams<{ columnId: string }>()
   const sp = useSearchParams()
 
-  const columnId = params.columnId
-  const langParam = sp.get('lang') || 'en'
+  const columnId = params?.columnId || ''
+  const langParam = sp?.get('lang') || 'en'
   const initialLang: 'en' | 'ja' = langParam === 'en' ? 'en' : 'ja'
 
   const [busy, setBusy] = useState(false)
@@ -128,6 +128,11 @@ export default function AdminColumnDetailPage() {
   }
 
   const load = async () => {
+    if (!columnId) {
+      setError('invalid id')
+      setBusy(false)
+      return
+    }
     setError(null)
     setBusy(true)
     try {

@@ -9,7 +9,7 @@ import styles from './me.module.css'
 
 export default function MyPage() {
   const params = useParams<{ country: string }>()
-  const country = params.country
+  const country = params?.country || 'us'
   const router = useRouter()
   const isJp = country === 'jp'
   const showDev = process.env.NODE_ENV !== 'production'

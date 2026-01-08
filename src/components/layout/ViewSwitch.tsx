@@ -17,12 +17,12 @@ export function ViewSwitch({ className }: ViewSwitchProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   
-  const gentle = getGentleFromUrl(`${pathname}?${searchParams.toString()}`)
+  const gentle = getGentleFromUrl(`${pathname || ''}?${searchParams?.toString() || ''}`)
   
   const handleToggle = (nextGentle: boolean) => {
     if (nextGentle === gentle) return
     
-    const currentPath = `${pathname}?${searchParams.toString()}`
+    const currentPath = `${pathname || ''}?${searchParams?.toString() || ''}`
     const newUrl = getGentleSwitchedUrl(currentPath, nextGentle)
     
     setPreferredGentle(nextGentle)

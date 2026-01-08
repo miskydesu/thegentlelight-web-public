@@ -19,14 +19,14 @@ export function Footer() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const country = useMemo(() => detectCountryFromPathname(pathname), [pathname])
+  const country = useMemo(() => detectCountryFromPathname(pathname || ''), [pathname])
 
   const lang: Locale | null = country ? getLocaleForCountry(country) : null
   const t = country && lang ? getTranslationsForCountry(country, lang) : null
   const locale = lang === 'ja' ? 'ja' : 'en'
   const isJa = locale === 'ja'
 
-  const gentle = getGentleFromUrl(`${pathname}?${searchParams.toString()}`)
+  const gentle = getGentleFromUrl(`${pathname || ''}?${searchParams?.toString() || ''}`)
   const withGentle = (url: string) => addGentleToUrl(url, gentle)
 
   const primaryLinks = useMemo(() => {

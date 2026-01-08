@@ -8,9 +8,11 @@ export const runtime = 'edge'
 
 export default async function CountryLayout({
   children,
+  sidebar,
   params,
 }: {
   children: ReactNode
+  sidebar: ReactNode
   params: { country: string }
 }) {
   const country = isCountry(params.country) ? params.country : null
@@ -23,15 +25,19 @@ export default async function CountryLayout({
           <div className={styles.main}>{children}</div>
           {country ? (
             <aside className={styles.sidebar}>
-              <>
-                <SidebarGentleIntro country={country} />
-                <div style={{ height: 14 }} />
-                <SidebarLatestColumns country={country} />
-                <div style={{ height: 14 }} />
-                <SidebarQuoteOfDay country={country} />
-                <div style={{ height: 14 }} />
-                <SidebarDailyCalendar country={country} />
-              </>
+              {sidebar ? (
+                sidebar
+              ) : (
+                <>
+                  <SidebarGentleIntro country={country} />
+                  <div style={{ height: 14 }} />
+                  <SidebarLatestColumns country={country} />
+                  <div style={{ height: 14 }} />
+                  <SidebarQuoteOfDay country={country} />
+                  <div style={{ height: 14 }} />
+                  <SidebarDailyCalendar country={country} />
+                </>
+              )}
             </aside>
           ) : null}
         </div>

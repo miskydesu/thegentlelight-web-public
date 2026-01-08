@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node ./scripts/next-build-with-fixes.js",
     "build:cf": "npx --yes @cloudflare/next-on-pages@1 && if [ -n \"$SENTRY_AUTH_TOKEN\" ] && [ -n \"$SENTRY_ORG\" ] && [ -n \"$SENTRY_PROJECT\" ]; then npx --yes @sentry/cli sourcemaps upload --validate --rewrite --debug-id-reference --url-prefix \"~\" .vercel/output/static/_next/static .vercel/output/static/_worker.js; else echo \"[sentry] skip sourcemap upload (missing env)\"; fi",
     "start": "next start",
     "lint": "next lint"

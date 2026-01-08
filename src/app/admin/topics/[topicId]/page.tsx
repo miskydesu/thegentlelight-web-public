@@ -21,8 +21,8 @@ export default function AdminTopicDetailPage() {
   const params = useParams<{ topicId: string }>()
   const sp = useSearchParams()
 
-  const topicId = params.topicId
-  const countryParam = sp.get('country') || 'us'
+  const topicId = params?.topicId || ''
+  const countryParam = sp?.get('country') || 'us'
   const country: Country = isCountry(countryParam) ? countryParam : 'us'
 
   const [busy, setBusy] = useState(false)
@@ -56,6 +56,11 @@ export default function AdminTopicDetailPage() {
   const [aiRunResult, setAiRunResult] = useState<any | null>(null)
 
   const load = async () => {
+    if (!topicId) {
+      setError('invalid id')
+      setBusy(false)
+      return
+    }
     setError(null)
     setBusy(true)
     try {

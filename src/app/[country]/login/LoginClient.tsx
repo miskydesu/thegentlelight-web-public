@@ -16,7 +16,7 @@ declare global {
 
 export default function LoginClient() {
   const params = useParams<{ country: string }>()
-  const country = params.country
+  const country = params?.country || 'us'
   const isJp = country === 'jp'
   const router = useRouter()
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID

@@ -25,7 +25,7 @@ export function NewsSearchForm({
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams(searchParams?.toString() || '')
     if (query.trim()) {
       params.set('q', query.trim())
     } else {

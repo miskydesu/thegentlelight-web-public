@@ -8,7 +8,7 @@ import { adminListWriters, adminUpdateWriter, clearAdminToken, type AdminWriter 
 export default function AdminWriterEditPage() {
   const router = useRouter()
   const params = useParams<{ writerId: string }>()
-  const writerId = params.writerId
+  const writerId = params?.writerId || ''
 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -18,6 +18,11 @@ export default function AdminWriterEditPage() {
   const [nameEn, setNameEn] = useState('')
 
   const load = async () => {
+    if (!writerId) {
+      setError('invalid id')
+      setRow(null)
+      return
+    }
     setError(null)
     setBusy(true)
     try {

@@ -20,24 +20,24 @@ export function CountrySwitch({ currentCountry }: CountrySwitchProps) {
   const searchParams = useSearchParams()
   
   // カテゴリを抽出
-  const categoryMatch = pathname.match(/\/category\/([^/]+)/)
+  const categoryMatch = (pathname || '').match(/\/category\/([^/]+)/)
   const category = categoryMatch ? categoryMatch[1] : undefined
 
   // 現在の言語を取得
   const currentLang: Locale | null = (() => {
-    const langParam = searchParams.get('lang')
+    const langParam = searchParams?.get('lang')
     if (langParam === 'en' || langParam === 'ja') return langParam
     return null
   })()
 
-  const gentleParam = searchParams.get('gentle')
+  const gentleParam = searchParams?.get('gentle')
   const gentle = gentleParam === '1' || gentleParam === 'true'
 
   return (
     <>
       {COUNTRIES.map((c) => {
         if (c.code === currentCountry) return null
-        const switchUrl = getCountrySwitchUrl(currentCountry, c.code, pathname, category, currentLang)
+        const switchUrl = getCountrySwitchUrl(currentCountry, c.code, pathname || `/${currentCountry}`, category, currentLang)
         const href = addGentleToUrl(switchUrl, gentle)
         return (
           <Link
