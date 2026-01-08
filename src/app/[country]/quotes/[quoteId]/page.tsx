@@ -2,10 +2,11 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { isCountry, fetchJson, type ApiMeta } from '@/lib/tglApi'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
-import styles from '../quotes.module.css'
+import styles from './quoteDetail.module.css'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 import { canonicalUrl } from '@/lib/seo'
 import { generateSEOMetadata } from '@/lib/seo-helpers'
+import { Card, CardContent, CardMeta, CardTitle } from '@/components/ui/Card'
 
 type QuoteDetailResponse = {
   quote: {
@@ -50,13 +51,31 @@ export async function generateMetadata({ params }: { params: { country: string; 
   try {
     const data = await fetchJson<QuoteDetailResponse>(`/v1/${country}/quotes/${encodeURIComponent(quoteId)}`, { next: { revalidate: CACHE_POLICY.stable } })
     const q = data.quote
+    const author = String(q?.author_name || '').trim()
+    const source = String(q?.source_text || '').trim()
     const text = String(q?.quote_text || '').trim()
     const titleCore = text ? snippet(text, isJa ? 40 : 70) : (isJa ? '名言' : 'Quote')
-    const desc = String(q?.note || '').trim() || (q?.author_name ? `— ${q.author_name}` : '')
+    const note = String(q?.note || '').trim()
+    const descBody =
+      note ||
+      (author
+        ? isJa
+          ? '名言の背景や意味を静かに紹介します。'
+          : 'A calm look at the meaning and context behind this quote.'
+        : '')
+
+    // 要望: title/description の先頭に著者名を入れる（著者がある場合）
+    const title = author ? `${author}｜${titleCore}｜${siteName}` : `${titleCore}｜${siteName}`
+    const desc = author
+      ? `${author}${source ? ` / ${source}` : ''}：${descBody}`.trim()
+      : descBody
+
+    const keywordsBase = isJa ? ['名言', 'テーマ'] : ['quotes', 'theme']
+    const keywords = [author, source, ...keywordsBase].map((x) => String(x || '').trim()).filter(Boolean)
     return generateSEOMetadata({
-      title: `${titleCore}｜${siteName}`,
+      title,
       description: desc || undefined,
-      keywords: isJa ? ['名言', 'テーマ'] : ['quotes', 'theme'],
+      keywords: keywords.length ? keywords : keywordsBase,
       type: 'article',
       canonical,
     })
@@ -74,6 +93,8 @@ export default async function QuoteDetailPage({ params }: { params: { country: s
 
   const lang: Locale = getLocaleForCountry(country)
   const t = getTranslationsForCountry(country, lang)
+  const isJa = lang === 'ja'
+  const locale = isJa ? 'ja' : 'en'
 
   const [data, themesData] = await Promise.all([
     fetchJson<QuoteDetailResponse>(`/v1/${country}/quotes/${encodeURIComponent(params.quoteId)}`, { next: { revalidate: CACHE_POLICY.stable } }),
@@ -94,24 +115,35 @@ export default async function QuoteDetailPage({ params }: { params: { country: s
   const themeKey = themeTag ? themeTag.slice('theme:'.length) : ''
   const themeLabel = themeKey ? themeNameByTheme.get(themeKey) || themeKey : ''
 
+  const dateIso = q.updated_at || q.created_at
+  const dateText = dateIso ? new Date(dateIso).toLocaleDateString(locale, { year: 'numeric', month: '2-digit', day: '2-digit' }) : null
+
   return (
-    <main>
-      <div style={{ marginBottom: 12 }}>
-        <Link href={`/${country}/quotes`} style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}>
+    <main className={styles.page}>
+      <div className={styles.topNav}>
+        <Link href={`/${country}/quotes`} className={styles.backLink}>
           {t.pages.quotes.backToList}
         </Link>
       </div>
 
-      <h1 style={{ fontSize: '1.6rem', marginBottom: 12, lineHeight: 1.6 }}>
-        {q.quote_text || '—'}
-      </h1>
-      <div style={{ color: 'var(--muted)', marginBottom: 14, lineHeight: 1.6 }}>
-        {q.author_name ? <span>{q.author_name}</span> : null}
-        {q.source_text ? <span>{q.author_name ? ' / ' : ''}{q.source_text}</span> : null}
-      </div>
-      {q.note ? <div style={{ color: 'var(--muted)', lineHeight: 1.7 }}>{q.note}</div> : null}
-      {themeKey ? (
-        <div style={{ marginTop: 14 }}>
+      <Card className={styles.headerCard}>
+        <CardTitle as="h1" className={styles.title}>
+          <span className={styles.cardTitleAccent}>{isJa ? '名言' : 'Quote'}</span>
+        </CardTitle>
+
+        <blockquote className={styles.quoteBlock}>
+          <p className={styles.quoteText}>{q.quote_text || '—'}</p>
+        </blockquote>
+
+        <CardMeta className={styles.metaRow}>
+          <span className={styles.metaLeft}>
+            {q.author_name ? <span className={styles.authorName}>{q.author_name}</span> : null}
+            {q.source_text ? <span className={styles.sourceText}>{q.source_text}</span> : null}
+          </span>
+          {dateText ? <span className={styles.metaRight}>{dateText}</span> : null}
+        </CardMeta>
+
+        {themeKey ? (
           <div className={styles.tagsRow}>
             <Link
               key={themeKey}
@@ -122,11 +154,22 @@ export default async function QuoteDetailPage({ params }: { params: { country: s
               {themeLabel}
             </Link>
           </div>
-        </div>
+        ) : null}
+      </Card>
+
+      {q.note ? (
+        <Card className={styles.noteCard} as="section">
+          <CardTitle as="h2" className={styles.sectionTitle}>
+            {isJa ? 'ひとこと' : 'Note'}
+          </CardTitle>
+          <CardContent className={styles.noteText}>
+            <p>{q.note}</p>
+          </CardContent>
+        </Card>
       ) : null}
 
-      <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
-        <Link href={`/${country}`} style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}>
+      <div className={styles.bottomNav}>
+        <Link href={`/${country}`} className={styles.bottomLink}>
           ← {t.nav.top}
         </Link>
       </div>

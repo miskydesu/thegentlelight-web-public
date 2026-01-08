@@ -1,0 +1,167 @@
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.topNav {
+  margin-bottom: 12px;
+}
+
+.backLink {
+  font-size: 0.92rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.backLink:hover {
+  text-decoration: underline;
+}
+
+.headerCard {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.08);
+  border-radius: 6px !important;
+  padding: 15px 15px 15px 18px !important;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.title {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  font-weight: 900;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.cardTitleAccent {
+  display: inline-block;
+  border-left: 4px solid rgba(0, 0, 0, 0.18);
+  padding-left: 8px;
+}
+
+.quoteBlock {
+  margin: 10px 0 0;
+  padding: 14px 14px 14px 16px;
+  border-left: 4px solid rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 14px;
+}
+
+.quoteText {
+  margin: 0;
+  font-size: clamp(18px, 2.4vw, 24px);
+  line-height: 1.85;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  font-weight: 900;
+  white-space: pre-wrap;
+}
+
+.metaRow {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
+}
+
+.metaLeft {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.authorName {
+  font-weight: 800;
+}
+
+.sourceText {
+  opacity: 0.9;
+}
+
+.metaRight {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.tagsRow {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tagPill {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.82rem;
+  color: var(--text);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.tagPill:hover {
+  border-color: rgba(0, 0, 0, 0.28);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.noteCard {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #fff;
+  padding: 18px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.noteText {
+  color: var(--text);
+  opacity: 0.9;
+  line-height: 1.9;
+  font-size: 16px;
+}
+
+.noteText p {
+  margin: 10px 0 0;
+  white-space: pre-wrap;
+}
+
+.bottomNav {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.bottomLink {
+  font-size: 0.92rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.bottomLink:hover {
+  text-decoration: underline;
+}
+
+
