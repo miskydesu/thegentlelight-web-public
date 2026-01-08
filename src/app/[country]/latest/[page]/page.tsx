@@ -22,7 +22,7 @@ export function generateMetadata({
   const hreflang = generateHreflang(`/latest/${page}`)
   const isJa = country === 'jp'
   return {
-    title: isJa ? '最新ニュース｜The Gentle Light' : 'Latest World News | The Gentle Light',
+    title: isJa ? '最新ニュース' : 'Latest World News',
     description: isJa
       ? '最新の世界ニュースを穏やかでやさしい言葉で。不安やニュース疲れなしで情報を得る。'
       : 'Latest world news in calm, gentle language. Stay informed without anxiety or news fatigue.',

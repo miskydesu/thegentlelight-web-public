@@ -41,8 +41,8 @@ export async function generateMetadata({
 
   const isJa = country === 'jp'
   const title = isJa
-    ? 'The Gentle Light｜やさしく、静かに世界を知るためのニュースサイト'
-    : 'The Gentle Light | Calm News Without Anxiety'
+    ? 'やさしく、静かに世界を知るためのニュースサイト'
+    : 'Calm News Without Anxiety'
   const description = isJa
     ? 'やさしいニュース。煽りがない穏やかな言葉に編集したニュースをお届けする、やさしいニュースサイト。'
     : "Gentle news for your mental health. World news without doomscrolling, anxiety, or sensationalism. Calm daily briefings that keep you informed."
@@ -61,7 +61,7 @@ export async function generateMetadata({
       ]
     : ['gentle news', 'calm news', 'news without anxiety', 'mental health news', 'news fatigue solution']
 
-  return generateSEOMetadata({
+  const baseMeta = generateSEOMetadata({
     title,
     description,
     keywords,
@@ -69,6 +69,9 @@ export async function generateMetadata({
     canonical: `${base}${canonicalPath}`,
     hreflang,
   })
+
+  // 国別 layout で title.template を出し分けるため、ここでは文字列 title をそのまま返す
+  return baseMeta
 }
 
 export default async function CountryHome({

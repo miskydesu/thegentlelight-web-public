@@ -1,10 +1,30 @@
 import type { ReactNode } from 'react'
 import { isCountry } from '../../lib/tglApi'
+import type { Metadata } from 'next'
 import { Header } from '../../components/layout/Header'
 import { SidebarDailyCalendar, SidebarGentleIntro, SidebarLatestColumns, SidebarQuoteOfDay } from './_sidebar/blocks'
 import styles from './layout.module.css'
 
 export const runtime = 'edge'
+
+export function generateMetadata({
+  params,
+}: {
+  // Next.js の LayoutProps（parallel route 含む）に合わせて slot を受け取れる形にしておく
+  params: { country: string }
+  children?: ReactNode
+  sidebar: ReactNode
+}): Metadata {
+  const isJa = params.country === 'jp'
+  // JP/EN で suffix を出し分け（ルートの template に依存しない）
+  const suffix = isJa ? 'やさしいニュース The Gentle Light' : 'Calm News The Gentle Light'
+  return {
+    title: {
+      default: 'The Gentle Light',
+      template: `%s | ${suffix}`,
+    },
+  }
+}
 
 export default async function CountryLayout({
   children,

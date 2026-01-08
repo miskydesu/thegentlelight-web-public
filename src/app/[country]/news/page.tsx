@@ -34,7 +34,7 @@ export function generateMetadata({
   const hreflang = hasFilter ? null : generateHreflang('/news')
   if (hasFilter) {
     return {
-      title: query ? (isJa ? `検索: ${query}｜The Gentle Light` : `Search: ${query} | The Gentle Light`) : (isJa ? 'ニュース検索｜The Gentle Light' : 'Search | The Gentle Light'),
+      title: query ? (isJa ? `検索: ${query}` : `Search: ${query}`) : (isJa ? 'ニュース検索' : 'Search'),
       description: query ? (isJa ? `検索結果: ${query}` : `Search results for: ${query}`) : undefined,
       robots: { index: false, follow: true, googleBot: { index: false, follow: true } }, // クエリ無限のため noindex 推奨
       alternates: { canonical },
@@ -42,7 +42,7 @@ export function generateMetadata({
   }
 
   return {
-    title: isJa ? 'The Gentle Light｜ニュース一覧' : 'The Gentle Light | Browse Calm News by Topic',
+    title: isJa ? 'ニュース一覧' : 'Browse Calm News by Topic',
     description: isJa
       ? 'やさしいニュース一覧。穏やかで、煽られない・不安にならない。心が落ち着く、静かなニュースをカテゴリ別に。'
       : 'Browse gentle news organized by category. World news without anxiety, stress, or doomscrolling.',

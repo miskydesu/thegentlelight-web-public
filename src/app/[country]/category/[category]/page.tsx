@@ -25,7 +25,7 @@ export function generateMetadata({
   const isJa = params.country === 'jp'
   const catLabel = isJa ? (category?.labelJa || category?.label || params.category) : (category?.label || category?.labelJa || params.category)
   return {
-    title: isJa ? `${catLabel}ニュース｜The Gentle Light` : `${catLabel} News | The Gentle Light`,
+    title: isJa ? `${catLabel}ニュース` : `${catLabel} News`,
     description: isJa
       ? `不安のない${catLabel}ニュース。穏やかで、煽られない言葉で整理。`
       : `Calm ${catLabel} news without anxiety. Fact-based reporting that protects your mental health.`,

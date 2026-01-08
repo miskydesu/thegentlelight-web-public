@@ -43,7 +43,7 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   const isJa = country === 'jp'
   const hreflang = generateHreflang('/columns')
   return {
-    title: isJa ? 'コラム・考察｜The Gentle Light' : 'Thoughtful Columns | The Gentle Light',
+    title: isJa ? 'コラム・考察' : 'Thoughtful Columns',
     description: isJa
       ? 'ニュースと付き合うためのコラム。不安にならない、煽られない、心が落ち着く“静かさ”の考察（メンタルヘルスにも配慮）。'
       : 'Thoughtful columns on news, mental health, and how to stay informed without anxiety or doomscrolling.',

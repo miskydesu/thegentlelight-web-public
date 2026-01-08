@@ -34,11 +34,19 @@ export function generateSEOMetadata(config: SEOConfig): Metadata {
   // stg/dev/local はデフォルトで noindex（誤インデックス防止）
   const isNoindex = process.env.ROBOTS_NOINDEX === 'true' || !isProdSite() || config.noindex
 
+  // Root layout に title.template（`%s | The Gentle Light`）があるため、
+  // ここで既にサイト名を含む title を渡すと重複しやすい。
+  // 例: `今日の朝刊｜The Gentle Light | The Gentle Light`
+  // サイト名を含む場合は absolute を使って template 適用を止める。
+  const siteName = 'The Gentle Light'
+  const rawTitle = String(config.title || '').trim()
+  const title: Metadata['title'] = rawTitle.includes(siteName) ? { absolute: rawTitle } : rawTitle
+
   const hasImage = Boolean(config.image)
   const twitterCard: 'summary' | 'summary_large_image' = hasImage ? 'summary_large_image' : 'summary'
 
   const metadata: Metadata = {
-    title: config.title,
+    title,
     description: config.description,
     keywords: config.keywords,
     alternates: {
@@ -48,7 +56,7 @@ export function generateSEOMetadata(config: SEOConfig): Metadata {
       ? { index: false, follow: false, googleBot: { index: false, follow: false } }
       : undefined,
     openGraph: {
-      title: config.title,
+      title: rawTitle,
       description: config.description,
       type: config.type || 'website',
       url: canonical,
@@ -58,7 +66,7 @@ export function generateSEOMetadata(config: SEOConfig): Metadata {
     },
     twitter: {
       card: twitterCard,
-      title: config.title,
+      title: rawTitle,
       description: config.description,
       images: hasImage ? [config.image!] : undefined,
     },

@@ -13,7 +13,7 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   const isJa = getLocaleForCountry(country) === 'ja' || country === 'jp'
   const hreflang = generateHreflang('/legal')
   return {
-    title: isJa ? '利用規約・プライバシーポリシー｜The Gentle Light' : 'Terms of Service & Privacy Policy | The Gentle Light',
+    title: isJa ? '利用規約・プライバシーポリシー' : 'Terms of Service & Privacy Policy',
     description: isJa ? 'サービス利用規約とプライバシーポリシーの詳細です。' : 'Detailed terms of service and privacy policy for The Gentle Light.',
     keywords: isJa ? ['利用規約', 'プライバシー'] : ['terms', 'privacy'],
     alternates: {

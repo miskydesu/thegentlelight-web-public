@@ -13,10 +13,8 @@ const base = getSiteBaseUrl()
 
 export const metadata: Metadata = {
   metadataBase: new URL(base),
-  title: {
-    default: 'The Gentle Light',
-    template: '%s | The Gentle Light',
-  },
+  // NOTE: 国別（/[country]）で title.template を出し分けるため、Root では template を持たせない
+  title: 'The Gentle Light',
   description: '優しく、静かに、世界のニュースを届けます',
   alternates: {
     canonical: base,

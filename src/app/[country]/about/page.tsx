@@ -13,7 +13,8 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   const canonical = canonicalUrl(`/${country}/about`)
   const hreflang = generateHreflang('/about')
   return {
-    title: isJa ? 'The Gentle Lightについて｜不安のないニュース' : 'About The Gentle Light | News Without Anxiety',
+    // /[country]/layout.tsx の title.template で末尾を出し分けるため、ここでは短い title を返す
+    title: isJa ? 'やさしいニュースについて' : 'About Us',
     description: isJa
       ? 'やさしいニュースの方針。穏やかで、煽られない・不安にならない。心が落ち着く、静かなニュース体験を目指します（メンタルヘルスにも配慮）。'
       : 'Learn how The Gentle Light delivers calm, fact-based news for mental health. Our approach to fighting news anxiety, doomscrolling, and news fatigue.',

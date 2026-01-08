@@ -115,6 +115,8 @@ export default async function QuoteDetailPage({ params }: { params: { country: s
   const themeKey = themeTag ? themeTag.slice('theme:'.length) : ''
   const themeLabel = themeKey ? themeNameByTheme.get(themeKey) || themeKey : ''
 
+  const authorName = String(q.author_name || '').trim()
+
   const dateIso = q.updated_at || q.created_at
   const dateText = dateIso ? new Date(dateIso).toLocaleDateString(locale, { year: 'numeric', month: '2-digit', day: '2-digit' }) : null
 
@@ -147,7 +149,7 @@ export default async function QuoteDetailPage({ params }: { params: { country: s
           <div className={styles.tagsRow}>
             <Link
               key={themeKey}
-              href={`/${country}/quotes?theme=${encodeURIComponent(themeKey)}`}
+                  href={`/${country}/quotes/theme/${encodeURIComponent(themeKey)}`}
               className={styles.tagPill}
               title={lang === 'ja' ? `テーマ「${themeLabel}」で絞り込み` : `Filter by theme: ${themeLabel}`}
             >
@@ -169,6 +171,15 @@ export default async function QuoteDetailPage({ params }: { params: { country: s
       ) : null}
 
       <div className={styles.bottomNav}>
+        {authorName ? (
+          <Link
+            href={`/${country}/quotes?q=${encodeURIComponent(authorName)}`}
+            className={styles.bottomLink}
+            title={isJa ? `著者「${authorName}」の名言を検索` : `Search quotes by ${authorName}`}
+          >
+            {isJa ? 'この著者の他の名言を見る' : `More quotes by ${authorName}`}
+          </Link>
+        ) : null}
         <Link href={`/${country}`} className={styles.bottomLink}>
           ← {t.nav.top}
         </Link>

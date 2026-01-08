@@ -2,9 +2,9 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { isCountry, fetchJson, type ApiMeta } from '@/lib/tglApi'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
+import { Card, CardTitle } from '@/components/ui/Card'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
-import styles from './quotes.module.css'
+import styles from '../../quotes.module.css'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 import { canonicalUrl } from '@/lib/seo'
 import { generateHreflang } from '@/lib/seo-helpers'
@@ -34,83 +34,60 @@ type QuoteThemesResponse = {
   meta: ApiMeta
 }
 
-export function generateMetadata({
+export async function generateMetadata({
   params,
-  searchParams,
 }: {
-  params: { country: string }
-  searchParams: { q?: string; theme?: string }
+  params: { country: string; theme: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return {}
   const isJa = country === 'jp'
-  const q = typeof searchParams.q === 'string' ? searchParams.q.trim() : ''
-  const theme = typeof searchParams.theme === 'string' ? searchParams.theme.trim() : ''
+  const theme = String(params.theme || '').trim()
+  if (!theme) return {}
 
-  const hreflang = (q || theme) ? null : generateHreflang('/quotes')
-  const canonical = canonicalUrl(`/${country}/quotes${theme ? `?theme=${encodeURIComponent(theme)}` : ''}`)
-
-  // q は無限に増えるため noindex（follow は維持）
-  if (q) {
-    return {
-      title: isJa ? `検索結果：${q}` : `Search Results: ${q}`,
-      robots: { index: false, follow: true, googleBot: { index: false, follow: true } },
-      alternates: { canonical: canonicalUrl(`/${country}/quotes`) },
-    }
-  }
-
-  // theme は固定語彙なら index も検討可（現状は canonical をクエリ込みにする）
-  if (theme) {
-    return {
-      title: isJa ? `${theme}の名言` : `${theme} Quotes`,
-      alternates: { canonical: canonicalUrl(`/${country}/quotes/theme/${encodeURIComponent(theme)}`) },
-    }
-  }
+  // theme は固定語彙として index を狙う前提（実体は API themes から出る想定）
+  const canonical = canonicalUrl(`/${country}/quotes/theme/${encodeURIComponent(theme)}`)
+  const hreflang = generateHreflang(`/quotes/theme/${theme}`)
 
   return {
-    title: isJa ? '癒しの名言・言葉' : 'Calming Quotes & Inspiration',
-    description: isJa ? 'ニュースと共に心を落ち着かせる名言と癒しの言葉。' : 'Calming quotes and inspirational words to help you reflect and find peace alongside the news.',
-    keywords: isJa
-      ? ['癒しの名言', '心に響く言葉', '穏やかな言葉', 'メンタルウェルネス', 'マインドフルネス']
-      : ['calming quotes', 'inspirational quotes', 'peaceful words', 'mental wellness', 'mindfulness'],
+    title: isJa ? `${theme}の名言` : `${theme} Quotes`,
     alternates: {
-      canonical: canonicalUrl(`/${country}/quotes`),
-      ...(hreflang ? { languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])) } : {}),
+      canonical,
+      languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
     },
   }
 }
 
-export default async function QuotesPage({
+export default async function QuotesThemePage({
   params,
   searchParams,
 }: {
-  params: { country: string }
-  searchParams: { q?: string; theme?: string }
+  params: { country: string; theme: string }
+  searchParams: { q?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
 
+  const theme = String(params.theme || '').trim()
+  if (!theme) return notFound()
+
   const lang: Locale = getLocaleForCountry(country)
   const t = getTranslationsForCountry(country, lang)
 
-  // searchParamsは任意（シンプルなGET検索フォーム）
   const q = typeof searchParams.q === 'string' ? searchParams.q.trim() : ''
-  const theme = typeof searchParams.theme === 'string' ? searchParams.theme.trim() : ''
-
-  // 互換: ?theme= はURL化した theme ページへ寄せる
-  if (theme) {
-    const sp = new URLSearchParams()
-    if (q) sp.set('q', q)
-    const qs = sp.toString()
-    redirect(`/${country}/quotes/theme/${encodeURIComponent(theme)}${qs ? `?${qs}` : ''}`)
-  }
-
-  const apiPath = `/v1/${country}/quotes?limit=30${q ? `&q=${encodeURIComponent(q)}` : ''}${theme ? `&theme=${encodeURIComponent(theme)}` : ''}`
+  const apiPath = `/v1/${country}/quotes?limit=30${q ? `&q=${encodeURIComponent(q)}` : ''}&theme=${encodeURIComponent(theme)}`
 
   const [data, themesData] = await Promise.all([
     fetchJson<QuotesResponse>(apiPath, { next: { revalidate: CACHE_POLICY.stable } }),
     fetchJson<QuoteThemesResponse>(`/v1/${country}/quotes/themes`, { next: { revalidate: CACHE_POLICY.stable } }),
   ])
+
+  // themes が空の場合、themeページを成立させない（URL乱立/ゴミインデックス防止）
+  const themeSet = new Set((themesData.themes || []).map((x) => String(x.theme || '').trim()).filter(Boolean))
+  if (!themeSet.has(theme)) {
+    // 互換: 古いURLや誤入力は一覧へ
+    redirect(`/${country}/quotes`)
+  }
 
   const themes = (themesData.themes || [])
     .filter((x) => (x.count || 0) > 0)
@@ -128,11 +105,14 @@ export default async function QuotesPage({
     const name = String(th.theme_name || '').trim()
     if (name) themeNameByTheme.set(key, name)
   }
+  const themeLabel = themeNameByTheme.get(theme) || theme
 
   return (
     <main>
       <div className={styles.shelfHeader}>
-        <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? '名言・癒しの言葉' : 'Inspirational Quotes'}</h1>
+        <h1 style={{ fontSize: '1.4rem' }}>
+          {country === 'jp' ? '名言・癒しの言葉' : 'Inspirational Quotes'}
+        </h1>
         <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>{t.pages.quotes.subtitle}</span>
       </div>
 
@@ -143,19 +123,14 @@ export default async function QuotesPage({
         <div className={styles.themeShelf} style={{ marginBottom: 14 }}>
           <div className={styles.themeShelfHeader}>
             <div className={styles.themeShelfTitle}>{t.pages.quotes.themeShelf}</div>
-            <div className={styles.shelfActions}>
-              <Link href={`/${country}/quotes/authors`} className={styles.shelfLink}>
-                {lang === 'ja' ? '著者で選ぶ' : 'Browse by Author'}
-              </Link>
-              <div className={styles.shelfHint}>{t.pages.quotes.filterByTheme}</div>
-            </div>
+            <div className={styles.shelfHint}>{t.pages.quotes.filterByTheme}</div>
           </div>
 
           <div className={styles.themeShelfGrid}>
             <Link
               href={`/${country}/quotes`}
-              className={`${styles.themeItem} ${!theme ? styles.themeItemActive : ''}`}
-              aria-current={!theme ? 'page' : undefined}
+              className={styles.themeItem}
+              aria-current={false}
               title={lang === 'ja' ? '絞り込みを解除' : 'Clear filter'}
             >
               <span className={styles.themeLabel}>{lang === 'ja' ? 'すべて' : 'All'}</span>
@@ -185,8 +160,13 @@ export default async function QuotesPage({
         </div>
       ) : null}
 
-      <form method="GET" action={`/${country}/quotes`} style={{ marginBottom: 14 }}>
-        {theme ? <input type="hidden" name="theme" value={theme} /> : null}
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>
+          {lang === 'ja' ? `テーマ: ${themeLabel}` : `Theme: ${themeLabel}`}
+        </div>
+      </div>
+
+      <form method="GET" action={`/${country}/quotes/theme/${encodeURIComponent(theme)}`} style={{ marginBottom: 14 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <input
             type="text"
@@ -206,7 +186,7 @@ export default async function QuotesPage({
           </button>
           {q ? (
             <Link
-              href={`/${country}/quotes${theme ? `?theme=${encodeURIComponent(theme)}` : ''}`}
+              href={`/${country}/quotes/theme/${encodeURIComponent(theme)}`}
               style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}
             >
               {t.pages.quotes.clear}
@@ -226,34 +206,13 @@ export default async function QuotesPage({
                   {q.source_text ? <span>{q.author_name ? ' / ' : ''}{q.source_text}</span> : null}
                 </div>
               </Link>
-
-              {q.tags?.length ? (() => {
-                const themeTag = q.tags.find((x) => typeof x === 'string' && x.startsWith('theme:')) || ''
-                const themeKey = themeTag ? themeTag.slice('theme:'.length) : ''
-                if (!themeKey) return null
-                const label = themeNameByTheme.get(themeKey) || themeKey
-                return (
-                <div className={styles.tagsRow}>
-                    <Link
-                      key={themeKey}
-                      href={`/${country}/quotes/theme/${encodeURIComponent(themeKey)}`}
-                      className={styles.tagPill}
-                      title={lang === 'ja' ? `テーマ「${label}」で絞り込み` : `Filter by theme: ${label}`}
-                    >
-                      {label}
-                    </Link>
-                </div>
-                )
-              })() : null}
             </Card>
           ))}
         </div>
       ) : (
         <EmptyState
-          title={q || theme ? t.pages.quotes.noResults : t.pages.quotes.empty}
-          description={
-            q || theme ? t.pages.quotes.noResultsDescription : t.pages.quotes.emptyDescription
-          }
+          title={q ? t.pages.quotes.noResults : t.pages.quotes.empty}
+          description={q ? t.pages.quotes.noResultsDescription : t.pages.quotes.emptyDescription}
           action={{ label: t.nav.top, href: `/${country}` }}
         />
       )}

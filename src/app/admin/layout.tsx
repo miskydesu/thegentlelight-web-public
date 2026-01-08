@@ -3,7 +3,8 @@ import { Metadata } from 'next'
 export const runtime = 'edge'
 
 export const metadata: Metadata = {
-  title: 'The Gentle Light 管理画面',
+  // Root layout の title.template による重複を避けるため absolute を使用
+  title: { absolute: 'The Gentle Light 管理画面' },
   robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
 }
 

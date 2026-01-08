@@ -17,22 +17,27 @@ const nextBin = process.platform === 'win32' ? 'npx.cmd' : 'npx'
 
 function ensureVendorChunkMirror() {
   try {
-    const src = path.join(root, '.next', 'server', 'vendor-chunks', 'next.js')
-    if (!fs.existsSync(src)) return
+    const srcDir = path.join(root, '.next', 'server', 'vendor-chunks')
+    if (!fs.existsSync(srcDir)) return
 
     const dstDir = path.join(root, '.next', 'server', 'chunks', 'vendor-chunks')
-    const dst = path.join(dstDir, 'next.js')
-    if (fs.existsSync(dst)) return
-
     fs.mkdirSync(dstDir, { recursive: true })
-    fs.copyFileSync(src, dst)
-    // Also mirror the sourcemap if present (best-effort)
-    const srcMap = `${src}.map`
-    const dstMap = `${dst}.map`
-    if (fs.existsSync(srcMap) && !fs.existsSync(dstMap)) {
-      fs.copyFileSync(srcMap, dstMap)
+
+    // Mirror all vendor chunks (Next sometimes outputs to `vendor-chunks/*` but runtime expects `chunks/vendor-chunks/*`).
+    // Best-effort: only copy files that are missing on dst.
+    const entries = fs.readdirSync(srcDir, { withFileTypes: true })
+    let copied = 0
+    for (const ent of entries) {
+      if (!ent.isFile()) continue
+      const src = path.join(srcDir, ent.name)
+      const dst = path.join(dstDir, ent.name)
+      if (fs.existsSync(dst)) continue
+      fs.copyFileSync(src, dst)
+      copied += 1
     }
-    console.log('[build-fix] mirrored vendor-chunks/next.js -> chunks/vendor-chunks/next.js')
+    if (copied > 0) {
+      console.log(`[build-fix] mirrored vendor-chunks/* -> chunks/vendor-chunks/* (${copied} files)`)
+    }
   } catch (e) {
     // best-effort; do not crash build wrapper
   }

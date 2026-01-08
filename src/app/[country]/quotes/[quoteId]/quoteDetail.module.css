@@ -152,6 +152,11 @@
   margin-top: 18px;
   padding-top: 12px;
   border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .bottomLink {

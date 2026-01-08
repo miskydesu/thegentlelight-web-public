@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 
 export const metadata = {
-  title: 'このサイトについて - The Gentle Light',
+  // Root layout の title.template による重複を避けるため absolute を使用
+  title: { absolute: 'このサイトについて - The Gentle Light' },
 }
 
 export default function AboutRedirect({ searchParams }: { searchParams: { gentle?: string } }) {

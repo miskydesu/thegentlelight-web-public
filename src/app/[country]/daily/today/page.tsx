@@ -34,7 +34,7 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   const isJa = country === 'jp'
   const hreflang = generateHreflang('/daily/today')
   return {
-    title: isJa ? '今日の朝刊｜The Gentle Light' : "Today's Daily Briefing | The Gentle Light",
+    title: isJa ? '今日の朝刊' : "Today's Daily Briefing",
     description: isJa
       ? '今日の穏やかな朝刊。不安やニュース疲れに疲れず、必要なことを静かに把握する。'
       : "Today's calm news briefing. Stay informed without anxiety, doomscrolling, or news fatigue.",
