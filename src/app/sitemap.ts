@@ -173,12 +173,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 3. 固定ページ（changefreq は雑でも揃える。priorityは過信しないがヒントとして記載）
   // NOTE: /saved はユーザー個人の保存リスト（クローラ非対象）なので sitemap から除外する
   // NOTE: /legal は /jp/legal へリダイレクト（互換）なので、sitemap には国別URLを載せる
-  const fixedRoutes: string[] = ['/', '/about']
+  // NOTE: `/` は noindex 方針のため sitemap には載せない（国別トップへ評価を寄せる）
+  const fixedRoutes: string[] = ['/about']
   for (const c of COUNTRIES) {
     fixedRoutes.push(`/${c.code}`)
     fixedRoutes.push(`/${c.code}/news`)
     fixedRoutes.push(`/${c.code}/latest`)
     fixedRoutes.push(`/${c.code}/daily`)
+    fixedRoutes.push(`/${c.code}/about`)
+    fixedRoutes.push(`/${c.code}/columns`)
+    fixedRoutes.push(`/${c.code}/quotes`)
+    fixedRoutes.push(`/${c.code}/quotes/authors`)
     fixedRoutes.push(`/${c.code}/legal`)
     // カテゴリページ（Event Registry news/* に揃えたサイト内部カテゴリ）
     const categories = ['heartwarming', 'science_earth', 'politics', 'health', 'technology', 'arts', 'business', 'sports']
@@ -193,11 +198,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     let changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency'] = 'weekly'
     let priority = 0.6
 
-    if (path === '/') {
-      lastModified = now
-      changeFrequency = 'monthly'
-      priority = 0.7
-    } else if (path === '/about') {
+    if (path === '/about') {
       lastModified = now
       changeFrequency = 'yearly'
       priority = 0.3
@@ -210,6 +211,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           lastModified = homeLastModByCountry.get(cc) || now
           changeFrequency = 'hourly'
           priority = 1.0
+        } else if (rest === '/about') {
+          lastModified = now
+          changeFrequency = 'yearly'
+          priority = 0.5
         } else if (rest === '/news') {
           lastModified = latestLastModByCountry.get(cc) || homeLastModByCountry.get(cc) || now
           changeFrequency = 'hourly'
@@ -222,6 +227,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           lastModified = dailyIndexLastModByCountry.get(cc) || now
           changeFrequency = 'daily'
           priority = 0.8
+        } else if (rest === '/columns') {
+          lastModified = now
+          changeFrequency = 'weekly'
+          priority = 0.6
+        } else if (rest === '/quotes') {
+          lastModified = now
+          changeFrequency = 'weekly'
+          priority = 0.6
+        } else if (rest === '/quotes/authors') {
+          lastModified = now
+          changeFrequency = 'weekly'
+          priority = 0.4
         } else if (rest === '/legal') {
           lastModified = now
           changeFrequency = 'yearly'

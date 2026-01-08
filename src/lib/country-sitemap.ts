@@ -15,6 +15,24 @@ type DailyItem = {
   updatedAt: string | null
 }
 
+type ColumnItem = {
+  column_id: string
+  published_at: string | null
+  updated_at: string
+}
+
+type QuoteItem = {
+  quote_id: string
+  updated_at: string
+}
+
+type QuoteThemeItem = {
+  theme: string
+  theme_name?: string | null
+  count?: number | null
+  display_order?: number | null
+}
+
 const CATEGORIES = ['heartwarming', 'science_earth', 'politics', 'health', 'technology', 'arts', 'business', 'sports'] as const
 
 function getLastModForTopic(t: TopicItem): Date {
@@ -72,6 +90,12 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
   // 主要固定ページ（国配下）
   fixed.push(
     {
+      url: `${base}/${country}/about`,
+      lastModified: now,
+      changeFrequency: 'yearly',
+      priority: 0.5,
+    },
+    {
       url: `${base}/${country}/news`,
       lastModified: latestMeta || homeLastMod || now,
       changeFrequency: 'hourly',
@@ -88,6 +112,24 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
       lastModified: dailyIndexLastMod || now,
       changeFrequency: 'daily',
       priority: 0.8,
+    },
+    {
+      url: `${base}/${country}/columns`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    },
+    {
+      url: `${base}/${country}/quotes`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    },
+    {
+      url: `${base}/${country}/quotes/authors`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.4,
     }
   )
 
@@ -108,6 +150,35 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     })
   }
 
+  // 名言テーマ棚（上位9テーマ）
+  const themeEntries: MetadataRoute.Sitemap = []
+  try {
+    const themesResponse = await fetchJson<{ themes: QuoteThemeItem[] }>(`/v1/${country}/quotes/themes`, {
+      next: { revalidate: CACHE_POLICY.meta },
+    })
+    const themes = (themesResponse.themes || [])
+      .filter((x) => (x.count || 0) > 0)
+      .sort((a, b) => {
+        const ao = a.display_order ?? 9999
+        const bo = b.display_order ?? 9999
+        if (ao !== bo) return ao - bo
+        return (b.count || 0) - (a.count || 0)
+      })
+      .slice(0, 9)
+    for (const th of themes) {
+      const key = String(th.theme || '').trim()
+      if (!key) continue
+      themeEntries.push({
+        url: `${base}/${country}/quotes/theme/${encodeURIComponent(key)}`,
+        lastModified: now,
+        changeFrequency: 'weekly',
+        priority: 0.4,
+      })
+    }
+  } catch (e) {
+    console.error(`Failed to fetch quote themes for sitemap (${country}):`, e)
+  }
+
   // トピック詳細（国別）
   const topicEntries: MetadataRoute.Sitemap = []
   try {
@@ -124,6 +195,43 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     }
   } catch (e) {
     console.error(`Failed to fetch topics for sitemap (${country}):`, e)
+  }
+
+  // コラム詳細（公開分、上限1000）
+  const columnEntries: MetadataRoute.Sitemap = []
+  try {
+    const columnsResponse = await fetchJson<{ columns: ColumnItem[]; meta: any }>(`/v1/${country}/columns?limit=1000`, {
+      next: { revalidate: CACHE_POLICY.meta },
+    })
+    for (const c of columnsResponse.columns || []) {
+      const lastModified = c.published_at ? new Date(c.published_at) : new Date(c.updated_at)
+      columnEntries.push({
+        url: `${base}/${country}/columns/${c.column_id}`,
+        lastModified,
+        changeFrequency: 'weekly',
+        priority: 0.6,
+      })
+    }
+  } catch (e) {
+    console.error(`Failed to fetch columns for sitemap (${country}):`, e)
+  }
+
+  // 名言詳細（上限1000）
+  const quoteEntries: MetadataRoute.Sitemap = []
+  try {
+    const quotesResponse = await fetchJson<{ quotes: QuoteItem[]; meta: any }>(`/v1/${country}/quotes?limit=1000`, {
+      next: { revalidate: CACHE_POLICY.meta },
+    })
+    for (const q of quotesResponse.quotes || []) {
+      quoteEntries.push({
+        url: `${base}/${country}/quotes/${q.quote_id}`,
+        lastModified: new Date(q.updated_at),
+        changeFrequency: 'monthly',
+        priority: 0.5,
+      })
+    }
+  } catch (e) {
+    console.error(`Failed to fetch quotes for sitemap (${country}):`, e)
   }
 
   // 朝刊（日付詳細、過去30日）
@@ -150,7 +258,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     console.error(`Failed to fetch daily for sitemap (${country}):`, e)
   }
 
-  return [...fixed, ...topicEntries, ...dailyEntries]
+  return [...fixed, ...themeEntries, ...topicEntries, ...columnEntries, ...quoteEntries, ...dailyEntries]
 }
 
 

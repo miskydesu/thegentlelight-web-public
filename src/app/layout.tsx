@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { headers } from 'next/headers'
 import { getSiteBaseUrl, isProdSite } from '../lib/seo'
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 import { HtmlLangSetter } from '@/components/seo/HtmlLangSetter'
@@ -44,8 +45,26 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const h = headers()
+  const pathname = h.get('x-tgl-pathname') || ''
+  const seg = (pathname.split('/')[1] || '').trim().toLowerCase()
+  const acceptLanguage = h.get('accept-language') ?? ''
+  const isJaByHeader = /(^|,)\s*ja([-_][A-Za-z]+)?\s*(;|,|$)/i.test(acceptLanguage)
+  const lang =
+    seg === 'jp'
+      ? 'ja-JP'
+      : seg === 'uk'
+        ? 'en-GB'
+        : seg === 'ca'
+          ? 'en-CA'
+          : seg === 'us'
+            ? 'en-US'
+            : isJaByHeader
+              ? 'ja-JP'
+              : 'en-US'
+
   return (
-    <html lang="en-US">
+    <html lang={lang} suppressHydrationWarning>
       <body>
         <HtmlLangSetter />
         <GoogleAnalytics />
