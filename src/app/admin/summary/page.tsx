@@ -11,6 +11,13 @@ export default function AdminSummaryPage() {
   const [error, setError] = useState<string | null>(null)
   const [stats, setStats] = useState<any | null>(null)
 
+  const NUMERIC_STYLE: React.CSSProperties = {
+    fontVariantNumeric: 'tabular-nums',
+    fontFeatureSettings: '"tnum"',
+    // 数値だけ “Pフォント（比例）” にならないように、数値部分だけ monospace を当てる
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  }
+
   const countryFlagEmoji = (country: string) => {
     const c = String(country ?? '').toLowerCase()
     switch (c) {
@@ -128,7 +135,7 @@ export default function AdminSummaryPage() {
           >
             <div style={{ padding: '16px 20px', backgroundColor: '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
               <h2 style={{ fontSize: '1.15rem', margin: 0, fontWeight: 600, color: '#1a1a1a' }}>
-                News取得（直近{Number(stats?.news_fetch_runs_last_hours?.since_hours ?? 36)}時間）
+                News取得（直近<span style={NUMERIC_STYLE}>{Number(stats?.news_fetch_runs_last_hours?.since_hours ?? 36)}</span>時間）
               </h2>
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
                 表記: <span style={{ fontWeight: 800 }}>runs</span> / <span style={{ fontWeight: 800 }}>ins</span> /{' '}
@@ -166,10 +173,7 @@ export default function AdminSummaryPage() {
                         gap: 6,
                         width: '100%',
                         whiteSpace: 'nowrap',
-                        fontVariantNumeric: 'tabular-nums',
-                        fontFeatureSettings: '"tnum"',
-                        fontFamily:
-                          'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                        ...NUMERIC_STYLE,
                       }}
                       title={err > 0 ? `errors=${err}` : undefined}
                     >
@@ -348,7 +352,7 @@ export default function AdminSummaryPage() {
                         const u = Number(v?.unevaluated ?? 0)
                         const p = Number(v?.pending ?? 0)
                         return (
-                          <span style={{ whiteSpace: 'nowrap' }}>
+                          <span style={{ whiteSpace: 'nowrap', ...NUMERIC_STYLE }}>
                             <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0b5394' }}>{s}</span>
                             {u > 0 ? (
                               <>
@@ -415,7 +419,7 @@ export default function AdminSummaryPage() {
                     }
 
                     const totalRowCell = (s: number, u: number, p: number) => (
-                      <span style={{ whiteSpace: 'nowrap' }}>
+                      <span style={{ whiteSpace: 'nowrap', ...NUMERIC_STYLE }}>
                         <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0b5394' }}>{s}</span>
                         {u > 0 ? (
                           <>
@@ -532,7 +536,7 @@ export default function AdminSummaryPage() {
                         <td style={{ padding: '12px 16px', fontWeight: 600, color: '#212529', backgroundColor: '#f8f9fa' }}>{label}</td>
                         {stats.countries?.map((c: any) => (
                           <td key={c.country} style={{ padding: '12px 16px', textAlign: 'right', color: '#495057', borderLeft: '1px solid #e9ecef' }}>
-                            {perCountry(String(c.country))}
+                            <span style={NUMERIC_STYLE}>{perCountry(String(c.country))}</span>
                           </td>
                         ))}
                         <td
@@ -546,7 +550,7 @@ export default function AdminSummaryPage() {
                             borderLeft: '1px solid #e9ecef',
                           }}
                         >
-                          {total}
+                          <span style={NUMERIC_STYLE}>{total}</span>
                         </td>
                       </tr>
                     )
@@ -620,7 +624,7 @@ export default function AdminSummaryPage() {
                           <td style={{ padding: '10px 12px', fontWeight: 600, color: '#212529' }}>{label}</td>
                           {stats.countries?.map((c: any) => (
                             <td key={c.country} style={{ padding: '10px 12px', textAlign: 'right', color: '#6c757d', borderLeft: '1px solid #e9ecef' }}>
-                              {perCountry(String(c.country))}
+                              <span style={NUMERIC_STYLE}>{perCountry(String(c.country))}</span>
                             </td>
                           ))}
                           <td
@@ -633,7 +637,7 @@ export default function AdminSummaryPage() {
                               backgroundColor: '#f1f3f5',
                             }}
                           >
-                            {totalVal}
+                            <span style={NUMERIC_STYLE}>{totalVal}</span>
                           </td>
                         </tr>
                       )
@@ -702,10 +706,7 @@ export default function AdminSummaryPage() {
                         justifyContent: 'flex-end',
                         gap: 6,
                         width: '100%',
-                        fontVariantNumeric: 'tabular-nums',
-                        fontFeatureSettings: '"tnum"',
-                        fontFamily:
-                          'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                          ...NUMERIC_STYLE,
                       }}
                     >
                       <span style={{ fontWeight: 800, color: '#212529', minWidth: 28, textAlign: 'right' }}>{n}</span>
