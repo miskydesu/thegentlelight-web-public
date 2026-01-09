@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { AdminNav } from './_components/AdminNav'
 
 export const runtime = 'edge'
 
@@ -23,20 +24,9 @@ export default function AdminLayout({
             </a>
             <span className="tglPill">Admin</span>
           </div>
-          <nav className="tglNav">
-            <a href="/admin">ホーム</a>
-            <a href="/admin/jobs">ジョブ</a>
-            <a href="/admin/topics">トピック</a>
-            <a href="/admin/quotes">名言</a>
-            <a href="/admin/writers">ライター</a>
-            <a href="/admin/column-names">コラム名</a>
-            <a href="/admin/columns">コラム</a>
-            <a href="/admin/ai-runs">AI実行ログ</a>
-            <a href="/admin/job-logs">ジョブログ</a>
-            <a href="/admin/login" className="tglMuted">
-              ログイン
-            </a>
-          </nav>
+          <div className="tglNav">
+            <AdminNav />
+          </div>
         </div>
       </header>
       <div className="tglContainer">{children}</div>

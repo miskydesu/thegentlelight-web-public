@@ -18,7 +18,7 @@ export default function AdminLoginPage() {
     try {
       const res = await adminLogin(email.trim(), password)
       setAdminToken(res.token)
-      router.push('/admin/topics')
+      router.push('/admin')
     } catch (err: any) {
       setError(err?.message || 'ログインに失敗しました')
     } finally {

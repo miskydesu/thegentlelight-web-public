@@ -246,7 +246,7 @@ export default function AdminTopicDetailPage() {
   return (
     <main>
       <div className="tglMuted" style={{ marginBottom: 10, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <Link href={`/admin/topics?country=${country}`}>← topics</Link>
+        <Link href="/admin">← ホーム</Link>
         <button className="tglButton" onClick={() => void load()} disabled={busy}>
           {busy ? '読み込み中…' : '再読み込み'}
         </button>
