@@ -9,15 +9,14 @@ type NavItem = { href: string; label: string; muted?: boolean }
 const NAV: NavItem[] = [
   { href: '/admin', label: 'ホーム' },
   { href: '/admin/summary', label: 'サマリー' },
-  { href: '/admin/jobs', label: 'ジョブ' },
   { href: '/admin/topics', label: 'トピック' },
   { href: '/admin/quotes', label: '名言' },
   { href: '/admin/writers', label: 'ライター' },
   { href: '/admin/column-names', label: 'コラム名' },
   { href: '/admin/columns', label: 'コラム' },
+  { href: '/admin/jobs', label: 'ジョブ' },
   { href: '/admin/ai-runs', label: 'AI実行ログ' },
   { href: '/admin/job-logs', label: 'ジョブログ' },
-  { href: '/admin/login', label: 'ログイン', muted: true },
 ]
 
 function isActivePath(pathname: string, href: string): boolean {
