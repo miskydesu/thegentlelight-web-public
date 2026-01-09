@@ -812,6 +812,164 @@ export default function AdminSummaryPage() {
             </div>
           </section>
 
+          {/* 取得設定変更後（2026-01-10 06:50 JST以降）の country×category（new_topics / summarized_ready_topics） */}
+          <section
+            style={{
+              marginBottom: 32,
+              backgroundColor: '#fff',
+              borderRadius: '8px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              overflow: 'hidden',
+            }}
+          >
+            <div style={{ padding: '16px 20px', backgroundColor: '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
+              <h2 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 600, color: '#1a1a1a' }}>
+                トピック集計（取得設定変更後）
+              </h2>
+              <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.9rem' }}>
+                集計範囲: 日本時間（JST）{String(stats?.topic_metrics_by_country_category_since_acq_change?.since_jst ?? '2026-01-10 06:50')} 〜 現在
+              </div>
+              <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
+                表記: <span style={{ fontWeight: 800, color: '#212529' }}>new</span> / <span style={{ fontWeight: 700, color: '#0b5394' }}>ready</span> /{' '}
+                <span style={{ fontWeight: 500, color: '#8a6d3b' }}>%</span>
+              </div>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              {(() => {
+                const items = stats.topic_metrics_by_country_category_since_acq_change?.items ?? []
+                const countries = (stats.countries ?? []).map((c: any) => String(c.country))
+                // Keep display order: JP → CA → US → UK (stats.countries already in that order)
+                const countryCols: string[] = (countries.length ? countries : ['jp', 'ca', 'us', 'uk']) as string[]
+
+                const categories: string[] = Array.from(new Set<string>(items.map((x: any) => String(x.category)))).sort()
+                const byCatCountry = new Map<string, Map<string, { new_topics: number; ready: number }>>()
+                for (const it of items as any[]) {
+                  const cat = String(it.category)
+                  const c = String(it.country)
+                  const new_topics = Number(it.new_topics ?? 0)
+                  const ready = Number(it.summarized_ready_topics ?? 0)
+                  if (!byCatCountry.has(cat)) byCatCountry.set(cat, new Map())
+                  byCatCountry.get(cat)!.set(c, { new_topics, ready })
+                }
+
+                const cell = (v: { new_topics: number; ready: number } | null | undefined) => {
+                  const n = Number(v?.new_topics ?? 0)
+                  const r = Number(v?.ready ?? 0)
+                  const pct = n > 0 ? Math.round((r / n) * 100) : 0
+                  return (
+                    <span
+                      style={{
+                        whiteSpace: 'nowrap',
+                        display: 'inline-flex',
+                        justifyContent: 'flex-end',
+                        gap: 6,
+                        width: '100%',
+                        ...NUMERIC_STYLE,
+                      }}
+                    >
+                      <span style={{ fontWeight: 800, color: '#212529', minWidth: 28, textAlign: 'right' }}>{n}</span>
+                      <span style={{ color: '#adb5bd' }}>/</span>
+                      <span style={{ fontWeight: 800, color: '#0b5394', minWidth: 28, textAlign: 'right' }}>{r}</span>
+                      <span style={{ color: '#adb5bd' }}>/</span>
+                      <span style={{ fontWeight: 500, color: '#8a6d3b', minWidth: 40, textAlign: 'right' }}>{pct}%</span>
+                    </span>
+                  )
+                }
+
+                return (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem', tableLayout: 'fixed' }}>
+                    <colgroup>
+                      <col style={{ width: 220 }} />
+                      {countryCols.map((c: string) => (
+                        <col key={c} style={{ width: 160 }} />
+                      ))}
+                      <col style={{ width: 160 }} />
+                    </colgroup>
+                    <thead>
+                      <tr style={{ backgroundColor: '#f1f3f5', borderBottom: '2px solid #dee2e6' }}>
+                        <th
+                          style={{
+                            padding: '12px 16px',
+                            textAlign: 'left',
+                            fontWeight: 700,
+                            color: '#495057',
+                            fontSize: '0.9rem',
+                            backgroundColor: '#e9ecef',
+                          }}
+                        >
+                          category
+                        </th>
+                        {countryCols.map((c: string) => (
+                          <th
+                            key={c}
+                            style={{
+                              padding: '12px 16px',
+                              textAlign: 'center',
+                              fontWeight: 700,
+                              color: '#495057',
+                              fontSize: '0.9rem',
+                              borderLeft: '1px solid #e9ecef',
+                            }}
+                          >
+                            {renderCountryHeader(c)}
+                          </th>
+                        ))}
+                        <th
+                          style={{
+                            padding: '12px 16px',
+                            textAlign: 'right',
+                            fontWeight: 700,
+                            color: '#495057',
+                            fontSize: '0.9rem',
+                            borderLeft: '1px solid #e9ecef',
+                            backgroundColor: '#f1f3f5',
+                          }}
+                        >
+                          TOTAL
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {categories.map((cat: string, idx: number) => {
+                        const m = byCatCountry.get(cat) ?? new Map()
+                        const total = countryCols.reduce(
+                          (acc: { new_topics: number; ready: number }, c: string) => {
+                            const v = m.get(c)
+                            acc.new_topics += Number(v?.new_topics ?? 0)
+                            acc.ready += Number(v?.ready ?? 0)
+                            return acc
+                          },
+                          { new_topics: 0, ready: 0 }
+                        )
+                        return (
+                          <tr key={cat} style={{ backgroundColor: idx % 2 === 0 ? '#fff' : '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
+                            <td style={{ padding: '12px 16px', fontWeight: 800, color: '#212529' }}>{cat}</td>
+                            {countryCols.map((c: string) => (
+                              <td key={c} style={{ padding: '12px 16px', color: '#212529', textAlign: 'right', borderLeft: '1px solid #e9ecef' }}>
+                                {cell(m.get(c))}
+                              </td>
+                            ))}
+                            <td
+                              style={{
+                                padding: '12px 16px',
+                                color: '#212529',
+                                textAlign: 'right',
+                                borderLeft: '1px solid #e9ecef',
+                                backgroundColor: '#f1f3f5',
+                              }}
+                            >
+                              {cell(total)}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                )
+              })()}
+            </div>
+          </section>
+
           {/* failed日報 */}
           {/* NOTE: 既存の /admin の表示と同じ並び（下は必要最低限だけ残す） */}
           <div style={{ height: 10 }} />
