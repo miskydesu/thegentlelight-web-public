@@ -15,7 +15,10 @@ export default function robots(): MetadataRoute.Robots {
       rules: [
         {
           userAgent: '*',
-          disallow: '/',
+          // NOTE:
+          // - noindex 環境でも / をクロールできるようにする（Search Console の「ライブURLをテスト」で確認できる）
+          // - インデックスは HTML の meta robots（noindex）で制御する
+          allow: '/',
         },
       ],
       sitemap: sitemaps,
