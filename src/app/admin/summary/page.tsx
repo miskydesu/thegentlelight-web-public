@@ -288,7 +288,7 @@ export default function AdminSummaryPage() {
                 記事取得（取得設定変更後）
               </h2>
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
-                集計範囲: 日本時間（JST）{String(stats?.news_fetch_runs_since_acq_change?.since_jst ?? '2026-01-10 06:50')} 〜 現在
+                集計範囲: 日本時間（JST）{String(stats?.news_fetch_runs_since_acq_change?.since_jst ?? '2026-01-11 04:00')} 〜 現在
               </div>
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
                 表記:{' '}
@@ -993,7 +993,7 @@ export default function AdminSummaryPage() {
             </div>
           </section>
 
-          {/* 取得設定変更後（2026-01-10 06:50 JST以降）の country×category（new_topics / summarized_ready_topics） */}
+          {/* 取得設定変更後（2026-01-11 04:00 JST以降）の country×category（sources / new_topics / summarized_ready_topics） */}
           <section
             style={{
               marginBottom: 32,
@@ -1024,7 +1024,7 @@ export default function AdminSummaryPage() {
                 </div>
               ) : null}
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.9rem' }}>
-                集計範囲: 日本時間（JST）{String(stats?.topic_metrics_by_country_category_since_acq_change?.since_jst ?? '2026-01-10 06:50')} 〜 現在
+                集計範囲: 日本時間（JST）{String(stats?.topic_metrics_by_country_category_since_acq_change?.since_jst ?? '2026-01-11 04:00')} 〜 現在
               </div>
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
                 debug: first_seen_since_total=
@@ -1037,8 +1037,11 @@ export default function AdminSummaryPage() {
                 </span>
               </div>
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
-                表記: <span style={{ fontWeight: 800, color: '#212529' }}>new</span> / <span style={{ fontWeight: 700, color: '#0b5394' }}>ready</span> /{' '}
-                <span style={{ fontWeight: 500, color: '#8a6d3b' }}>%</span>
+                表記: <span style={{ fontWeight: 700, color: '#495057' }}>source</span> / <span style={{ fontWeight: 800, color: '#212529' }}>new</span> /{' '}
+                <span style={{ fontWeight: 700, color: '#0b5394' }}>ready</span> / <span style={{ fontWeight: 500, color: '#8a6d3b' }}>%</span>
+              </div>
+              <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.8rem' }}>
+                ※ <span style={{ fontWeight: 700, color: '#495057' }}>source</span> は保存された記事数（<span style={{ ...NUMERIC_STYLE, fontWeight: 700 }}>source_articles.fetched_at</span> 基準）です
               </div>
             </div>
             <div style={{ overflowX: 'auto' }}>
@@ -1051,17 +1054,19 @@ export default function AdminSummaryPage() {
                 const categoriesFromData: string[] = Array.from(new Set<string>(items.map((x: any) => String(x.category))))
                 const extraCategories = categoriesFromData.filter((c: string) => !SITE_CATEGORY_ORDER.includes(c)).sort()
                 const categories: string[] = [...SITE_CATEGORY_ORDER, ...extraCategories]
-                const byCatCountry = new Map<string, Map<string, { new_topics: number; ready: number }>>()
+                const byCatCountry = new Map<string, Map<string, { sources: number; new_topics: number; ready: number }>>()
                 for (const it of items as any[]) {
                   const cat = String(it.category)
                   const c = String(it.country)
+                  const sources = Number((it as any).sources ?? 0)
                   const new_topics = Number(it.new_topics ?? 0)
                   const ready = Number(it.summarized_ready_topics ?? 0)
                   if (!byCatCountry.has(cat)) byCatCountry.set(cat, new Map())
-                  byCatCountry.get(cat)!.set(c, { new_topics, ready })
+                  byCatCountry.get(cat)!.set(c, { sources, new_topics, ready })
                 }
 
-                const cell = (v: { new_topics: number; ready: number } | null | undefined) => {
+                const cell = (v: { sources: number; new_topics: number; ready: number } | null | undefined) => {
+                  const s = Number(v?.sources ?? 0)
                   const n = Number(v?.new_topics ?? 0)
                   const r = Number(v?.ready ?? 0)
                   const pct = n > 0 ? Math.round((r / n) * 100) : 0
@@ -1076,6 +1081,8 @@ export default function AdminSummaryPage() {
                         ...NUMERIC_STYLE,
                       }}
                     >
+                      <span style={{ fontWeight: 700, color: '#495057', minWidth: 30, textAlign: 'right' }}>{s}</span>
+                      <span style={{ color: '#adb5bd' }}>/</span>
                       <span style={{ fontWeight: 800, color: '#212529', minWidth: 28, textAlign: 'right' }}>{n}</span>
                       <span style={{ color: '#adb5bd' }}>/</span>
                       <span style={{ fontWeight: 800, color: '#0b5394', minWidth: 28, textAlign: 'right' }}>{r}</span>
@@ -1090,9 +1097,8 @@ export default function AdminSummaryPage() {
                     <colgroup>
                       <col style={{ width: 220 }} />
                       {countryCols.map((c: string) => (
-                        <col key={c} style={{ width: 160 }} />
+                        <col key={c} style={{ width: 210 }} />
                       ))}
-                      <col style={{ width: 160 }} />
                     </colgroup>
                     <thead>
                       <tr style={{ backgroundColor: '#f1f3f5', borderBottom: '2px solid #dee2e6' }}>
@@ -1123,33 +1129,11 @@ export default function AdminSummaryPage() {
                             {renderCountryHeader(c)}
                           </th>
                         ))}
-                        <th
-                          style={{
-                            padding: '12px 16px',
-                            textAlign: 'right',
-                            fontWeight: 700,
-                            color: '#495057',
-                            fontSize: '0.9rem',
-                            borderLeft: '1px solid #e9ecef',
-                            backgroundColor: '#f1f3f5',
-                          }}
-                        >
-                          TOTAL
-                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {categories.map((cat: string, idx: number) => {
                         const m = byCatCountry.get(cat) ?? new Map()
-                        const total = countryCols.reduce(
-                          (acc: { new_topics: number; ready: number }, c: string) => {
-                            const v = m.get(c)
-                            acc.new_topics += Number(v?.new_topics ?? 0)
-                            acc.ready += Number(v?.ready ?? 0)
-                            return acc
-                          },
-                          { new_topics: 0, ready: 0 }
-                        )
                         return (
                           <tr key={cat} style={{ backgroundColor: idx % 2 === 0 ? '#fff' : '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
                             <td style={{ padding: '12px 16px', fontWeight: 800, color: '#212529' }}>{cat}</td>
@@ -1158,17 +1142,6 @@ export default function AdminSummaryPage() {
                                 {cell(m.get(c))}
                               </td>
                             ))}
-                            <td
-                              style={{
-                                padding: '12px 16px',
-                                color: '#212529',
-                                textAlign: 'right',
-                                borderLeft: '1px solid #e9ecef',
-                                backgroundColor: '#f1f3f5',
-                              }}
-                            >
-                              {cell(total)}
-                            </td>
                           </tr>
                         )
                       })}

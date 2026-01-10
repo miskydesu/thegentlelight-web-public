@@ -13,6 +13,12 @@ import { SaveTopicButton } from '../../../../../components/topic/SaveTopicButton
 import { CACHE_POLICY } from '@/lib/cache-policy'
 // 表示はsoft一本（UX方針）
 
+function isApiNotFoundError(err: unknown): boolean {
+  const msg = String((err as any)?.message || err || '')
+  // fetchJson() throws: `API ${status} ...` so this catches the 404 path reliably.
+  return msg.includes('API 404') || msg.includes(' 404 ')
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -66,14 +72,31 @@ export default async function TopicPage({
   const lang: Locale = getLocaleForCountry(country)
   const gentle = getGentleFromSearchParams(searchParams)
 
-  const [data, sourcesData] = await Promise.all([
-    fetchJson<TopicDetailResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}${gentle ? '?gentle=1' : ''}`, {
+  let data: TopicDetailResponse
+  try {
+    data = await fetchJson<TopicDetailResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}${gentle ? '?gentle=1' : ''}`, {
       next: { revalidate: CACHE_POLICY.stable },
-    }),
-    fetchJson<TopicSourcesResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}/sources${gentle ? '?gentle=1' : ''}`, {
+    })
+  } catch (e) {
+    // Ensure a clean 404 page for deleted/hidden/nonexistent topics (e.g. Google indexed old URLs)
+    if (isApiNotFoundError(e)) return notFound()
+    throw e
+  }
+
+  // Sources are optional for rendering; if this fails, show the topic page with no sources.
+  let sourcesData: TopicSourcesResponse = { sources: [], meta: { is_partial: false } as any }
+  try {
+    sourcesData = await fetchJson<TopicSourcesResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}/sources${gentle ? '?gentle=1' : ''}`, {
       next: { revalidate: CACHE_POLICY.stable },
-    }),
-  ])
+    })
+  } catch (e) {
+    if (isApiNotFoundError(e)) {
+      // If sources endpoint returns 404, treat it as "no sources" rather than breaking the page.
+      sourcesData = { sources: [], meta: { is_partial: false } as any }
+    } else {
+      throw e
+    }
+  }
   const topic = data.topic
 
   const base = getSiteBaseUrl()
