@@ -18,6 +18,18 @@ export default function AdminSummaryPage() {
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
   }
 
+  // カテゴリは「データが0件で items が返ってこない」場合でも表示したいので固定順を持つ
+  const SITE_CATEGORY_ORDER: string[] = [
+    'science_earth',
+    'politics',
+    'health',
+    'technology',
+    'arts',
+    'business',
+    'sports',
+    'heartwarming',
+  ]
+
   const countryFlagEmoji = (country: string) => {
     const c = String(country ?? '').toLowerCase()
     switch (c) {
@@ -683,7 +695,9 @@ export default function AdminSummaryPage() {
                 // Keep display order: JP → CA → US → UK (stats.countries already in that order)
                 const countryCols: string[] = (countries.length ? countries : ['jp', 'ca', 'us', 'uk']) as string[]
 
-                const categories: string[] = Array.from(new Set<string>(items.map((x: any) => String(x.category)))).sort()
+                const categoriesFromData: string[] = Array.from(new Set<string>(items.map((x: any) => String(x.category))))
+                const extraCategories = categoriesFromData.filter((c: string) => !SITE_CATEGORY_ORDER.includes(c)).sort()
+                const categories: string[] = [...SITE_CATEGORY_ORDER, ...extraCategories]
                 const byCatCountry = new Map<string, Map<string, { new_topics: number; ready: number }>>()
                 for (const it of items as any[]) {
                   const cat = String(it.category)
@@ -841,7 +855,9 @@ export default function AdminSummaryPage() {
                 // Keep display order: JP → CA → US → UK (stats.countries already in that order)
                 const countryCols: string[] = (countries.length ? countries : ['jp', 'ca', 'us', 'uk']) as string[]
 
-                const categories: string[] = Array.from(new Set<string>(items.map((x: any) => String(x.category)))).sort()
+                const categoriesFromData: string[] = Array.from(new Set<string>(items.map((x: any) => String(x.category))))
+                const extraCategories = categoriesFromData.filter((c: string) => !SITE_CATEGORY_ORDER.includes(c)).sort()
+                const categories: string[] = [...SITE_CATEGORY_ORDER, ...extraCategories]
                 const byCatCountry = new Map<string, Map<string, { new_topics: number; ready: number }>>()
                 for (const it of items as any[]) {
                   const cat = String(it.category)
