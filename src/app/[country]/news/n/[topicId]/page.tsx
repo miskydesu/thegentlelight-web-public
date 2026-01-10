@@ -22,8 +22,9 @@ export async function generateMetadata({
   if (!isCountry(country)) return {}
 
   const lang: Locale = getLocaleForCountry(country)
-  const locale = lang === 'ja' ? 'ja' : 'en'
-  const siteName = 'The Gentle Light'
+  const isJa = lang === 'ja'
+  const brandSuffix = isJa ? 'やさしいニュース The Gentle Light' : 'Calm News The Gentle Light'
+  const sep = isJa ? '｜' : ' | '
 
   try {
     // トピックデータを取得（metadata生成用）
@@ -37,7 +38,7 @@ export async function generateMetadata({
     const canonicalPath = `/${country}${path}`
 
     return generateSEOMetadata({
-      title: `${t.title || `${country.toUpperCase()} News`}｜${siteName}`,
+      title: `${t.title || `${country.toUpperCase()} News`}${sep}${brandSuffix}`,
       description: t.summary || undefined,
       type: 'article',
       publishedTime: t.last_source_published_at || undefined,
@@ -46,7 +47,7 @@ export async function generateMetadata({
   } catch (error) {
     // エラー時は最小限のmetadataを返す
     return generateSEOMetadata({
-      title: [`${country.toUpperCase()} News`, siteName].join(' | '),
+      title: `${country.toUpperCase()} News${sep}${brandSuffix}`,
       canonical: canonicalUrl(`/${country}/news/n/${topicId}`),
     })
   }

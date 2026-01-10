@@ -99,37 +99,43 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
       url: `${base}/${country}/news`,
       lastModified: latestMeta || homeLastMod || now,
       changeFrequency: 'hourly',
-      priority: 0.9,
+      // ニュースカテゴリ（評価の受け皿）
+      priority: 0.85,
     },
     {
       url: `${base}/${country}/latest`,
       lastModified: latestMeta || homeLastMod || now,
       changeFrequency: 'hourly',
-      priority: 0.9,
+      // 最新一覧は補助的（news/categoryのほうを集約点にする）
+      priority: 0.6,
     },
     {
       url: `${base}/${country}/daily`,
       lastModified: dailyIndexLastMod || now,
       changeFrequency: 'daily',
-      priority: 0.8,
+      // 朝刊（入口）
+      priority: 0.9,
     },
     {
       url: `${base}/${country}/columns`,
       lastModified: now,
       changeFrequency: 'weekly',
-      priority: 0.6,
+      // コラム一覧（少数だが思想の核）
+      priority: 0.8,
     },
     {
       url: `${base}/${country}/quotes`,
       lastModified: now,
       changeFrequency: 'weekly',
-      priority: 0.6,
+      // 名言一覧（検索入口として強化）
+      priority: 0.8,
     },
     {
       url: `${base}/${country}/quotes/authors`,
       lastModified: now,
       changeFrequency: 'weekly',
-      priority: 0.4,
+      // 名言著者一覧（人物名検索のハブ）
+      priority: 0.7,
     }
   )
 
@@ -146,7 +152,8 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
       url: `${base}/${country}/category/${cat}`,
       lastModified: latestMeta || homeLastMod || now,
       changeFrequency: 'daily',
-      priority: 0.7,
+      // ニュースカテゴリ（評価の受け皿）
+      priority: 0.85,
     })
   }
 
@@ -190,7 +197,8 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
         url: `${base}/${country}/news/n/${t.topic_id}`,
         lastModified: getLastModForTopic(t),
         changeFrequency: 'daily',
-        priority: 0.7,
+        // ニュース詳細（量産枠）: 0.3〜0.4 に明確に下げる
+        priority: 0.35,
       })
     }
   } catch (e) {
@@ -209,7 +217,8 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
         url: `${base}/${country}/columns/${c.column_id}`,
         lastModified,
         changeFrequency: 'weekly',
-        priority: 0.6,
+        // コラム詳細（少数精鋭）
+        priority: 0.7,
       })
     }
   } catch (e) {
@@ -222,12 +231,26 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     const quotesResponse = await fetchJson<{ quotes: QuoteItem[]; meta: any }>(`/v1/${country}/quotes?limit=1000`, {
       next: { revalidate: CACHE_POLICY.meta },
     })
+    const authors = new Set<string>()
     for (const q of quotesResponse.quotes || []) {
+      const author = String((q as any)?.author_name || '').trim()
+      if (author) authors.add(author)
       quoteEntries.push({
         url: `${base}/${country}/quotes/${q.quote_id}`,
         lastModified: new Date(q.updated_at),
         changeFrequency: 'monthly',
-        priority: 0.5,
+        // 名言詳細（主役ではない）
+        priority: 0.4,
+      })
+    }
+
+    // 名言著者の名言（まとめ役）
+    for (const author of Array.from(authors)) {
+      quoteEntries.push({
+        url: `${base}/${country}/quotes/author/${encodeURIComponent(author)}`,
+        lastModified: now,
+        changeFrequency: 'weekly',
+        priority: 0.6,
       })
     }
   } catch (e) {
@@ -251,7 +274,8 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
         url: `${base}/${country}/daily/${day.dateLocal}`,
         lastModified: day.updatedAt ? new Date(day.updatedAt) : dayDate,
         changeFrequency: 'daily',
-        priority: 0.6,
+        // 朝刊（日付詳細）: 毎日の入口
+        priority: 0.9,
       })
     }
   } catch (e) {

@@ -17,6 +17,7 @@ type ColumnItem = {
 
 type QuoteItem = {
   quote_id: string
+  author_name: string | null
   updated_at: string
 }
 
@@ -76,7 +77,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           url: `${base}/${c.code}/news/n/${topic.topic_id}`,
           lastModified,
           changeFrequency: 'daily' as const,
-          priority: 0.7,
+          // ニュース詳細（量産枠）: 0.3〜0.4 に明確に下げる
+          priority: 0.35,
         })
       }
     } catch (error) {
@@ -85,13 +87,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // 3. Columns（公開分、上限1000件/国）
-  // 注意: columns/quotesのページが実装されていない場合はスキップ
-  // TODO: columns/quotesのページ実装後に有効化
-  /*
   for (const c of COUNTRIES) {
     try {
       const columnsResponse = await fetchJson<{ columns: ColumnItem[]; meta: any }>(
-        `${apiBase}/v1/${c.code}/columns?limit=1000`,
+        `/v1/${c.code}/columns?limit=1000`,
         { next: { revalidate: CACHE_POLICY.meta } } // キャッシュ（メタ系）
       )
 
@@ -101,7 +100,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           url: `${base}/${c.code}/columns/${column.column_id}`,
           lastModified,
           changeFrequency: 'weekly' as const,
-          priority: 0.6,
+          // コラム詳細（少数精鋭）
+          priority: 0.7,
         })
       }
     } catch (error) {
@@ -110,26 +110,40 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // 4. Quotes（公開分、上限1000件/国）
+  // - 名言詳細: 0.4
+  // - 名言著者ページ（quotes/author/{name}）: 0.6（まとめ役）
   for (const c of COUNTRIES) {
     try {
       const quotesResponse = await fetchJson<{ quotes: QuoteItem[]; meta: any }>(
-        `${apiBase}/v1/${c.code}/quotes?limit=1000`,
+        `/v1/${c.code}/quotes?limit=1000`,
         { next: { revalidate: CACHE_POLICY.meta } } // キャッシュ（メタ系）
       )
 
+      const authors = new Set<string>()
       for (const quote of quotesResponse.quotes) {
+        const author = String((quote as any)?.author_name || '').trim()
+        if (author) authors.add(author)
         entries.push({
           url: `${base}/${c.code}/quotes/${quote.quote_id}`,
           lastModified: new Date(quote.updated_at),
           changeFrequency: 'monthly' as const,
-          priority: 0.5,
+          priority: 0.4,
+        })
+      }
+
+      // 著者別名言一覧（人物名検索のハブ → その先のまとめ役）
+      for (const author of Array.from(authors)) {
+        entries.push({
+          url: `${base}/${c.code}/quotes/author/${encodeURIComponent(author)}`,
+          lastModified: now,
+          changeFrequency: 'weekly' as const,
+          priority: 0.6,
         })
       }
     } catch (error) {
       console.error(`Failed to fetch quotes for ${c.code}:`, error)
     }
   }
-  */
 
   // 2. Morning Briefing（朝刊、status=ready、過去30日分）
   // - 日付詳細は updatedAt があればそれを lastmod にする
@@ -161,7 +175,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             url: `${base}/${c.code}/daily/${day.dateLocal}`,
             lastModified: day.updatedAt ? new Date(day.updatedAt) : dayDate,
             changeFrequency: 'daily' as const,
-            priority: 0.6,
+            // 朝刊（日付詳細）: 毎日の入口として 0.9
+            priority: 0.9,
           })
         }
       }
@@ -180,6 +195,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     fixedRoutes.push(`/${c.code}/news`)
     fixedRoutes.push(`/${c.code}/latest`)
     fixedRoutes.push(`/${c.code}/daily`)
+    fixedRoutes.push(`/${c.code}/daily/today`)
     fixedRoutes.push(`/${c.code}/about`)
     fixedRoutes.push(`/${c.code}/columns`)
     fixedRoutes.push(`/${c.code}/quotes`)
@@ -218,27 +234,38 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         } else if (rest === '/news') {
           lastModified = latestLastModByCountry.get(cc) || homeLastModByCountry.get(cc) || now
           changeFrequency = 'hourly'
-          priority = 0.9
+          // ニュースカテゴリ（評価の受け皿）
+          priority = 0.85
         } else if (rest === '/latest') {
           lastModified = latestLastModByCountry.get(cc) || homeLastModByCountry.get(cc) || now
           changeFrequency = 'hourly'
-          priority = 0.9
+          // 最新一覧は補助的（news/category のほうを集約点にする）
+          priority = 0.6
         } else if (rest === '/daily') {
           lastModified = dailyIndexLastModByCountry.get(cc) || now
           changeFrequency = 'daily'
-          priority = 0.8
+          // 朝刊（入口）
+          priority = 0.9
+        } else if (rest === '/daily/today') {
+          lastModified = dailyIndexLastModByCountry.get(cc) || now
+          changeFrequency = 'daily'
+          // 朝刊（今日・入口）
+          priority = 0.9
         } else if (rest === '/columns') {
           lastModified = now
           changeFrequency = 'weekly'
-          priority = 0.6
+          // コラム一覧（少数だが思想の核）
+          priority = 0.8
         } else if (rest === '/quotes') {
           lastModified = now
           changeFrequency = 'weekly'
-          priority = 0.6
+          // 名言一覧（検索入口として強化）
+          priority = 0.8
         } else if (rest === '/quotes/authors') {
           lastModified = now
           changeFrequency = 'weekly'
-          priority = 0.4
+          // 名言著者一覧（人物名検索のハブ）
+          priority = 0.7
         } else if (rest === '/legal') {
           lastModified = now
           changeFrequency = 'yearly'
@@ -246,7 +273,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         } else if (rest.startsWith('/category/')) {
           lastModified = latestLastModByCountry.get(cc) || homeLastModByCountry.get(cc) || now
           changeFrequency = 'daily'
-          priority = 0.7
+          // ニュースカテゴリ（評価の受け皿）
+          priority = 0.85
         }
       }
     }
