@@ -42,6 +42,18 @@ export default function AdminJobLogsPage() {
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
   }
 
+  // Table cell spacing: keep a clear visual gap between duration(ms) and job name.
+  const MS_CELL_STYLE: React.CSSProperties = {
+    ...NUMERIC_STYLE,
+    paddingRight: 18,
+    whiteSpace: 'nowrap',
+  }
+  const NAME_CELL_STYLE: React.CSSProperties = {
+    paddingLeft: 18,
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    fontSize: 12.5,
+  }
+
   const load = async () => {
     setError(null)
     setBusy(true)
@@ -215,8 +227,12 @@ export default function AdminJobLogsPage() {
                   <th align="left">country</th>
                   <th align="left">kind</th>
                   <th align="left">status</th>
-                  <th align="right">ms</th>
-                  <th align="left">name</th>
+                  <th align="right" style={{ paddingRight: 18 }}>
+                    ms
+                  </th>
+                  <th align="left" style={{ paddingLeft: 18 }}>
+                    name
+                  </th>
                   <th align="left">summary</th>
                 </tr>
               </thead>
@@ -234,10 +250,10 @@ export default function AdminJobLogsPage() {
                       <td>{r.country ?? '-'}</td>
                       <td>{r.kind}</td>
                       <td>{r.status}</td>
-                      <td align="right" style={NUMERIC_STYLE}>
+                      <td align="right" style={MS_CELL_STYLE}>
                         {typeof r.duration_ms === 'number' ? r.duration_ms.toLocaleString() : '-'}
                       </td>
-                      <td style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace', fontSize: 12.5 }}>
+                      <td style={NAME_CELL_STYLE}>
                         {r.name}
                       </td>
                       <td>{r.summary ?? '-'}</td>
