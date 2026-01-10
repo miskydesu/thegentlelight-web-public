@@ -444,7 +444,8 @@ export default function AdminColumnDetailPage() {
               </button>
             </div>
             <div style={{ color: '#6c757d', fontSize: '0.8rem' }}>
-              ※保存時にDBへ反映されます。空の場合は published_at=null（未設定）になります
+              ※保存時にDBへ反映されます。空の場合は published_at=null（未設定）になります<br />
+              ※status=published かつ published_at が未来の場合は **予約投稿** 扱いになり、その日時までは一般公開ページに表示されません
             </div>
           </label>
 

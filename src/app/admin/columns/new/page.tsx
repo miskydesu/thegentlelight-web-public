@@ -359,7 +359,8 @@ export default function AdminColumnNewPage() {
                 </button>
               </div>
               <div style={{ color: '#6c757d', fontSize: '0.8rem' }}>
-                ※空の場合、status=published なら作成時に自動で「今」を入れます（後から編集で変更できます）
+                ※空の場合、status=published なら作成時に自動で「今」を入れます（後から編集で変更できます）<br />
+                ※published_at が未来の場合は **予約投稿** 扱いになり、その日時までは一般公開ページに表示されません
               </div>
             </label>
             <label style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

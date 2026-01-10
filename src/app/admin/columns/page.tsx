@@ -43,6 +43,14 @@ export default function AdminColumnsPage() {
   const [tmpScanResult, setTmpScanResult] = useState<AdminColumnsTmpScanResult | null>(null)
   const [tmpResult, setTmpResult] = useState<AdminColumnsTmpCleanupResult | null>(null)
 
+  const isScheduled = (c: any): boolean => {
+    if (!c || c.status !== 'published') return false
+    if (!c.published_at) return false
+    const t = new Date(String(c.published_at)).getTime()
+    if (!Number.isFinite(t)) return false
+    return t > Date.now()
+  }
+
   const load = async () => {
     setError(null)
     setBusy(true)
@@ -874,21 +882,39 @@ export default function AdminColumnsPage() {
                       <span
                         style={{
                           padding: '4px 10px',
-                          backgroundColor: c.status === 'published' ? '#d4edda' : c.status === 'archived' ? '#e2e3e5' : '#fff3cd',
-                          color: c.status === 'published' ? '#155724' : c.status === 'archived' ? '#383d41' : '#856404',
+                          backgroundColor: isScheduled(c)
+                            ? '#e7f1ff'
+                            : c.status === 'published'
+                              ? '#d4edda'
+                              : c.status === 'archived'
+                                ? '#e2e3e5'
+                                : '#fff3cd',
+                          color: isScheduled(c) ? '#084298' : c.status === 'published' ? '#155724' : c.status === 'archived' ? '#383d41' : '#856404',
                           borderRadius: '999px',
                           fontWeight: 600,
                           fontFamily: 'monospace',
                         }}
                       >
-                        {c.status === 'published' ? '公開（published）' : c.status === 'archived' ? 'アーカイブ（archived）' : '下書き（draft）'}
+                        {isScheduled(c)
+                          ? '予約（scheduled）'
+                          : c.status === 'published'
+                            ? '公開（published）'
+                            : c.status === 'archived'
+                              ? 'アーカイブ（archived）'
+                              : '下書き（draft）'}
                       </span>
                     </td>
                     <td style={{ padding: '12px 16px', fontSize: '0.85rem', color: '#6c757d', fontFamily: 'monospace' }}>
                       {c.slug ? `/${c.slug}` : '-'}
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.85rem', color: '#6c757d' }}>
-                      {c.published_at ? new Date(c.published_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '-'}
+                      {c.published_at ? (
+                        <span style={{ color: isScheduled(c) ? '#084298' : '#6c757d', fontWeight: isScheduled(c) ? 700 : 400 }}>
+                          {new Date(c.published_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}
+                        </span>
+                      ) : (
+                        '-'
+                      )}
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.85rem', color: '#6c757d' }}>
                       {c.updated_at ? new Date(c.updated_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '-'}

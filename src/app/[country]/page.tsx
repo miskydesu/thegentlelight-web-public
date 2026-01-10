@@ -40,9 +40,12 @@ export async function generateMetadata({
   const hreflang = generateHreflang('')
 
   const isJa = country === 'jp'
+  // IMPORTANT:
+  // 国別トップ（/[country]）だけは title の順序を固定したい。
+  // layout.tsx の title.template（`%s | ${suffix}`）を適用させず、absolute を使う。
   const title = isJa
-    ? 'やさしく、静かに世界を知るためのニュースサイト'
-    : 'Calm News Without Anxiety'
+    ? 'やさしいニュース The Gentle Light | やさしく、静かに世界を知るためのニュースサイト'
+    : 'Calm News The Gentle Light | Calm News Without Anxiety'
   const description = isJa
     ? 'やさしいニュース。煽りがない穏やかな言葉に編集したニュースをお届けする、やさしいニュースサイト。'
     : "Gentle news for your mental health. World news without doomscrolling, anxiety, or sensationalism. Calm daily briefings that keep you informed."
@@ -71,7 +74,10 @@ export async function generateMetadata({
   })
 
   // 国別 layout で title.template を出し分けるため、ここでは文字列 title をそのまま返す
-  return baseMeta
+  return {
+    ...baseMeta,
+    title: { absolute: title },
+  }
 }
 
 export default async function CountryHome({
