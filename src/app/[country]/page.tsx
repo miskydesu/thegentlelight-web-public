@@ -156,7 +156,7 @@ export default async function CountryHome({
 
       <main>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
-          <h1 style={{ fontSize: '1.5rem' }}>{country === 'jp' ? '穏やかに世界を知る' : 'Gentle World News'}</h1>
+          <h1 style={{ fontSize: '1.5rem' }}>{country === 'jp' ? 'やさしいニュース トップ' : 'Calm News Top'}</h1>
           {isPartial ? (
             <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>
           ) : (

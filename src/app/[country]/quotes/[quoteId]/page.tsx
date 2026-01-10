@@ -64,8 +64,8 @@ export async function generateMetadata({ params }: { params: { country: string; 
           : 'A calm look at the meaning and context behind this quote.'
         : '')
 
-    // 要望: title/description の先頭に著者名を入れる（著者がある場合）
-    const title = author ? `${author}｜${titleCore}｜${siteName}` : `${titleCore}｜${siteName}`
+    // 要望: 名言（=引用文/名言）→ 著者 → サイト名 の順にする（著者がある場合）
+    const title = author ? `${titleCore}｜${author}｜${siteName}` : `${titleCore}｜${siteName}`
     const desc = author
       ? `${author}${source ? ` / ${source}` : ''}：${descBody}`.trim()
       : descBody

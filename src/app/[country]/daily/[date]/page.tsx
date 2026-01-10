@@ -16,16 +16,22 @@ import { CACHE_POLICY } from '@/lib/cache-policy'
 export async function generateMetadata({ params }: { params: { country: string; date: string } }) {
   const { country, date } = params
   const canonical = canonicalUrl(`/${country}/daily/${date}`)
-  const siteName = 'The Gentle Light'
   const isJa = country === 'jp'
 
   // country不正・日付不正は最小限（notFoundはpage側で処理）
   if (!isCountry(country) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return { title: `${siteName}`, alternates: { canonical } }
+    return { title: { absolute: 'The Gentle Light' }, alternates: { canonical } }
   }
 
   return {
-    title: isJa ? `${date}の朝刊｜${siteName}` : `Daily Briefing - ${date} | ${siteName}`,
+    // NOTE:
+    // 国別layout側の title template（"... | やさしいニュース The Gentle Light" 等）と二重化しないよう、
+    // このページは absolute で固定する。
+    title: {
+      absolute: isJa
+        ? `${date}の朝刊｜やさしいニュース The Gentle Light`
+        : `Daily Briefing - ${date} | Calm News The Gentle Light`,
+    },
     description: isJa
       ? `${date}の主要ニュースを静かな言葉でまとめた朝刊。不安を感じずに世界を知る。`
       : `Daily news briefing for ${date}. Calm, fact-based summary of world events without sensationalism or anxiety.`,
