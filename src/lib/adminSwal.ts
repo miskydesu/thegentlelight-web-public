@@ -1,12 +1,6 @@
-type SwalModule = typeof import('sweetalert2')
-
-async function getSwal() {
-  const mod: SwalModule = await import('sweetalert2')
-  return mod.default
-}
+import Swal from 'sweetalert2'
 
 export async function swalError(message: string, title = 'エラー（Error）') {
-  const Swal = await getSwal()
   await Swal.fire({
     icon: 'error',
     title,
@@ -16,7 +10,6 @@ export async function swalError(message: string, title = 'エラー（Error）')
 }
 
 export async function swalInfo(message: string, title = 'お知らせ（Info）') {
-  const Swal = await getSwal()
   await Swal.fire({
     icon: 'info',
     title,
@@ -26,7 +19,6 @@ export async function swalInfo(message: string, title = 'お知らせ（Info）'
 }
 
 export async function swalSuccess(message: string, title = '完了（Done）') {
-  const Swal = await getSwal()
   await Swal.fire({
     icon: 'success',
     title,
@@ -36,7 +28,6 @@ export async function swalSuccess(message: string, title = '完了（Done）') {
 }
 
 export async function swalConfirm(opts: { title: string; text: string; confirmText?: string; cancelText?: string }) {
-  const Swal = await getSwal()
   const res = await Swal.fire({
     icon: 'warning',
     title: opts.title,
@@ -51,7 +42,6 @@ export async function swalConfirm(opts: { title: string; text: string; confirmTe
 }
 
 export async function swalLoading(title = '処理中…', text = 'しばらくお待ちください') {
-  const Swal = await getSwal()
   Swal.fire({
     title,
     text,
@@ -64,7 +54,6 @@ export async function swalLoading(title = '処理中…', text = 'しばらく�
 }
 
 export async function swalClose() {
-  const Swal = await getSwal()
   Swal.close()
 }
 

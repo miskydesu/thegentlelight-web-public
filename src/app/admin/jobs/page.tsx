@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { adminFetchJson, clearAdminToken } from '@/lib/tglAdminApi'
 import type { Country } from '@/lib/tglApi'
-import { swalClose, swalError, swalLoading, swalSuccess } from '@/lib/adminSwal'
+import { swalClose, swalConfirm, swalError, swalLoading, swalSuccess } from '@/lib/adminSwal'
 
 type JobsResult = { status: string; result?: any; error?: string; message?: string }
 
@@ -59,7 +59,7 @@ export default function AdminJobsPage() {
   // news queues
   const [queues, setQueues] = useState<NewsQueuesResponse['items']>([])
   const [queueId, setQueueId] = useState<string>('')
-  const [queueConfirm, setQueueConfirm] = useState<boolean>(false)
+  // NOTE: 重いジョブなので明示confirmを挟む（checkboxではなくダイアログで）
 
   const primaryCountry: Country = countries[0] ?? 'jp'
 
@@ -147,14 +147,22 @@ export default function AdminJobsPage() {
       // 初回は国に合うものを自動選択
       const first = (data.items ?? []).find((x) => x.queue_id.includes(`:${primaryCountry}`))
       if (first && !queueId) setQueueId(first.queue_id)
+      return {
+        status: 'ok',
+        kind: 'news_queues',
+        count: (data.items ?? []).length,
+        generated_at: data?.meta?.generated_at ?? null,
+        example: first?.queue_id ?? (data.items?.[0]?.queue_id ?? null),
+      }
     } catch (err: any) {
       const msg = err?.message || '取得に失敗しました'
       if (String(msg).includes(' 401 ') || String(msg).includes(' 403 ')) {
         clearAdminToken()
         router.push('/admin/login')
-        return
+        return { status: 'redirected', kind: 'news_queues', message: msg }
       }
       setError(msg)
+      return { status: 'error', kind: 'news_queues', message: msg }
     }
   }
 
@@ -189,6 +197,13 @@ export default function AdminJobsPage() {
     await swalLoading('実行中…', jobLabel)
     try {
       const r = await fn()
+      if (r?.status === 'skipped') {
+        await swalClose()
+        const reason = String(r?.reason || r?.message || '')
+        await swalError(reason || 'スキップされました（すでに実行中の可能性があります）', `${jobLabel}（SKIPPED）`)
+        setLastResult(r)
+        return
+      }
       setLastResult(r)
       await swalClose()
       await swalSuccess('完了しました', jobLabel)
@@ -285,15 +300,25 @@ export default function AdminJobsPage() {
               </select>
               <button
                 className="tglButton"
-                disabled={busyKey === 'queue' || !queueId || !queueConfirm}
+                disabled={busyKey === 'queue' || !queueId}
                 onClick={() =>
-                  void run('queue', async () => {
-                    const parts = String(queueId).split(':')
-                    const qCountry = parts[1] as Country | undefined
-                    const qId = String(queueId)
-                  const path = `/admin/v1/${encodeURIComponent(qCountry || primaryCountry)}/news/queues/${encodeURIComponent(qId)}/run-admin`
-                    return await adminFetchJson<JobsResult>(path, { method: 'POST', body: JSON.stringify({ confirm: true }) })
-                  })
+                  void (async () => {
+                    const ok = await swalConfirm({
+                      title: 'News Queue を実行しますか？',
+                      text: 'fetch + ingest + topicize を実行します（重い処理です）',
+                      confirmText: '実行（OK）',
+                      cancelText: 'キャンセル',
+                    })
+                    if (!ok) return
+
+                    await run('queue', async () => {
+                      const parts = String(queueId).split(':')
+                      const qCountry = parts[1] as Country | undefined
+                      const qId = String(queueId)
+                      const path = `/admin/v1/${encodeURIComponent(qCountry || primaryCountry)}/news/queues/${encodeURIComponent(qId)}/run-admin`
+                      return await adminFetchJson<JobsResult>(path, { method: 'POST', body: JSON.stringify({ confirm: true }) })
+                    })
+                  })()
                 }
               >
                 {busyKey === 'queue' ? '実行中…' : '実行'}
@@ -306,10 +331,7 @@ export default function AdminJobsPage() {
               </div>
             ) : null}
 
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--muted)', fontSize: 13 }}>
-              <input type="checkbox" checked={queueConfirm} onChange={(e) => setQueueConfirm(e.target.checked)} />
-              confirm（意図した実行です）
-            </label>
+            <div className="tglMuted" style={{ fontSize: 13 }}>実行前に確認ダイアログが出ます</div>
 
             <button className="tglButton" disabled={busyKey === 'reloadQueues'} onClick={() => void run('reloadQueues', loadQueues)} style={{ width: 'fit-content' }}>
               {busyKey === 'reloadQueues' ? '更新中…' : 'キュー一覧を更新'}

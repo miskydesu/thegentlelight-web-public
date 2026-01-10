@@ -11,6 +11,30 @@ export const runtime = 'edge'
 // stg/dev/local はデフォルトで noindex（誤インデックス防止）
 const isNoindex = process.env.ROBOTS_NOINDEX === 'true' || !isProdSite()
 const base = getSiteBaseUrl()
+function isLocalhostBaseUrl(siteBaseUrl: string): boolean {
+  try {
+    const u = siteBaseUrl.includes('://') ? new URL(siteBaseUrl) : new URL(`https://${siteBaseUrl}`)
+    const host = u.hostname.toLowerCase()
+    return host === 'localhost' || host === '127.0.0.1'
+  } catch {
+    return false
+  }
+}
+
+const appEnv = (process.env.APP_ENV || '').toLowerCase()
+const faviconIconUrl =
+  // ローカル開発
+  process.env.NODE_ENV === 'development' || isLocalhostBaseUrl(base)
+    ? '/icon_dev.svg'
+    : // Cloudflare等で明示される環境
+      appEnv === 'stg'
+      ? '/icon_stg.svg'
+      : appEnv === 'prod'
+        ? '/icon.svg'
+        : // フォールバック（host判定）
+          !isProdSite()
+          ? '/icon_stg.svg'
+          : '/icon.svg'
 
 export const metadata: Metadata = {
   metadataBase: new URL(base),
@@ -21,8 +45,8 @@ export const metadata: Metadata = {
     canonical: base,
   },
   icons: {
-    // NOTE: 本番用のシンボルマークに差し替える場合は public/icon.svg を置き換える
-    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+    // NOTE: favicon は環境別に出し分け（dev: icon_dev.svg / stg: icon_stg.svg / prod: icon.svg）
+    icon: [{ url: faviconIconUrl, type: 'image/svg+xml' }],
   },
   openGraph: {
     title: 'The Gentle Light',

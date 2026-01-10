@@ -36,6 +36,12 @@ export default function AdminJobLogsPage() {
   const [limit, setLimit] = useState<number>(200)
   const [data, setData] = useState<JobLogsResponse | null>(null)
 
+  const NUMERIC_STYLE: React.CSSProperties = {
+    fontVariantNumeric: 'tabular-nums',
+    fontFeatureSettings: '"tnum"',
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  }
+
   const load = async () => {
     setError(null)
     setBusy(true)
@@ -192,7 +198,7 @@ export default function AdminJobLogsPage() {
           }}
         />
         <div className="tglMuted" style={{ marginTop: 8, fontSize: 12 }}>
-          generated_at(JST): {data?.meta?.generated_at ? fmtJst(data.meta.generated_at) : '-'}
+          generated_at(JST): <span style={NUMERIC_STYLE}>{data?.meta?.generated_at ? fmtJst(data.meta.generated_at) : '-'}</span>
         </div>
       </section>
 
@@ -224,11 +230,13 @@ export default function AdminJobLogsPage() {
                 ) : (
                   (data?.items || []).map((r) => (
                     <tr key={`${r.kind}:${r.id}`}>
-                      <td>{fmtJst(r.started_at)}</td>
+                      <td style={NUMERIC_STYLE}>{fmtJst(r.started_at)}</td>
                       <td>{r.country ?? '-'}</td>
                       <td>{r.kind}</td>
                       <td>{r.status}</td>
-                      <td align="right">{typeof r.duration_ms === 'number' ? r.duration_ms.toLocaleString() : '-'}</td>
+                      <td align="right" style={NUMERIC_STYLE}>
+                        {typeof r.duration_ms === 'number' ? r.duration_ms.toLocaleString() : '-'}
+                      </td>
                       <td style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace', fontSize: 12.5 }}>
                         {r.name}
                       </td>

@@ -12,6 +12,12 @@ export function getSiteBaseUrl(): string {
  * - stg/dev/local は誤ってインデックスされないよう noindex をデフォルトにする
  */
 export function isProdSite(): boolean {
+  // Cloudflare/Vercelなどで環境を明示できる場合は、それを最優先する
+  // 想定: APP_ENV=prod | stg
+  const appEnv = (process.env.APP_ENV || '').toLowerCase()
+  if (appEnv === 'prod') return true
+  if (appEnv === 'stg') return false
+
   const base = getSiteBaseUrl()
   try {
     const u = base.includes('://') ? new URL(base) : new URL(`https://${base}`)
