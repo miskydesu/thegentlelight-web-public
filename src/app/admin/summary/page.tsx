@@ -147,11 +147,12 @@ export default function AdminSummaryPage() {
           >
             <div style={{ padding: '16px 20px', backgroundColor: '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
               <h2 style={{ fontSize: '1.15rem', margin: 0, fontWeight: 600, color: '#1a1a1a' }}>
-                News取得（直近<span style={NUMERIC_STYLE}>{Number(stats?.news_fetch_runs_last_hours?.since_hours ?? 36)}</span>時間）
+                記事取得（直近<span style={NUMERIC_STYLE}>{Number(stats?.news_fetch_runs_last_hours?.since_hours ?? 36)}</span>時間）
               </h2>
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
-                表記: <span style={{ fontWeight: 800 }}>runs</span> / <span style={{ fontWeight: 800 }}>ins</span> /{' '}
-                <span style={{ fontWeight: 800 }}>topics</span>
+                表記:{' '}
+                <span style={{ fontWeight: 800, color: '#495057' }}>runs</span> / <span style={{ fontWeight: 800, color: '#0b5394' }}>ins</span> /{' '}
+                <span style={{ fontWeight: 800, color: '#212529' }}>createdTopics</span>
               </div>
             </div>
             <div style={{ overflowX: 'auto' }}>
@@ -175,7 +176,7 @@ export default function AdminSummaryPage() {
                 const cell = (v?: { runs: number; inserted: number; topicize_createdTopics: number; error: number }) => {
                   const runs = Number(v?.runs ?? 0)
                   const ins = Number(v?.inserted ?? 0)
-                  const topics = Number(v?.topicize_createdTopics ?? 0)
+                  const createdTopics = Number(v?.topicize_createdTopics ?? 0)
                   const err = Number(v?.error ?? 0)
                   return (
                     <span
@@ -193,7 +194,7 @@ export default function AdminSummaryPage() {
                       <span style={{ color: '#adb5bd' }}>/</span>
                       <span style={{ minWidth: 24, textAlign: 'right', color: '#0b5394', fontWeight: 800 }}>{ins}</span>
                       <span style={{ color: '#adb5bd' }}>/</span>
-                      <span style={{ minWidth: 24, textAlign: 'right', color: '#212529', fontWeight: 800 }}>{topics}</span>
+                      <span style={{ minWidth: 24, textAlign: 'right', color: '#212529', fontWeight: 800 }}>{createdTopics}</span>
                     </span>
                   )
                 }
@@ -284,7 +285,7 @@ export default function AdminSummaryPage() {
           >
             <div style={{ padding: '16px 20px', backgroundColor: '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
               <h2 style={{ fontSize: '1.15rem', margin: 0, fontWeight: 600, color: '#1a1a1a' }}>
-                News取得（取得設定変更後）
+                記事取得（取得設定変更後）
               </h2>
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
                 集計範囲: 日本時間（JST）{String(stats?.news_fetch_runs_since_acq_change?.since_jst ?? '2026-01-10 06:50')} 〜 現在
@@ -294,6 +295,9 @@ export default function AdminSummaryPage() {
                 <span style={{ fontWeight: 800, color: '#495057' }}>fetched</span> / <span style={{ fontWeight: 800, color: '#0b5394' }}>ins</span> /{' '}
                 <span style={{ fontWeight: 800, color: '#6c757d' }}>upd</span> / <span style={{ fontWeight: 800, color: '#212529' }}>topics</span>{' '}
                 <span style={{ color: '#adb5bd' }}>(runs)</span>
+              </div>
+              <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.8rem' }}>
+                ※ <span style={{ fontWeight: 800, color: '#212529' }}>topics</span> は「記事数」ではなく topicize の <span style={{ fontWeight: 800, color: '#212529' }}>createdTopics</span>（新規トピック作成数）です
               </div>
             </div>
             <div style={{ overflowX: 'auto' }}>
@@ -331,7 +335,7 @@ export default function AdminSummaryPage() {
                   const fetched = Number((v as any)?.fetched ?? 0)
                   const ins = Number(v?.inserted ?? 0)
                   const upd = Number((v as any)?.updated ?? 0)
-                  const topics = Number(v?.topicize_createdTopics ?? 0)
+                  const createdTopics = Number(v?.topicize_createdTopics ?? 0)
                   const err = Number(v?.error ?? 0)
                   return (
                     <span
@@ -351,7 +355,7 @@ export default function AdminSummaryPage() {
                       <span style={{ color: '#adb5bd' }}>/</span>
                       <span style={{ minWidth: 26, textAlign: 'right', color: '#6c757d', fontWeight: 700 }}>{upd}</span>
                       <span style={{ color: '#adb5bd' }}>/</span>
-                      <span style={{ minWidth: 26, textAlign: 'right', color: '#212529', fontWeight: 800 }}>{topics}</span>
+                      <span style={{ minWidth: 26, textAlign: 'right', color: '#212529', fontWeight: 800 }}>{createdTopics}</span>
                       <span style={{ color: '#adb5bd' }}>(</span>
                       <span style={{ minWidth: 18, textAlign: 'right', color: '#adb5bd' }}>{runs}</span>
                       <span style={{ color: '#adb5bd' }}>)</span>
