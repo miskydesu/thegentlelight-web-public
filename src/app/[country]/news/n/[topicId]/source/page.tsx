@@ -5,6 +5,7 @@ import { canonicalUrl } from '../../../../../../lib/seo'
 import { getLocaleForCountry } from '../../../../../../lib/i18n'
 import { getGentleFromSearchParams } from '../../../../../../lib/view-switch'
 import { CACHE_POLICY } from '@/lib/cache-policy'
+import { ExternalLinkWithConfirm } from '@/components/ExternalLinkWithConfirm'
 
 export function generateMetadata({ params }: { params: { country: string; topicId: string } }) {
   const { country, topicId } = params
@@ -52,7 +53,7 @@ export default async function TopicSourcesPage({
       {data.sources?.length ? (
         <div className="tglList">
           {data.sources.map((s) => (
-            <a key={s.source_id} className="tglRow" href={s.url} target="_blank" rel="noreferrer">
+            <ExternalLinkWithConfirm key={s.source_id} className="tglRow" href={s.url} isJa={isJa}>
               <div className="tglRowTitle">{s.title}</div>
               <div className="tglRowMeta">
                 {(() => {
@@ -62,7 +63,7 @@ export default async function TopicSourcesPage({
                 {s.published_at ? <span>{new Date(s.published_at).toLocaleString()}</span> : null}
                 <span className="tglMuted">{isJa ? '外部サイトで開く →' : 'Open source →'}</span>
               </div>
-            </a>
+            </ExternalLinkWithConfirm>
           ))}
         </div>
       ) : (

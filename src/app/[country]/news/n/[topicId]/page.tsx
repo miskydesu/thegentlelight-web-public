@@ -11,6 +11,7 @@ import { getCategoryBadgeTheme, getCategoryLabel } from '../../../../../lib/cate
 import styles from './topic.module.css'
 import { SaveTopicButton } from '../../../../../components/topic/SaveTopicButton'
 import { CACHE_POLICY } from '@/lib/cache-policy'
+import { ExternalLinkWithConfirm } from '@/components/ExternalLinkWithConfirm'
 // 表示はsoft一本（UX方針）
 
 function isApiNotFoundError(err: unknown): boolean {
@@ -228,7 +229,7 @@ export default async function TopicPage({
             {sources.length ? (
               <div className={styles.sourceList}>
                 {sources.map((s) => (
-                  <a key={s.source_id} className={styles.sourceItem} href={s.url} target="_blank" rel="noreferrer">
+                  <ExternalLinkWithConfirm key={s.source_id} className={styles.sourceItem} href={s.url} isJa={isJa}>
                     <div className={styles.sourceTitle}>{s.title || '—'}</div>
                     <div className={styles.sourceMeta}>
                       {(() => {
@@ -238,7 +239,7 @@ export default async function TopicPage({
                       {s.published_at ? <span>{new Date(s.published_at).toLocaleString()}</span> : null}
                       <span>{isJa ? '外部サイトで開く →' : 'Open source →'}</span>
                     </div>
-                  </a>
+                  </ExternalLinkWithConfirm>
                 ))}
               </div>
             ) : (
