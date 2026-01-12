@@ -1055,6 +1055,7 @@ export default function AdminSummaryPage() {
                 const extraCategories = categoriesFromData.filter((c: string) => !SITE_CATEGORY_ORDER.includes(c)).sort()
                 const categories: string[] = [...SITE_CATEGORY_ORDER, ...extraCategories]
                 const byCatCountry = new Map<string, Map<string, { sources: number; new_topics: number; ready: number }>>()
+                const totalByCountry = new Map<string, { sources: number; new_topics: number; ready: number }>()
                 for (const it of items as any[]) {
                   const cat = String(it.category)
                   const c = String(it.country)
@@ -1063,6 +1064,13 @@ export default function AdminSummaryPage() {
                   const ready = Number(it.summarized_ready_topics ?? 0)
                   if (!byCatCountry.has(cat)) byCatCountry.set(cat, new Map())
                   byCatCountry.get(cat)!.set(c, { sources, new_topics, ready })
+
+                  const cur = totalByCountry.get(c) ?? { sources: 0, new_topics: 0, ready: 0 }
+                  totalByCountry.set(c, {
+                    sources: cur.sources + sources,
+                    new_topics: cur.new_topics + new_topics,
+                    ready: cur.ready + ready,
+                  })
                 }
 
                 const cell = (v: { sources: number; new_topics: number; ready: number } | null | undefined) => {
@@ -1145,6 +1153,23 @@ export default function AdminSummaryPage() {
                           </tr>
                         )
                       })}
+                      <tr style={{ backgroundColor: '#f1f3f5', borderTop: '2px solid #dee2e6' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: 900, color: '#212529' }}>TOTAL</td>
+                        {countryCols.map((c: string) => (
+                          <td
+                            key={c}
+                            style={{
+                              padding: '12px 16px',
+                              color: '#212529',
+                              textAlign: 'right',
+                              borderLeft: '1px solid #e9ecef',
+                              fontWeight: 800,
+                            }}
+                          >
+                            {cell(totalByCountry.get(c))}
+                          </td>
+                        ))}
+                      </tr>
                     </tbody>
                   </table>
                 )
