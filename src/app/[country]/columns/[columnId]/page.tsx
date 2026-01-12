@@ -55,6 +55,12 @@ function renderMarkdownToSafeishHtml(md: string): string {
   return sanitizeHtmlLoosely(raw)
 }
 
+function replaceCountryToken(input: string, country: string): string {
+  // Column body supports "{country}" token mainly for internal links like "/{country}/news".
+  // Replace at render-time so the same column content can be reused across country editions.
+  return String(input || '').split('{country}').join(country)
+}
+
 export async function generateMetadata({ params }: { params: { country: string; columnId: string } }) {
   const { country, columnId } = params
   if (!isCountry(country)) return {}
@@ -101,7 +107,7 @@ export default async function ColumnDetailPage({ params }: { params: { country: 
   if (!c) return notFound()
 
   const coverSrc = imageBase && c.cover_image_key ? joinUrl(imageBase, c.cover_image_key) : null
-  const html = c.body_md ? renderMarkdownToSafeishHtml(c.body_md) : ''
+  const html = c.body_md ? renderMarkdownToSafeishHtml(replaceCountryToken(c.body_md, country)) : ''
 
   return (
     <main className={styles.page}>

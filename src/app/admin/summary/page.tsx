@@ -158,37 +158,26 @@ export default function AdminSummaryPage() {
               </h2>
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
                 表記:{' '}
-                <span style={{ fontWeight: 800, color: '#495057' }}>runs</span> / <span style={{ fontWeight: 800, color: '#0b5394' }}>ins</span> /{' '}
-                <span style={{ fontWeight: 800, color: '#212529' }}>createdTopics</span> /{' '}
+                <span style={{ fontWeight: 800, color: '#0b5394' }}>ins</span> / <span style={{ fontWeight: 800, color: '#212529' }}>createdTopics</span> /{' '}
                 <span style={{ fontWeight: 800, color: '#6a1b9a' }}>summarizedTopics</span>
               </div>
             </div>
             <div style={{ overflowX: 'auto' }}>
               {(() => {
-                const data = stats?.news_fetch_runs_last_hours
-                const byKindCountry = (data?.by_kind_country ?? {}) as Record<
+                const data = stats?.news_fetch_shelf_all_last_hours
+                const byCountry = (data?.by_country ?? {}) as Record<
                   string,
                   {
-                    runs: number
                     inserted: number
-                    topicize_createdTopics: number
-                    summarized_topics?: number
-                    error: number
+                    createdTopics: number
+                    summarizedTopics: number
                   }
                 >
 
-                const kinds: Array<{ kind: string; label: string }> = [
-                  { kind: 'top_pool', label: 'top_pool' },
-                  { kind: 'shelf_all', label: 'shelf_all' },
-                  { kind: 'summarize', label: 'summarize' },
-                ]
-
-                const cell = (v?: { runs: number; inserted: number; topicize_createdTopics: number; summarized_topics?: number; error: number }) => {
-                  const runs = Number(v?.runs ?? 0)
+                const cell = (v?: { inserted: number; createdTopics: number; summarizedTopics: number }) => {
                   const ins = Number(v?.inserted ?? 0)
-                  const createdTopics = Number(v?.topicize_createdTopics ?? 0)
-                  const summarizedTopics = Number((v as any)?.summarized_topics ?? 0)
-                  const err = Number(v?.error ?? 0)
+                  const createdTopics = Number(v?.createdTopics ?? 0)
+                  const summarizedTopics = Number(v?.summarizedTopics ?? 0)
                   return (
                     <span
                       style={{
@@ -199,10 +188,7 @@ export default function AdminSummaryPage() {
                         whiteSpace: 'nowrap',
                         ...NUMERIC_STYLE,
                       }}
-                      title={err > 0 ? `errors=${err}` : undefined}
                     >
-                      <span style={{ minWidth: 24, textAlign: 'right', color: '#495057' }}>{runs}</span>
-                      <span style={{ color: '#adb5bd' }}>/</span>
                       <span style={{ minWidth: 24, textAlign: 'right', color: '#0b5394', fontWeight: 800 }}>{ins}</span>
                       <span style={{ color: '#adb5bd' }}>/</span>
                       <span style={{ minWidth: 24, textAlign: 'right', color: '#212529', fontWeight: 800 }}>{createdTopics}</span>
@@ -213,6 +199,7 @@ export default function AdminSummaryPage() {
                 }
 
                 const countries: string[] = (stats.countries ?? []).map((c: any) => String(c.country))
+                const total = (data?.total ?? {}) as any
 
                 return (
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem', tableLayout: 'fixed' }}>
@@ -255,31 +242,21 @@ export default function AdminSummaryPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {kinds.map((k, idx) => {
-                        const rowTotal = { runs: 0, inserted: 0, topicize_createdTopics: 0, summarized_topics: 0, error: 0 }
-                        for (const c of countries) {
-                          const v = byKindCountry[`${k.kind}:${c}`]
-                          rowTotal.runs += Number(v?.runs ?? 0)
-                          rowTotal.inserted += Number(v?.inserted ?? 0)
-                          rowTotal.topicize_createdTopics += Number(v?.topicize_createdTopics ?? 0)
-                          rowTotal.summarized_topics += Number((v as any)?.summarized_topics ?? 0)
-                          rowTotal.error += Number(v?.error ?? 0)
-                        }
-
-                        return (
-                          <tr key={k.kind} style={{ backgroundColor: idx % 2 === 0 ? '#fff' : '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
-                            <td style={{ padding: '12px 16px', fontWeight: 800, color: '#212529' }}>{k.label}</td>
-                            {countries.map((c: string) => (
-                              <td key={c} style={{ padding: '12px 16px', borderLeft: '1px solid #e9ecef', textAlign: 'right' }}>
-                                {cell(byKindCountry[`${k.kind}:${c}`])}
-                              </td>
-                            ))}
-                            <td style={{ padding: '12px 16px', borderLeft: '1px solid #e9ecef', backgroundColor: '#f1f3f5', textAlign: 'right' }}>
-                              {cell(rowTotal)}
-                            </td>
-                          </tr>
-                        )
-                      })}
+                      <tr style={{ backgroundColor: '#fff', borderBottom: '1px solid #e9ecef' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: 800, color: '#212529' }}>shelf_all</td>
+                        {countries.map((c: string) => (
+                          <td key={c} style={{ padding: '12px 16px', borderLeft: '1px solid #e9ecef', textAlign: 'right' }}>
+                            {cell(byCountry[c])}
+                          </td>
+                        ))}
+                        <td style={{ padding: '12px 16px', borderLeft: '1px solid #e9ecef', backgroundColor: '#f1f3f5', textAlign: 'right' }}>
+                          {cell({
+                            inserted: Number(total.inserted ?? 0),
+                            createdTopics: Number(total.createdTopics ?? 0),
+                            summarizedTopics: Number(total.summarizedTopics ?? 0),
+                          })}
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 )
