@@ -14,7 +14,7 @@ export default function AdminSummaryPage() {
   // NOTE (ops):
   // Acquisition-policy change "since" used by /admin/v1/dashboard/stats?acq_change_since_jst=...
   // Change this string in web only; API does NOT need changes anymore.
-  const ACQ_CHANGE_SINCE_JST = '2026-01-13 04:00'
+  const ACQ_CHANGE_SINCE_JST = '2026-01-13 04:15'
 
   const NUMERIC_STYLE: React.CSSProperties = {
     fontVariantNumeric: 'tabular-nums',
@@ -157,7 +157,8 @@ export default function AdminSummaryPage() {
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
                 表記:{' '}
                 <span style={{ fontWeight: 800, color: '#495057' }}>runs</span> / <span style={{ fontWeight: 800, color: '#0b5394' }}>ins</span> /{' '}
-                <span style={{ fontWeight: 800, color: '#212529' }}>createdTopics</span>
+                <span style={{ fontWeight: 800, color: '#212529' }}>createdTopics</span> /{' '}
+                <span style={{ fontWeight: 800, color: '#6a1b9a' }}>summarizedTopics</span>
               </div>
             </div>
             <div style={{ overflowX: 'auto' }}>
@@ -169,6 +170,7 @@ export default function AdminSummaryPage() {
                     runs: number
                     inserted: number
                     topicize_createdTopics: number
+                    summarized_topics?: number
                     error: number
                   }
                 >
@@ -176,12 +178,14 @@ export default function AdminSummaryPage() {
                 const kinds: Array<{ kind: string; label: string }> = [
                   { kind: 'top_pool', label: 'top_pool' },
                   { kind: 'shelf_all', label: 'shelf_all' },
+                  { kind: 'summarize', label: 'summarize' },
                 ]
 
-                const cell = (v?: { runs: number; inserted: number; topicize_createdTopics: number; error: number }) => {
+                const cell = (v?: { runs: number; inserted: number; topicize_createdTopics: number; summarized_topics?: number; error: number }) => {
                   const runs = Number(v?.runs ?? 0)
                   const ins = Number(v?.inserted ?? 0)
                   const createdTopics = Number(v?.topicize_createdTopics ?? 0)
+                  const summarizedTopics = Number((v as any)?.summarized_topics ?? 0)
                   const err = Number(v?.error ?? 0)
                   return (
                     <span
@@ -200,6 +204,8 @@ export default function AdminSummaryPage() {
                       <span style={{ minWidth: 24, textAlign: 'right', color: '#0b5394', fontWeight: 800 }}>{ins}</span>
                       <span style={{ color: '#adb5bd' }}>/</span>
                       <span style={{ minWidth: 24, textAlign: 'right', color: '#212529', fontWeight: 800 }}>{createdTopics}</span>
+                      <span style={{ color: '#adb5bd' }}>/</span>
+                      <span style={{ minWidth: 24, textAlign: 'right', color: '#6a1b9a', fontWeight: 800 }}>{summarizedTopics}</span>
                     </span>
                   )
                 }
@@ -248,12 +254,13 @@ export default function AdminSummaryPage() {
                     </thead>
                     <tbody>
                       {kinds.map((k, idx) => {
-                        const rowTotal = { runs: 0, inserted: 0, topicize_createdTopics: 0, error: 0 }
+                        const rowTotal = { runs: 0, inserted: 0, topicize_createdTopics: 0, summarized_topics: 0, error: 0 }
                         for (const c of countries) {
                           const v = byKindCountry[`${k.kind}:${c}`]
                           rowTotal.runs += Number(v?.runs ?? 0)
                           rowTotal.inserted += Number(v?.inserted ?? 0)
                           rowTotal.topicize_createdTopics += Number(v?.topicize_createdTopics ?? 0)
+                          rowTotal.summarized_topics += Number((v as any)?.summarized_topics ?? 0)
                           rowTotal.error += Number(v?.error ?? 0)
                         }
 
