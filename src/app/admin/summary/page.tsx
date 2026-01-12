@@ -11,6 +11,11 @@ export default function AdminSummaryPage() {
   const [error, setError] = useState<string | null>(null)
   const [stats, setStats] = useState<any | null>(null)
 
+  // NOTE (ops):
+  // Acquisition-policy change "since" used by /admin/v1/dashboard/stats?acq_change_since_jst=...
+  // Change this string in web only; API does NOT need changes anymore.
+  const ACQ_CHANGE_SINCE_JST = '2026-01-13 00:00'
+
   const NUMERIC_STYLE: React.CSSProperties = {
     fontVariantNumeric: 'tabular-nums',
     fontFeatureSettings: '"tnum"',
@@ -61,7 +66,7 @@ export default function AdminSummaryPage() {
     setError(null)
     setBusy(true)
     try {
-      const data = await adminFetchJson<any>('/admin/v1/dashboard/stats')
+      const data = await adminFetchJson<any>(`/admin/v1/dashboard/stats?acq_change_since_jst=${encodeURIComponent(ACQ_CHANGE_SINCE_JST)}`)
       setStats(data)
     } catch (err: any) {
       const msg = err?.message || '取得に失敗しました'
