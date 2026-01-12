@@ -1054,6 +1054,9 @@ export default function AdminSummaryPage() {
                 const categoriesFromData: string[] = Array.from(new Set<string>(items.map((x: any) => String(x.category))))
                 const extraCategories = categoriesFromData.filter((c: string) => !SITE_CATEGORY_ORDER.includes(c)).sort()
                 const categories: string[] = [...SITE_CATEGORY_ORDER, ...extraCategories]
+                // Put TOTAL above heartwarming (TOTAL excludes heartwarming by design).
+                const hasHeartwarming = categories.includes('heartwarming')
+                const categoriesNoHeartwarming = categories.filter((c: string) => c !== 'heartwarming')
                 const byCatCountry = new Map<string, Map<string, { sources: number; new_topics: number; ready: number }>>()
                 const totalByCountry = new Map<string, { sources: number; new_topics: number; ready: number }>()
                 for (const it of items as any[]) {
@@ -1143,7 +1146,7 @@ export default function AdminSummaryPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {categories.map((cat: string, idx: number) => {
+                      {categoriesNoHeartwarming.map((cat: string, idx: number) => {
                         const m = byCatCountry.get(cat) ?? new Map()
                         return (
                           <tr key={cat} style={{ backgroundColor: idx % 2 === 0 ? '#fff' : '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
@@ -1173,6 +1176,16 @@ export default function AdminSummaryPage() {
                           </td>
                         ))}
                       </tr>
+                      {hasHeartwarming ? (
+                        <tr style={{ backgroundColor: '#fff', borderBottom: '1px solid #e9ecef' }}>
+                          <td style={{ padding: '12px 16px', fontWeight: 800, color: '#212529' }}>heartwarming</td>
+                          {countryCols.map((c: string) => (
+                            <td key={c} style={{ padding: '12px 16px', color: '#212529', textAlign: 'right', borderLeft: '1px solid #e9ecef' }}>
+                              {cell((byCatCountry.get('heartwarming') ?? new Map()).get(c))}
+                            </td>
+                          ))}
+                        </tr>
+                      ) : null}
                     </tbody>
                   </table>
                 )
