@@ -66,7 +66,9 @@ export default function AdminSummaryPage() {
     setError(null)
     setBusy(true)
     try {
-      const data = await adminFetchJson<any>(`/admin/v1/dashboard/stats?acq_change_since_jst=${encodeURIComponent(ACQ_CHANGE_SINCE_JST)}`)
+      const data = await adminFetchJson<any>(
+        `/admin/v1/dashboard/stats?since_hours=24&acq_change_since_jst=${encodeURIComponent(ACQ_CHANGE_SINCE_JST)}`
+      )
       setStats(data)
     } catch (err: any) {
       const msg = err?.message || '取得に失敗しました'
