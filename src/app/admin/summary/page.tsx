@@ -1065,12 +1065,15 @@ export default function AdminSummaryPage() {
                   if (!byCatCountry.has(cat)) byCatCountry.set(cat, new Map())
                   byCatCountry.get(cat)!.set(c, { sources, new_topics, ready })
 
-                  const cur = totalByCountry.get(c) ?? { sources: 0, new_topics: 0, ready: 0 }
-                  totalByCountry.set(c, {
-                    sources: cur.sources + sources,
-                    new_topics: cur.new_topics + new_topics,
-                    ready: cur.ready + ready,
-                  })
+                  // TOTAL row excludes heartwarming (shown as its own row but not counted into TOTAL).
+                  if (cat !== 'heartwarming') {
+                    const cur = totalByCountry.get(c) ?? { sources: 0, new_topics: 0, ready: 0 }
+                    totalByCountry.set(c, {
+                      sources: cur.sources + sources,
+                      new_topics: cur.new_topics + new_topics,
+                      ready: cur.ready + ready,
+                    })
+                  }
                 }
 
                 const cell = (v: { sources: number; new_topics: number; ready: number } | null | undefined) => {
