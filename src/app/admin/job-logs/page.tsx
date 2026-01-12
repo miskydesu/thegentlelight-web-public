@@ -36,6 +36,12 @@ export default function AdminJobLogsPage() {
   const [limit, setLimit] = useState<number>(200)
   const [data, setData] = useState<JobLogsResponse | null>(null)
 
+  const PRIMARY_BUTTON_STYLE: React.CSSProperties = {
+    background: 'var(--primary)',
+    borderColor: 'var(--primary)',
+    color: '#fff',
+  }
+
   const NUMERIC_STYLE: React.CSSProperties = {
     fontVariantNumeric: 'tabular-nums',
     fontFeatureSettings: '"tnum"',
@@ -174,7 +180,7 @@ export default function AdminJobLogsPage() {
               style={{ padding: '8px 10px', borderRadius: 10, border: '1px solid var(--border)', width: 110 }}
             />
           </label>
-          <button className="tglButton" onClick={() => void load()} disabled={busy}>
+          <button className="tglButton" onClick={() => void load()} disabled={busy} style={PRIMARY_BUTTON_STYLE}>
             {busy ? '読み込み中…' : '更新'}
           </button>
         </div>
