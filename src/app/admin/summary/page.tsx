@@ -278,172 +278,6 @@ export default function AdminSummaryPage() {
             </div>
           </section>
 
-          {/* News Fetch（取得設定変更後）: 起点以後の fetched/inserted/updated/topics を並べて見る */}
-          <section
-            style={{
-              marginBottom: 20,
-              backgroundColor: '#fff',
-              borderRadius: '8px',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              overflow: 'hidden',
-            }}
-          >
-            <div style={{ padding: '16px 20px', backgroundColor: '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
-              <h2 style={{ fontSize: '1.15rem', margin: 0, fontWeight: 600, color: '#1a1a1a' }}>
-                記事取得（取得設定変更後）
-              </h2>
-              <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
-                集計範囲: 日本時間（JST）{String(stats?.news_fetch_runs_since_acq_change?.since_jst ?? '2026-01-12 19:20')} 〜 現在
-              </div>
-              <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
-                表記:{' '}
-                <span style={{ fontWeight: 800, color: '#495057' }}>fetched</span> / <span style={{ fontWeight: 800, color: '#0b5394' }}>ins</span> /{' '}
-                <span style={{ fontWeight: 800, color: '#6c757d' }}>upd</span> / <span style={{ fontWeight: 800, color: '#212529' }}>topics</span>{' '}
-                <span style={{ color: '#adb5bd' }}>(runs)</span>
-              </div>
-              <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.8rem' }}>
-                ※ <span style={{ fontWeight: 800, color: '#212529' }}>topics</span> は「記事数」ではなく topicize の <span style={{ fontWeight: 800, color: '#212529' }}>createdTopics</span>（新規トピック作成数）です
-              </div>
-            </div>
-            <div style={{ overflowX: 'auto' }}>
-              {(() => {
-                const data = stats?.news_fetch_runs_since_acq_change
-                const byKindCountry = (data?.by_kind_country ?? {}) as Record<
-                  string,
-                  {
-                    runs: number
-                    fetched: number
-                    inserted: number
-                    updated: number
-                    topicize_createdTopics: number
-                    error: number
-                  }
-                >
-
-                const kinds: Array<{ kind: string; label: string }> = [
-                  { kind: 'top_pool', label: 'top_pool' },
-                  { kind: 'shelf_all', label: 'shelf_all' },
-                  { kind: 'shelf_fastlane', label: 'shelf_fastlane' },
-                  { kind: 'heartwarming', label: 'heartwarming' },
-                  { kind: 'sports_small', label: 'sports_small' },
-                ]
-
-                const cell = (v?: {
-                  runs: number
-                  fetched: number
-                  inserted: number
-                  updated: number
-                  topicize_createdTopics: number
-                  error: number
-                }) => {
-                  const runs = Number(v?.runs ?? 0)
-                  const fetched = Number((v as any)?.fetched ?? 0)
-                  const ins = Number(v?.inserted ?? 0)
-                  const upd = Number((v as any)?.updated ?? 0)
-                  const createdTopics = Number(v?.topicize_createdTopics ?? 0)
-                  const err = Number(v?.error ?? 0)
-                  return (
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        justifyContent: 'flex-end',
-                        gap: 6,
-                        width: '100%',
-                        whiteSpace: 'nowrap',
-                        ...NUMERIC_STYLE,
-                      }}
-                      title={err > 0 ? `errors=${err}` : undefined}
-                    >
-                      <span style={{ minWidth: 26, textAlign: 'right', color: '#495057' }}>{fetched}</span>
-                      <span style={{ color: '#adb5bd' }}>/</span>
-                      <span style={{ minWidth: 26, textAlign: 'right', color: '#0b5394', fontWeight: 800 }}>{ins}</span>
-                      <span style={{ color: '#adb5bd' }}>/</span>
-                      <span style={{ minWidth: 26, textAlign: 'right', color: '#6c757d', fontWeight: 700 }}>{upd}</span>
-                      <span style={{ color: '#adb5bd' }}>/</span>
-                      <span style={{ minWidth: 26, textAlign: 'right', color: '#212529', fontWeight: 800 }}>{createdTopics}</span>
-                      <span style={{ color: '#adb5bd' }}>(</span>
-                      <span style={{ minWidth: 18, textAlign: 'right', color: '#adb5bd' }}>{runs}</span>
-                      <span style={{ color: '#adb5bd' }}>)</span>
-                    </span>
-                  )
-                }
-
-                const countries: string[] = (stats.countries ?? []).map((c: any) => String(c.country))
-
-                return (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem', tableLayout: 'fixed' }}>
-                    <colgroup>
-                      <col style={{ width: 220 }} />
-                      {countries.map((c: string) => (
-                        <col key={c} style={{ width: 220 }} />
-                      ))}
-                      <col style={{ width: 220 }} />
-                    </colgroup>
-                    <thead>
-                      <tr style={{ backgroundColor: '#f1f3f5', borderBottom: '2px solid #dee2e6' }}>
-                        <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: '#495057', backgroundColor: '#e9ecef' }}>queue</th>
-                        {countries.map((c: string) => (
-                          <th
-                            key={c}
-                            style={{
-                              padding: '12px 16px',
-                              textAlign: 'center',
-                              fontWeight: 700,
-                              color: '#495057',
-                              borderLeft: '1px solid #e9ecef',
-                            }}
-                          >
-                            {renderCountryHeader(c)}
-                          </th>
-                        ))}
-                        <th
-                          style={{
-                            padding: '12px 16px',
-                            textAlign: 'right',
-                            fontWeight: 700,
-                            color: '#495057',
-                            borderLeft: '1px solid #e9ecef',
-                            backgroundColor: '#f1f3f5',
-                          }}
-                        >
-                          TOTAL
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {kinds.map((k, idx) => {
-                        const rowTotal = { runs: 0, fetched: 0, inserted: 0, updated: 0, topicize_createdTopics: 0, error: 0 }
-                        for (const c of countries) {
-                          const v = byKindCountry[`${k.kind}:${c}`] as any
-                          rowTotal.runs += Number(v?.runs ?? 0)
-                          rowTotal.fetched += Number(v?.fetched ?? 0)
-                          rowTotal.inserted += Number(v?.inserted ?? 0)
-                          rowTotal.updated += Number(v?.updated ?? 0)
-                          rowTotal.topicize_createdTopics += Number(v?.topicize_createdTopics ?? 0)
-                          rowTotal.error += Number(v?.error ?? 0)
-                        }
-
-                        return (
-                          <tr key={k.kind} style={{ backgroundColor: idx % 2 === 0 ? '#fff' : '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
-                            <td style={{ padding: '12px 16px', fontWeight: 800, color: '#212529' }}>{k.label}</td>
-                            {countries.map((c: string) => (
-                              <td key={c} style={{ padding: '12px 16px', borderLeft: '1px solid #e9ecef', textAlign: 'right' }}>
-                                {cell(byKindCountry[`${k.kind}:${c}`])}
-                              </td>
-                            ))}
-                            <td style={{ padding: '12px 16px', borderLeft: '1px solid #e9ecef', backgroundColor: '#f1f3f5', textAlign: 'right' }}>
-                              {cell(rowTotal as any)}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                )
-              })()}
-            </div>
-          </section>
-
           {/* 日別（直近5日）：要約生成済み / 未評価 / 要約待ち（未評価・要約待ちは1以上のみ表示） */}
           <section
             style={{
@@ -987,6 +821,173 @@ export default function AdminSummaryPage() {
                               }}
                             >
                               {cell(total)}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                )
+              })()}
+            </div>
+          </section>
+
+          {/* News Fetch（取得設定変更後）: 起点以後の fetched/inserted/updated/topics を並べて見る */}
+          <section
+            style={{
+              marginBottom: 20,
+              backgroundColor: '#fff',
+              borderRadius: '8px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              overflow: 'hidden',
+            }}
+          >
+            <div style={{ padding: '16px 20px', backgroundColor: '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
+              <h2 style={{ fontSize: '1.15rem', margin: 0, fontWeight: 600, color: '#1a1a1a' }}>
+                記事取得（取得設定変更後）
+              </h2>
+              <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
+                集計範囲: 日本時間（JST）{String(stats?.news_fetch_runs_since_acq_change?.since_jst ?? '2026-01-12 19:20')} 〜 現在
+              </div>
+              <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
+                表記:{' '}
+                <span style={{ fontWeight: 800, color: '#495057' }}>fetched</span> / <span style={{ fontWeight: 800, color: '#0b5394' }}>ins</span> /{' '}
+                <span style={{ fontWeight: 800, color: '#6c757d' }}>upd</span> / <span style={{ fontWeight: 800, color: '#212529' }}>topics</span>{' '}
+                <span style={{ color: '#adb5bd' }}>(runs)</span>
+              </div>
+              <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.8rem' }}>
+                ※ <span style={{ fontWeight: 800, color: '#212529' }}>topics</span> は「記事数」ではなく topicize の{' '}
+                <span style={{ fontWeight: 800, color: '#212529' }}>createdTopics</span>（新規トピック作成数）です
+              </div>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              {(() => {
+                const data = stats?.news_fetch_runs_since_acq_change
+                const byKindCountry = (data?.by_kind_country ?? {}) as Record<
+                  string,
+                  {
+                    runs: number
+                    fetched: number
+                    inserted: number
+                    updated: number
+                    topicize_createdTopics: number
+                    error: number
+                  }
+                >
+
+                const kinds: Array<{ kind: string; label: string }> = [
+                  { kind: 'top_pool', label: 'top_pool' },
+                  { kind: 'shelf_all', label: 'shelf_all' },
+                  { kind: 'shelf_fastlane', label: 'shelf_fastlane' },
+                  { kind: 'heartwarming', label: 'heartwarming' },
+                  { kind: 'sports_small', label: 'sports_small' },
+                ]
+
+                const cell = (v?: {
+                  runs: number
+                  fetched: number
+                  inserted: number
+                  updated: number
+                  topicize_createdTopics: number
+                  error: number
+                }) => {
+                  const runs = Number(v?.runs ?? 0)
+                  const fetched = Number((v as any)?.fetched ?? 0)
+                  const ins = Number(v?.inserted ?? 0)
+                  const upd = Number((v as any)?.updated ?? 0)
+                  const createdTopics = Number(v?.topicize_createdTopics ?? 0)
+                  const err = Number(v?.error ?? 0)
+                  return (
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        justifyContent: 'flex-end',
+                        gap: 6,
+                        width: '100%',
+                        whiteSpace: 'nowrap',
+                        ...NUMERIC_STYLE,
+                      }}
+                      title={err > 0 ? `errors=${err}` : undefined}
+                    >
+                      <span style={{ minWidth: 26, textAlign: 'right', color: '#495057' }}>{fetched}</span>
+                      <span style={{ color: '#adb5bd' }}>/</span>
+                      <span style={{ minWidth: 26, textAlign: 'right', color: '#0b5394', fontWeight: 800 }}>{ins}</span>
+                      <span style={{ color: '#adb5bd' }}>/</span>
+                      <span style={{ minWidth: 26, textAlign: 'right', color: '#6c757d', fontWeight: 700 }}>{upd}</span>
+                      <span style={{ color: '#adb5bd' }}>/</span>
+                      <span style={{ minWidth: 26, textAlign: 'right', color: '#212529', fontWeight: 800 }}>{createdTopics}</span>
+                      <span style={{ color: '#adb5bd' }}>(</span>
+                      <span style={{ minWidth: 18, textAlign: 'right', color: '#adb5bd' }}>{runs}</span>
+                      <span style={{ color: '#adb5bd' }}>)</span>
+                    </span>
+                  )
+                }
+
+                const countries: string[] = (stats.countries ?? []).map((c: any) => String(c.country))
+
+                return (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem', tableLayout: 'fixed' }}>
+                    <colgroup>
+                      <col style={{ width: 220 }} />
+                      {countries.map((c: string) => (
+                        <col key={c} style={{ width: 220 }} />
+                      ))}
+                      <col style={{ width: 220 }} />
+                    </colgroup>
+                    <thead>
+                      <tr style={{ backgroundColor: '#f1f3f5', borderBottom: '2px solid #dee2e6' }}>
+                        <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: '#495057', backgroundColor: '#e9ecef' }}>queue</th>
+                        {countries.map((c: string) => (
+                          <th
+                            key={c}
+                            style={{
+                              padding: '12px 16px',
+                              textAlign: 'center',
+                              fontWeight: 700,
+                              color: '#495057',
+                              borderLeft: '1px solid #e9ecef',
+                            }}
+                          >
+                            {renderCountryHeader(c)}
+                          </th>
+                        ))}
+                        <th
+                          style={{
+                            padding: '12px 16px',
+                            textAlign: 'right',
+                            fontWeight: 700,
+                            color: '#495057',
+                            borderLeft: '1px solid #e9ecef',
+                            backgroundColor: '#f1f3f5',
+                          }}
+                        >
+                          TOTAL
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {kinds.map((k, idx) => {
+                        const rowTotal = { runs: 0, fetched: 0, inserted: 0, updated: 0, topicize_createdTopics: 0, error: 0 }
+                        for (const c of countries) {
+                          const v = byKindCountry[`${k.kind}:${c}`] as any
+                          rowTotal.runs += Number(v?.runs ?? 0)
+                          rowTotal.fetched += Number(v?.fetched ?? 0)
+                          rowTotal.inserted += Number(v?.inserted ?? 0)
+                          rowTotal.updated += Number(v?.updated ?? 0)
+                          rowTotal.topicize_createdTopics += Number(v?.topicize_createdTopics ?? 0)
+                          rowTotal.error += Number(v?.error ?? 0)
+                        }
+
+                        return (
+                          <tr key={k.kind} style={{ backgroundColor: idx % 2 === 0 ? '#fff' : '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
+                            <td style={{ padding: '12px 16px', fontWeight: 800, color: '#212529' }}>{k.label}</td>
+                            {countries.map((c: string) => (
+                              <td key={c} style={{ padding: '12px 16px', borderLeft: '1px solid #e9ecef', textAlign: 'right' }}>
+                                {cell(byKindCountry[`${k.kind}:${c}`])}
+                              </td>
+                            ))}
+                            <td style={{ padding: '12px 16px', borderLeft: '1px solid #e9ecef', backgroundColor: '#f1f3f5', textAlign: 'right' }}>
+                              {cell(rowTotal as any)}
                             </td>
                           </tr>
                         )
