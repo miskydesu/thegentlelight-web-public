@@ -288,7 +288,7 @@ export default function AdminSummaryPage() {
                 記事取得（取得設定変更後）
               </h2>
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
-                集計範囲: 日本時間（JST）{String(stats?.news_fetch_runs_since_acq_change?.since_jst ?? '2026-01-12 01:00')} 〜 現在
+                集計範囲: 日本時間（JST）{String(stats?.news_fetch_runs_since_acq_change?.since_jst ?? '2026-01-12 19:20')} 〜 現在
               </div>
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
                 表記:{' '}
@@ -993,7 +993,7 @@ export default function AdminSummaryPage() {
             </div>
           </section>
 
-          {/* 取得設定変更後（2026-01-12 01:00 JST以降）の country×category（sources / new_topics / summarized_ready_topics） */}
+          {/* 取得設定変更後（2026-01-12 19:20 JST以降）の country×category（sources / new_topics / summarized_ready_topics） */}
           <section
             style={{
               marginBottom: 32,
@@ -1024,7 +1024,7 @@ export default function AdminSummaryPage() {
                 </div>
               ) : null}
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.9rem' }}>
-                集計範囲: 日本時間（JST）{String(stats?.topic_metrics_by_country_category_since_acq_change?.since_jst ?? '2026-01-12 01:00')} 〜 現在
+                集計範囲: 日本時間（JST）{String(stats?.topic_metrics_by_country_category_since_acq_change?.since_jst ?? '2026-01-12 19:20')} 〜 現在
               </div>
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
                 debug: first_seen_since_total=
