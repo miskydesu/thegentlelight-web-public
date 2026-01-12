@@ -74,6 +74,10 @@ export type TopicSummary = {
 
 export type HomeResponse = {
   hero_topics: TopicSummary[]
+  // Country-top explicit buckets (aligned with daily briefing):
+  gentle_topics?: TopicSummary[]
+  heartwarming_topics?: TopicSummary[]
+  important_topics?: TopicSummary[]
   daily_latest: any | null
   updatedAt: string
   meta?: ApiMeta
