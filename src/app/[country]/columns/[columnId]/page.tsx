@@ -46,12 +46,24 @@ function sanitizeHtmlLoosely(html: string): string {
   return s
 }
 
+function normalizeMarkdownForRender(md: string): string {
+  // Defensive normalization:
+  // Some inputs may contain escaped markdown markers (e.g. "\\*\\*bold\\*\\*") or HTML entities ("&ast;")
+  // which would otherwise render as literal "**" in the column view.
+  let s = String(md || '')
+  // Decode asterisk entities commonly produced by some converters
+  s = s.replace(/&ast;/g, '*').replace(/&#42;/g, '*')
+  // Unescape backslash-escaped emphasis markers
+  s = s.replace(/\\\*/g, '*').replace(/\\_/g, '_')
+  return s
+}
+
 function renderMarkdownToSafeishHtml(md: string): string {
   marked.setOptions({
     gfm: true,
     breaks: false, // keep markdown semantics; "two spaces + newline" will still create <br>
   })
-  const raw = marked.parse(String(md || '')) as string
+  const raw = marked.parse(normalizeMarkdownForRender(String(md || ''))) as string
   return sanitizeHtmlLoosely(raw)
 }
 
