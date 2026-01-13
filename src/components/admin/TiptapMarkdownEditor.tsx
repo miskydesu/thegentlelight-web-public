@@ -198,9 +198,22 @@ export function TiptapMarkdownEditor({ value, onChange, placeholder, disabled, u
         .tiptapWrap :global(.ProseMirror p) {
           margin: 0.5rem 0;
         }
+        .tiptapWrap :global(.ProseMirror h1),
+        .tiptapWrap :global(.ProseMirror h2),
+        .tiptapWrap :global(.ProseMirror h3) {
+          margin: 22px 0 10px;
+          line-height: 1.25;
+          letter-spacing: -0.01em;
+        }
+        .tiptapWrap :global(.ProseMirror h2) {
+          font-size: 1.25rem;
+        }
+        .tiptapWrap :global(.ProseMirror h3) {
+          font-size: 1.12rem;
+        }
         .tiptapWrap :global(.ProseMirror hr) {
           border: 0;
-          border-top: 1px dotted rgba(0, 0, 0, 0.22);
+          border-top: 1px dotted rgba(0, 0, 0, 0.14);
           margin: 18px 0;
         }
         .tiptapWrap :global(.ProseMirror ul),

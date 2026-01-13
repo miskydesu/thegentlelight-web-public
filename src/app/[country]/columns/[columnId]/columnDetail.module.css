@@ -137,8 +137,8 @@
 
 .markdown h2 {
   font-size: 1.25rem;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.10);
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .markdown h3 {
@@ -166,7 +166,7 @@
 
 .markdown hr {
   border: 0;
-  border-top: 1px dotted rgba(0, 0, 0, 0.22);
+  border-top: 1px dotted rgba(0, 0, 0, 0.14);
   margin: 18px 0;
 }
 
