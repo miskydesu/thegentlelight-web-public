@@ -12,6 +12,10 @@ type ColumnsResponse = {
     excerpt: string | null
     cover_image_key: string | null
     published_at: string | null
+    updated_at?: string | null
+    column_name?: {
+      column_name_id: string
+    } | null
   }>
   meta: ApiMeta
 }
@@ -74,12 +78,38 @@ function getLocalYmdForCountry(country: 'us' | 'uk' | 'ca' | 'jp', now: Date = n
   }).format(now)
 }
 
-export function SidebarGentleIntro({ country }: { country: 'us' | 'uk' | 'ca' | 'jp' }) {
+export async function SidebarGentleIntro({ country }: { country: 'us' | 'uk' | 'ca' | 'jp' }) {
+  const WELCOME_COLUMN_NAME_ID = 'mkcfunk9k7yk9nymsug0000000'
   const title = country === 'jp' ? 'The Gentle Lightへようこそ' : 'Welcome to The Gentle Light'
   const desc =
     country === 'jp'
       ? '当サイトでは、心の負担が少ないニュースを優先して表示しております。更にGentleModeをONにする事で負担が大きいニュースを自動的に非表示にすることが出来ます。'
       : 'This site prioritizes stories that may feel less emotionally intense.\nTurn Gentle Mode ON to automatically hide stories that may feel more upsetting.'
+
+  const imageBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || process.env.IMAGE_BASE_URL || ''
+  const isWelcomeColumn = (c: ColumnsResponse['columns'][number]) => {
+    const nameId = c.column_name?.column_name_id ? String(c.column_name.column_name_id) : ''
+    return nameId === WELCOME_COLUMN_NAME_ID
+  }
+
+  // NOTE: show all "welcome" columns under the switch, oldest-first.
+  const welcomeColumns = await (async () => {
+    try {
+      const d = await fetchJson<ColumnsResponse>(`/v1/${country}/columns?limit=100`, { next: { revalidate: CACHE_POLICY.stable } })
+      const cols = (d.columns || []).filter(isWelcomeColumn)
+      cols.sort((a, b) => {
+        const ax = a.published_at || a.updated_at || ''
+        const ay = b.published_at || b.updated_at || ''
+        if (!ax && !ay) return String(a.column_id).localeCompare(String(b.column_id))
+        if (!ax) return -1
+        if (!ay) return 1
+        return ax.localeCompare(ay) // oldest first
+      })
+      return cols
+    } catch {
+      return []
+    }
+  })()
 
   return (
     <div className={styles.sidebarCard}>
@@ -94,15 +124,50 @@ export function SidebarGentleIntro({ country }: { country: 'us' | 'uk' | 'ca' | 
       <div style={{ marginTop: 12 }}>
         <ViewSwitch className={viewSwitchStyles.sidebarOffset} />
       </div>
+
+      {/* Welcome columns (oldest first) */}
+      <div style={{ marginTop: 12 }}>
+        {welcomeColumns.length ? (
+          <div className={styles.sidebarList}>
+            {welcomeColumns.map((c) => (
+              <Link key={c.column_id} className={styles.sidebarItemLink} href={`/${country}/columns/${c.column_id}`}>
+                <div className={styles.sidebarItemRow}>
+                  {imageBase && c.cover_image_key ? (
+                    <img
+                      className={styles.sidebarThumb}
+                      src={joinUrl(imageBase, c.cover_image_key) + (c.published_at ? `?v=${encodeURIComponent(c.published_at)}` : '')}
+                      alt=""
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className={styles.sidebarThumb} />
+                  )}
+                  <div className={styles.sidebarItemText}>
+                    <div className={styles.sidebarItemTitle}>{c.title || '(no title)'}</div>
+                    <div className={styles.sidebarItemMeta}>{c.published_at ? new Date(c.published_at).toLocaleDateString() : ''}</div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : null}
+      </div>
     </div>
   )
 }
 
 export async function SidebarLatestColumns({ country }: { country: 'us' | 'uk' | 'ca' | 'jp' }) {
-  const data = await fetchJson<ColumnsResponse>(`/v1/${country}/columns?limit=3`, { next: { revalidate: CACHE_POLICY.stable } })
+  const WELCOME_COLUMN_NAME_ID = 'mkcfunk9k7yk9nymsug0000000'
+  const data = await fetchJson<ColumnsResponse>(`/v1/${country}/columns?limit=12`, { next: { revalidate: CACHE_POLICY.stable } })
   const heading = country === 'jp' ? '最新コラム' : 'Latest columns'
   const more = country === 'jp' ? '一覧へ' : 'See all'
   const imageBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || process.env.IMAGE_BASE_URL || ''
+
+  const isExcluded = (c: ColumnsResponse['columns'][number]) => {
+    const nameId = c.column_name?.column_name_id ? String(c.column_name.column_name_id) : ''
+    return nameId === WELCOME_COLUMN_NAME_ID
+  }
+  const latest = (data.columns || []).filter((c) => !isExcluded(c)).slice(0, 3)
 
   return (
     <div className={styles.sidebarCard}>
@@ -113,9 +178,9 @@ export async function SidebarLatestColumns({ country }: { country: 'us' | 'uk' |
         </Link>
       </div>
 
-      {data.columns?.length ? (
+      {latest.length ? (
         <div className={styles.sidebarList}>
-          {data.columns.map((c) => (
+          {latest.map((c) => (
             <Link key={c.column_id} className={styles.sidebarItemLink} href={`/${country}/columns/${c.column_id}`}>
               <div className={styles.sidebarItemRow}>
                 {imageBase && c.cover_image_key ? (
