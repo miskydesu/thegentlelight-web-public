@@ -212,22 +212,20 @@ export function TiptapMarkdownEditor({ value, onChange, placeholder, disabled, u
         }
         .tiptapWrap :global(.ProseMirror h2) {
           font-size: 1.25em;
-          padding-bottom: 6px;
-          border-bottom: 1px solid rgba(0, 0, 0, 0.10);
+          padding-bottom: 0;
+          padding-left: 10px;
+          border-bottom: none;
+          border-left: 2px solid rgba(0, 0, 0, 0.16);
         }
         .tiptapWrap :global(.ProseMirror h3) {
           font-size: 1.12em;
         }
         .tiptapWrap :global(.ProseMirror hr) {
           border: 0;
-          height: 1px;
+          height: 0;
           margin: 18px 0;
-          /* hr.style14 inspired gradient (match public column view) */
-          background-image: -webkit-linear-gradient(left, #f0f0f0, #8c8b8b, #f0f0f0);
-          background-image: -moz-linear-gradient(left, #f0f0f0, #8c8b8b, #f0f0f0);
-          background-image: -ms-linear-gradient(left, #f0f0f0, #8c8b8b, #f0f0f0);
-          background-image: -o-linear-gradient(left, #f0f0f0, #8c8b8b, #f0f0f0);
-          background-image: linear-gradient(to right, #f0f0f0, #8c8b8b, #f0f0f0);
+          border-top: 1px dotted rgba(0, 0, 0, 0.14);
+          background: none;
         }
         .tiptapWrap :global(.ProseMirror ul),
         .tiptapWrap :global(.ProseMirror ol) {
