@@ -14,7 +14,7 @@ export default function AdminSummaryPage() {
   // NOTE (ops):
   // Acquisition-policy change "since" used by /admin/v1/dashboard/stats?acq_change_since_jst=...
   // Change this string in web only; API does NOT need changes anymore.
-  const ACQ_CHANGE_SINCE_JST = '2026-01-13 04:15'
+  const ACQ_CHANGE_SINCE_JST = '2026-01-14 00:00'
 
   const NUMERIC_STYLE: React.CSSProperties = {
     fontVariantNumeric: 'tabular-nums',

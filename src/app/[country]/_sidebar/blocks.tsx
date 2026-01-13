@@ -15,6 +15,7 @@ type ColumnsResponse = {
     updated_at?: string | null
     column_name?: {
       column_name_id: string
+      name?: string
     } | null
   }>
   meta: ApiMeta
@@ -110,6 +111,11 @@ export async function SidebarGentleIntro({ country }: { country: 'us' | 'uk' | '
       return []
     }
   })()
+  const welcomeColumnName = (() => {
+    const first = welcomeColumns[0]
+    const name = first?.column_name?.name ? String(first.column_name.name) : ''
+    return name.trim()
+  })()
 
   return (
     <div className={styles.sidebarCard}>
@@ -127,6 +133,9 @@ export async function SidebarGentleIntro({ country }: { country: 'us' | 'uk' | '
 
       {/* Welcome columns (oldest first) */}
       <div style={{ marginTop: 12 }}>
+        {welcomeColumnName ? (
+          <div style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: 8, color: 'var(--text)' }}>{welcomeColumnName}</div>
+        ) : null}
         {welcomeColumns.length ? (
           <div className={styles.sidebarList}>
             {welcomeColumns.map((c) => (
@@ -144,7 +153,6 @@ export async function SidebarGentleIntro({ country }: { country: 'us' | 'uk' | '
                   )}
                   <div className={styles.sidebarItemText}>
                     <div className={styles.sidebarItemTitle}>{c.title || '(no title)'}</div>
-                    <div className={styles.sidebarItemMeta}>{c.published_at ? new Date(c.published_at).toLocaleDateString() : ''}</div>
                   </div>
                 </div>
               </Link>
