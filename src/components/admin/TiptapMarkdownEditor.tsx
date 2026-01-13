@@ -220,8 +220,14 @@ export function TiptapMarkdownEditor({ value, onChange, placeholder, disabled, u
         }
         .tiptapWrap :global(.ProseMirror hr) {
           border: 0;
-          border-top: 1px dotted rgba(0, 0, 0, 0.14);
+          height: 1px;
           margin: 18px 0;
+          /* hr.style14 inspired gradient (match public column view) */
+          background-image: -webkit-linear-gradient(left, #f0f0f0, #8c8b8b, #f0f0f0);
+          background-image: -moz-linear-gradient(left, #f0f0f0, #8c8b8b, #f0f0f0);
+          background-image: -ms-linear-gradient(left, #f0f0f0, #8c8b8b, #f0f0f0);
+          background-image: -o-linear-gradient(left, #f0f0f0, #8c8b8b, #f0f0f0);
+          background-image: linear-gradient(to right, #f0f0f0, #8c8b8b, #f0f0f0);
         }
         .tiptapWrap :global(.ProseMirror ul),
         .tiptapWrap :global(.ProseMirror ol) {
@@ -523,6 +529,7 @@ export function TiptapMarkdownEditor({ value, onChange, placeholder, disabled, u
           onClick={() => fileInputRef.current?.click()}
           onMouseDown={keepEditorFocus}
           tabIndex={-1}
+          aria-label="画像（クロップ→R2）"
           style={{
             padding: '6px 12px',
             borderRadius: 6,
@@ -534,7 +541,37 @@ export function TiptapMarkdownEditor({ value, onChange, placeholder, disabled, u
           }}
           title="画像をクロップ/縮小（最大横幅1200px）してR2へアップロードし、本文へ挿入します"
         >
-          {busyUpload ? '画像アップロード中…' : '画像（クロップ→R2）'}
+          {busyUpload ? (
+            '…'
+          ) : (
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+              focusable="false"
+              style={{ display: 'block' }}
+            >
+              <path
+                d="M4 7C4 5.89543 4.89543 5 6 5H18C19.1046 5 20 5.89543 20 7V17C20 18.1046 19.1046 19 18 19H6C4.89543 19 4 18.1046 4 17V7Z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              />
+              <path
+                d="M8 11C8.55228 11 9 10.5523 9 10C9 9.44772 8.55228 9 8 9C7.44772 9 7 9.44772 7 10C7 10.5523 7.44772 11 8 11Z"
+                fill="currentColor"
+              />
+              <path
+                d="M6.5 17L11 12.5L13.5 15L16.5 12L19.5 15"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
         </button>
 
         <button
