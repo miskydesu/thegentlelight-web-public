@@ -49,6 +49,10 @@ function buildTurndown() {
     emDelimiter: '*',
     strongDelimiter: '**',
   })
+  td.addRule('hr-to-markdown', {
+    filter: (node: Node) => (node as any)?.nodeName === 'HR',
+    replacement: () => `\n\n---\n\n`,
+  })
   td.addRule('img-to-markdown', {
     filter: (node: Node) => (node as any)?.nodeName === 'IMG',
     replacement: (_content: string, node: Node) => {
@@ -194,6 +198,7 @@ export function TiptapMarkdownEditor({ value, onChange, placeholder, disabled, u
       <style jsx>{`
         .tiptapWrap :global(.ProseMirror) {
           outline: none;
+          font-size: 16px;
         }
         .tiptapWrap :global(.ProseMirror p) {
           margin: 0.5rem 0;
@@ -206,10 +211,12 @@ export function TiptapMarkdownEditor({ value, onChange, placeholder, disabled, u
           letter-spacing: -0.01em;
         }
         .tiptapWrap :global(.ProseMirror h2) {
-          font-size: 1.25rem;
+          font-size: 1.25em;
+          padding-bottom: 6px;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.10);
         }
         .tiptapWrap :global(.ProseMirror h3) {
-          font-size: 1.12rem;
+          font-size: 1.12em;
         }
         .tiptapWrap :global(.ProseMirror hr) {
           border: 0;
@@ -431,6 +438,26 @@ export function TiptapMarkdownEditor({ value, onChange, placeholder, disabled, u
           }}
         >
           H3
+        </button>
+        <button
+          type="button"
+          onClick={() => editor?.chain().focus().setHorizontalRule().run()}
+          onMouseDown={keepEditorFocus}
+          tabIndex={-1}
+          disabled={!editor || disabled}
+          style={{
+            padding: '6px 12px',
+            borderRadius: 6,
+            border: '1px solid #ced4da',
+            backgroundColor: '#fff',
+            color: '#212529',
+            cursor: 'pointer',
+            fontWeight: 800,
+            letterSpacing: '0.02em',
+          }}
+          title="区切り線（hr）を挿入します"
+        >
+          hr
         </button>
         <button
           type="button"
