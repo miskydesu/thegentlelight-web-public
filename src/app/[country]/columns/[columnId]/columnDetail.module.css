@@ -139,9 +139,8 @@
   /* Use em so it matches the editor even if root font-size differs */
   font-size: 1.25em;
   padding-bottom: 0;
-  padding-left: 10px;
   border-bottom: none;
-  border-left: 2px solid rgba(0, 0, 0, 0.16);
+  margin-bottom: 13px;
 }
 
 .markdown h3 {

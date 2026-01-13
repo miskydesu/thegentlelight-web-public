@@ -213,9 +213,8 @@ export function TiptapMarkdownEditor({ value, onChange, placeholder, disabled, u
         .tiptapWrap :global(.ProseMirror h2) {
           font-size: 1.25em;
           padding-bottom: 0;
-          padding-left: 10px;
           border-bottom: none;
-          border-left: 2px solid rgba(0, 0, 0, 0.16);
+          margin-bottom: 13px;
         }
         .tiptapWrap :global(.ProseMirror h3) {
           font-size: 1.12em;
