@@ -198,6 +198,11 @@ export function TiptapMarkdownEditor({ value, onChange, placeholder, disabled, u
         .tiptapWrap :global(.ProseMirror p) {
           margin: 0.5rem 0;
         }
+        .tiptapWrap :global(.ProseMirror hr) {
+          border: 0;
+          border-top: 1px dotted rgba(0, 0, 0, 0.22);
+          margin: 18px 0;
+        }
         .tiptapWrap :global(.ProseMirror ul),
         .tiptapWrap :global(.ProseMirror ol) {
           padding-left: 1.5rem;
