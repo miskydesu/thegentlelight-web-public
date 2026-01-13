@@ -1,0 +1,140 @@
+.formWrap {
+  display: grid;
+  gap: 10px;
+}
+
+.formRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.categoryShelf {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 10px;
+}
+
+/* Mobile: compact (like quotes theme shelf) */
+@media (max-width: 559px) {
+  .categoryShelf {
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+  }
+}
+
+.categoryShelfHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 559px) {
+  .categoryShelfHeader {
+    margin-bottom: 8px;
+  }
+}
+
+.categoryShelfTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.categoryShelfHint {
+  font-size: 0.9rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 560px) {
+  .categoryGrid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* Mobile: pill-style wrap */
+@media (max-width: 559px) {
+  .categoryGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+.categoryItem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 120ms ease, border-color 120ms ease, background-color 120ms ease;
+}
+
+@media (max-width: 559px) {
+  .categoryItem {
+    flex: 0 0 auto;
+    border-radius: 999px;
+    padding: 8px 10px;
+  }
+}
+
+.categoryItem:hover {
+  transform: translateY(-1px);
+  border-color: rgba(0, 0, 0, 0.24);
+}
+
+.categoryItemActive {
+  border-color: rgba(0, 0, 0, 0.32);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+@media (max-width: 559px) {
+  .categoryItemActive {
+    box-shadow: none;
+  }
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--cat-color, #64748b);
+  flex: 0 0 auto;
+}
+
+.categoryLabel {
+  font-weight: 800;
+  font-size: 0.92rem;
+  flex: 1 1 auto;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 559px) {
+  .categoryLabel {
+    font-size: 0.84rem;
+    max-width: 180px;
+  }
+}
+
