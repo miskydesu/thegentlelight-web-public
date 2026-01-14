@@ -218,7 +218,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
         lastModified,
         changeFrequency: 'weekly',
         // コラム詳細（少数精鋭）
-        priority: 0.7,
+        priority: 0.9,
       })
     }
   } catch (e) {
