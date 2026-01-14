@@ -69,17 +69,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         latestLastModByCountry.set(c.code, lm)
       }
 
-      for (const topic of topicsResponse.topics.slice(0, 5000)) {
-        const lastModified = topic.last_source_published_at
-          ? new Date(topic.last_source_published_at)
-          : new Date(topic.last_seen_at)
-        entries.push({
-          url: `${base}/${c.code}/news/n/${topic.topic_id}`,
-          lastModified,
-          changeFrequency: 'daily' as const,
-          // ニュース詳細（量産枠）: 0.3〜0.4 に明確に下げる
-          priority: 0.35,
-        })
+      // JPは試験運用：トピック詳細は noindex 対象なので sitemap から外す
+      if (c.code !== 'jp') {
+        for (const topic of topicsResponse.topics.slice(0, 5000)) {
+          const lastModified = topic.last_source_published_at
+            ? new Date(topic.last_source_published_at)
+            : new Date(topic.last_seen_at)
+          entries.push({
+            url: `${base}/${c.code}/news/n/${topic.topic_id}`,
+            lastModified,
+            changeFrequency: 'daily' as const,
+            // ニュース詳細（量産枠）: 0.3〜0.4 に明確に下げる
+            priority: 0.35,
+          })
+        }
       }
     } catch (error) {
       console.error(`Failed to fetch topics for ${c.code}:`, error)
@@ -101,7 +104,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           lastModified,
           changeFrequency: 'weekly' as const,
           // コラム詳細（少数精鋭）
-          priority: 0.9,
+          priority: c.code === 'jp' ? 0.75 : 0.9,
         })
       }
     } catch (error) {
@@ -123,12 +126,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       for (const quote of quotesResponse.quotes) {
         const author = String((quote as any)?.author_name || '').trim()
         if (author) authors.add(author)
-        entries.push({
-          url: `${base}/${c.code}/quotes/${quote.quote_id}`,
-          lastModified: new Date(quote.updated_at),
-          changeFrequency: 'monthly' as const,
-          priority: 0.4,
-        })
+        // JPは試験運用：名言詳細は noindex 対象なので sitemap から外す
+        if (c.code !== 'jp') {
+          entries.push({
+            url: `${base}/${c.code}/quotes/${quote.quote_id}`,
+            lastModified: new Date(quote.updated_at),
+            changeFrequency: 'monthly' as const,
+            priority: 0.4,
+          })
+        }
       }
 
       // 著者別名言一覧（人物名検索のハブ → その先のまとめ役）
@@ -204,6 +210,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // カテゴリページ（Event Registry news/* に揃えたサイト内部カテゴリ）
     const categories = ['heartwarming', 'science_earth', 'politics', 'health', 'technology', 'arts', 'business', 'sports']
     for (const cat of categories) {
+      // JPは試験運用：Heartwarming以外のカテゴリトップは noindex 対象なので sitemap から外す
+      if (c.code === 'jp' && cat !== 'heartwarming') continue
       fixedRoutes.push(`/${c.code}/category/${cat}`)
     }
   }
@@ -226,7 +234,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         if (rest === '') {
           lastModified = homeLastModByCountry.get(cc) || now
           changeFrequency = 'hourly'
-          priority = 1.0
+          // JPは試験運用：国トップの優先度を少し下げる（indexは維持）
+          priority = cc === 'jp' ? 0.9 : 1.0
         } else if (rest === '/about') {
           lastModified = now
           changeFrequency = 'yearly'
@@ -255,7 +264,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           lastModified = now
           changeFrequency = 'weekly'
           // コラム一覧（少数だが思想の核）
-          priority = 0.8
+          priority = cc === 'jp' ? 0.7 : 0.8
         } else if (rest === '/quotes') {
           lastModified = now
           changeFrequency = 'weekly'

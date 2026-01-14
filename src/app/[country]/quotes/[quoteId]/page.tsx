@@ -72,18 +72,27 @@ export async function generateMetadata({ params }: { params: { country: string; 
 
     const keywordsBase = isJa ? ['名言', 'テーマ'] : ['quotes', 'theme']
     const keywords = [author, source, ...keywordsBase].map((x) => String(x || '').trim()).filter(Boolean)
-    return generateSEOMetadata({
+    const meta = generateSEOMetadata({
       title,
       description: desc || undefined,
       keywords: keywords.length ? keywords : keywordsBase,
       type: 'article',
       canonical,
     })
+    // JPは試験運用：名言詳細は noindex,follow
+    if (country === 'jp') {
+      ;(meta as any).robots = { index: false, follow: true, googleBot: { index: false, follow: true } }
+    }
+    return meta
   } catch {
-    return generateSEOMetadata({
+    const meta = generateSEOMetadata({
       title: `${isJa ? '名言' : 'Quote'}｜${siteName}`,
       canonical,
     })
+    if (country === 'jp') {
+      ;(meta as any).robots = { index: false, follow: true, googleBot: { index: false, follow: true } }
+    }
+    return meta
   }
 }
 

@@ -44,19 +44,28 @@ export async function generateMetadata({
     const path = `/news/n/${topicId}`
     const canonicalPath = `/${country}${path}`
 
-    return generateSEOMetadata({
+    const meta = generateSEOMetadata({
       title: `${t.title || `${country.toUpperCase()} News`}${sep}${brandSuffix}`,
       description: t.summary || undefined,
       type: 'article',
       publishedTime: t.last_source_published_at || undefined,
       canonical: `${base}${canonicalPath}`,
     })
+    // JPは試験運用：トピック詳細は noindex,follow
+    if (country === 'jp') {
+      ;(meta as any).robots = { index: false, follow: true, googleBot: { index: false, follow: true } }
+    }
+    return meta
   } catch (error) {
     // エラー時は最小限のmetadataを返す
-    return generateSEOMetadata({
+    const meta = generateSEOMetadata({
       title: `${country.toUpperCase()} News${sep}${brandSuffix}`,
       canonical: canonicalUrl(`/${country}/news/n/${topicId}`),
     })
+    if (country === 'jp') {
+      ;(meta as any).robots = { index: false, follow: true, googleBot: { index: false, follow: true } }
+    }
+    return meta
   }
 }
 

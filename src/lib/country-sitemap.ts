@@ -42,6 +42,7 @@ function getLastModForTopic(t: TopicItem): Date {
 export async function generateCountrySitemap(country: Country): Promise<MetadataRoute.Sitemap> {
   const base = getSiteBaseUrl()
   const now = new Date()
+  const isJp = country === 'jp'
 
   // lastmod をできる範囲で正しく
   const homeLastMod = await (async () => {
@@ -84,7 +85,8 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     url: `${base}/${country}`,
     lastModified: homeLastMod || now,
     changeFrequency: 'hourly',
-    priority: 1.0,
+    // JPは試験運用：国トップの優先度を少し下げる（indexは維持）
+    priority: isJp ? 0.9 : 1.0,
   })
 
   // 主要固定ページ（国配下）
@@ -121,7 +123,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
       lastModified: now,
       changeFrequency: 'weekly',
       // コラム一覧（少数だが思想の核）
-      priority: 0.8,
+      priority: isJp ? 0.7 : 0.8,
     },
     {
       url: `${base}/${country}/quotes`,
@@ -148,6 +150,8 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
   })
 
   for (const cat of CATEGORIES) {
+    // JPは試験運用：Heartwarming以外のカテゴリトップは noindex 対象なので sitemap から外す
+    if (isJp && cat !== 'heartwarming') continue
     fixed.push({
       url: `${base}/${country}/category/${cat}`,
       lastModified: latestMeta || homeLastMod || now,
@@ -192,6 +196,8 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     const topicsResponse = await fetchJson<{ topics: TopicItem[]; meta: any }>(`/v1/${country}/latest?limit=5000`, {
       next: { revalidate: CACHE_POLICY.meta },
     })
+    // JPは試験運用：トピック詳細は noindex 対象なので sitemap から外す
+    if (!isJp) {
     for (const t of (topicsResponse.topics || []).slice(0, 5000)) {
       topicEntries.push({
         url: `${base}/${country}/news/n/${t.topic_id}`,
@@ -200,6 +206,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
         // ニュース詳細（量産枠）: 0.3〜0.4 に明確に下げる
         priority: 0.35,
       })
+    }
     }
   } catch (e) {
     console.error(`Failed to fetch topics for sitemap (${country}):`, e)
@@ -218,7 +225,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
         lastModified,
         changeFrequency: 'weekly',
         // コラム詳細（少数精鋭）
-        priority: 0.9,
+        priority: isJp ? 0.75 : 0.9,
       })
     }
   } catch (e) {
@@ -235,13 +242,16 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     for (const q of quotesResponse.quotes || []) {
       const author = String((q as any)?.author_name || '').trim()
       if (author) authors.add(author)
-      quoteEntries.push({
-        url: `${base}/${country}/quotes/${q.quote_id}`,
-        lastModified: new Date(q.updated_at),
-        changeFrequency: 'monthly',
-        // 名言詳細（主役ではない）
-        priority: 0.4,
-      })
+      // JPは試験運用：名言詳細は noindex 対象なので sitemap から外す
+      if (!isJp) {
+        quoteEntries.push({
+          url: `${base}/${country}/quotes/${q.quote_id}`,
+          lastModified: new Date(q.updated_at),
+          changeFrequency: 'monthly',
+          // 名言詳細（主役ではない）
+          priority: 0.4,
+        })
+      }
     }
 
     // 名言著者の名言（まとめ役）

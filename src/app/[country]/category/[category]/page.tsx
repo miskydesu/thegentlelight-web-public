@@ -24,7 +24,7 @@ export function generateMetadata({
   const hreflang = generateHreflang(`/category/${params.category}`)
   const isJa = params.country === 'jp'
   const catLabel = isJa ? (category?.labelJa || category?.label || params.category) : (category?.label || category?.labelJa || params.category)
-  return {
+  const meta: any = {
     title: isJa ? `${catLabel}ニュース` : `${catLabel} News`,
     description: isJa
       ? `不安のない${catLabel}ニュース。穏やかで、煽られない言葉で整理。`
@@ -37,6 +37,11 @@ export function generateMetadata({
       languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
     },
   }
+  // JPは試験運用：Heartwarming以外のカテゴリトップは noindex,follow
+  if (params.country === 'jp' && params.category !== 'heartwarming') {
+    meta.robots = { index: false, follow: true, googleBot: { index: false, follow: true } }
+  }
+  return meta
 }
 
 export default async function CategoryPage({

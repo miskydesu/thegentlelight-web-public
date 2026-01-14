@@ -869,6 +869,10 @@ export default function AdminSummaryPage() {
                   { kind: 'sports_small', label: 'sports_small' },
                 ]
 
+                // UI上では不要なキューは非表示
+                const hiddenKinds = new Set<string>(['top_pool', 'shelf_fastlane', 'sports_small'])
+                const visibleKinds = kinds.filter((k) => !hiddenKinds.has(k.kind))
+
                 const cell = (v?: {
                   runs: number
                   fetched: number
@@ -952,7 +956,7 @@ export default function AdminSummaryPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {kinds.map((k, idx) => {
+                      {visibleKinds.map((k, idx) => {
                         const rowTotal = { runs: 0, fetched: 0, inserted: 0, updated: 0, topicize_createdTopics: 0, error: 0 }
                         for (const c of countries) {
                           const v = byKindCountry[`${k.kind}:${c}`] as any
