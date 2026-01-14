@@ -178,7 +178,7 @@ export async function SidebarLatestColumns({ country }: { country: 'us' | 'uk' |
   const latest = (data.columns || []).filter((c) => !isExcluded(c)).slice(0, 3)
 
   return (
-    <div className={styles.sidebarCard}>
+    <div className={styles.sidebarCard} data-sidebar-block="latest-columns">
       <div className={styles.sidebarTitleRow}>
         <div className={styles.sidebarTitle}>{heading}</div>
         <Link className={styles.sidebarTitleSmallLink} href={`/${country}/columns`}>

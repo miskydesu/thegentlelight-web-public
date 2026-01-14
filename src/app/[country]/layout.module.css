@@ -4,6 +4,10 @@
   padding: 20px 20px;
 }
 
+:global(html[data-tgl-page='columns']) .sidebar [data-sidebar-block='latest-columns'] {
+  display: none;
+}
+
 .grid {
   display: grid;
   grid-template-columns: 1fr;

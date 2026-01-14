@@ -129,6 +129,12 @@ export default async function ColumnsPage({ params }: { params: { country: strin
 
   return (
     <main>
+      {/* Ensure sidebar CSS override is applied immediately (before hydration) */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: "document.documentElement.setAttribute('data-tgl-page','columns');",
+        }}
+      />
       <div
         style={{
           display: 'flex',

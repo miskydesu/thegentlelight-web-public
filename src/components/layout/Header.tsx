@@ -56,6 +56,16 @@ export function Header({ country, className }: HeaderProps) {
     }
   }, [pathname, searchParams])
 
+  // Route marker for CSS-based sidebar overrides (server-side pathname is not always reliable in dev/edge)
+  useEffect(() => {
+    const isColumns = /\/columns(\/|$)/.test(safePathname)
+    if (isColumns) {
+      document.documentElement.setAttribute('data-tgl-page', 'columns')
+    } else {
+      document.documentElement.removeAttribute('data-tgl-page')
+    }
+  }, [safePathname])
+
   const gentle = getGentleFromUrl(`${safePathname}?${searchParams?.toString() || ''}`)
   const withGentle = (url: string) => addGentleToUrl(url, gentle)
 

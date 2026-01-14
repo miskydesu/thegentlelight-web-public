@@ -123,6 +123,12 @@ export default async function ColumnDetailPage({ params }: { params: { country: 
 
   return (
     <main className={styles.page}>
+      {/* Ensure sidebar CSS override is applied immediately (before hydration) */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: "document.documentElement.setAttribute('data-tgl-page','columns');",
+        }}
+      />
       <div className={styles.pageHeader}>
         <Link href={`/${country}/columns`} style={{ fontSize: '0.95rem', color: 'var(--muted)', textDecoration: 'none' }}>
           {isJa ? '← コラム' : '← Columns'}
