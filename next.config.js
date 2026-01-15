@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
+  trailingSlash: false,
 }
 
 // Cloudflare Pages（next-on-pages）では、SentryのNext.js webpackプラグイン有効時に

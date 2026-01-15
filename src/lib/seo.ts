@@ -31,7 +31,9 @@ export function isProdSite(): boolean {
 export function canonicalUrl(path: string): string {
   const base = getSiteBaseUrl()
   const p = path.startsWith('/') ? path : `/${path}`
-  return `${base}${p}`
+  // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
+  const cleanPath = p.replace(/\/$/, '') || '/'
+  return `${base}${cleanPath}`
 }
 
 

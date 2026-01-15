@@ -80,60 +80,62 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
 
   const fixed: MetadataRoute.Sitemap = []
 
-  // 国別トップ
+  // 国別トップ（末尾スラッシュを削除）
+  // 優先国: CA/US=1.0（最優先）、UK=0.95、JP=0.9（最低限）
+  const countryPriority = country === 'ca' || country === 'us' ? 1.0 : country === 'uk' ? 0.95 : 0.9
   fixed.push({
-    url: `${base}/${country}`,
+    url: `${base}/${country}`.replace(/\/$/, ''),
     lastModified: homeLastMod || now,
     changeFrequency: 'hourly',
-    // JPは試験運用：国トップの優先度を少し下げる（indexは維持）
-    priority: isJp ? 0.9 : 1.0,
+    priority: countryPriority,
   })
 
-  // 主要固定ページ（国配下）
+  // 主要固定ページ（国配下、末尾スラッシュを削除）
   fixed.push(
     {
-      url: `${base}/${country}/about`,
+      url: `${base}/${country}/about`.replace(/\/$/, ''),
       lastModified: now,
       changeFrequency: 'yearly',
       priority: 0.5,
     },
     {
-      url: `${base}/${country}/news`,
+      url: `${base}/${country}/news`.replace(/\/$/, ''),
       lastModified: latestMeta || homeLastMod || now,
       changeFrequency: 'hourly',
       // ニュースカテゴリ（評価の受け皿）
       priority: 0.85,
     },
     {
-      url: `${base}/${country}/latest`,
+      url: `${base}/${country}/latest`.replace(/\/$/, ''),
       lastModified: latestMeta || homeLastMod || now,
       changeFrequency: 'hourly',
       // 最新一覧は補助的（news/categoryのほうを集約点にする）
       priority: 0.6,
     },
     {
-      url: `${base}/${country}/daily`,
+      url: `${base}/${country}/daily`.replace(/\/$/, ''),
       lastModified: dailyIndexLastMod || now,
       changeFrequency: 'daily',
       // 朝刊（入口）
       priority: 0.9,
     },
     {
-      url: `${base}/${country}/columns`,
+      url: `${base}/${country}/columns`.replace(/\/$/, ''),
       lastModified: now,
       changeFrequency: 'weekly',
       // コラム一覧（少数だが思想の核）
-      priority: isJp ? 0.7 : 0.8,
+      // 優先国: CA/US=0.85、UK=0.8、JP=0.7
+      priority: country === 'ca' || country === 'us' ? 0.85 : country === 'uk' ? 0.8 : 0.7,
     },
     {
-      url: `${base}/${country}/quotes`,
+      url: `${base}/${country}/quotes`.replace(/\/$/, ''),
       lastModified: now,
       changeFrequency: 'weekly',
       // 名言一覧（検索入口として強化）
       priority: 0.8,
     },
     {
-      url: `${base}/${country}/quotes/authors`,
+      url: `${base}/${country}/quotes/authors`.replace(/\/$/, ''),
       lastModified: now,
       changeFrequency: 'weekly',
       // 名言著者一覧（人物名検索のハブ）
@@ -141,9 +143,9 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     }
   )
 
-  // 利用規約・プライバシー（国別）
+  // 利用規約・プライバシー（国別、末尾スラッシュを削除）
   fixed.push({
-    url: `${base}/${country}/legal`,
+    url: `${base}/${country}/legal`.replace(/\/$/, ''),
     lastModified: now,
     changeFrequency: 'yearly',
     priority: 0.3,
@@ -153,7 +155,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     // JPは試験運用：Heartwarming以外のカテゴリトップは noindex 対象なので sitemap から外す
     if (isJp && cat !== 'heartwarming') continue
     fixed.push({
-      url: `${base}/${country}/category/${cat}`,
+      url: `${base}/${country}/category/${cat}`.replace(/\/$/, ''),
       lastModified: latestMeta || homeLastMod || now,
       changeFrequency: 'daily',
       // ニュースカテゴリ（評価の受け皿）
@@ -180,7 +182,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
       const key = String(th.theme || '').trim()
       if (!key) continue
       themeEntries.push({
-        url: `${base}/${country}/quotes/theme/${encodeURIComponent(key)}`,
+        url: `${base}/${country}/quotes/theme/${encodeURIComponent(key)}`.replace(/\/$/, ''),
         lastModified: now,
         changeFrequency: 'weekly',
         priority: 0.4,
@@ -200,7 +202,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     if (!isJp) {
     for (const t of (topicsResponse.topics || []).slice(0, 5000)) {
       topicEntries.push({
-        url: `${base}/${country}/news/n/${t.topic_id}`,
+        url: `${base}/${country}/news/n/${t.topic_id}`.replace(/\/$/, ''),
         lastModified: getLastModForTopic(t),
         changeFrequency: 'daily',
         // ニュース詳細（量産枠）: 0.3〜0.4 に明確に下げる
@@ -221,7 +223,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     for (const c of columnsResponse.columns || []) {
       const lastModified = c.published_at ? new Date(c.published_at) : new Date(c.updated_at)
       columnEntries.push({
-        url: `${base}/${country}/columns/${c.column_id}`,
+        url: `${base}/${country}/columns/${c.column_id}`.replace(/\/$/, ''),
         lastModified,
         changeFrequency: 'weekly',
         // コラム詳細（少数精鋭）
@@ -245,7 +247,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
       // JPは試験運用：名言詳細は noindex 対象なので sitemap から外す
       if (!isJp) {
         quoteEntries.push({
-          url: `${base}/${country}/quotes/${q.quote_id}`,
+          url: `${base}/${country}/quotes/${q.quote_id}`.replace(/\/$/, ''),
           lastModified: new Date(q.updated_at),
           changeFrequency: 'monthly',
           // 名言詳細（主役ではない）
@@ -255,41 +257,47 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     }
 
     // 名言著者の名言（まとめ役）
-    for (const author of Array.from(authors)) {
-      quoteEntries.push({
-        url: `${base}/${country}/quotes/author/${encodeURIComponent(author)}`,
-        lastModified: now,
-        changeFrequency: 'weekly',
-        priority: 0.6,
-      })
+    // JPは最低限の狙いのため除外（CA/US/UKを優先）
+    if (!isJp) {
+      for (const author of Array.from(authors)) {
+        quoteEntries.push({
+          url: `${base}/${country}/quotes/author/${encodeURIComponent(author)}`.replace(/\/$/, ''),
+          lastModified: now,
+          changeFrequency: 'weekly',
+          priority: 0.6,
+        })
+      }
     }
   } catch (e) {
     console.error(`Failed to fetch quotes for sitemap (${country}):`, e)
   }
 
   // 朝刊（日付詳細、過去30日）
+  // JPは最低限の狙いのため除外（CA/US/UKを優先）
   const dailyEntries: MetadataRoute.Sitemap = []
-  try {
-    const today = new Date()
-    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
-    const year = today.getFullYear()
-    const month = today.getMonth() + 1
-    const r = await fetchJson<{ days: DailyItem[]; meta: any }>(`/v1/${country}/daily?year=${year}&month=${month}`, {
-      next: { revalidate: CACHE_POLICY.meta },
-    })
-    for (const day of r.days || []) {
-      const dayDate = new Date(day.dateLocal)
-      if (dayDate < thirtyDaysAgo) continue
-      dailyEntries.push({
-        url: `${base}/${country}/daily/${day.dateLocal}`,
-        lastModified: day.updatedAt ? new Date(day.updatedAt) : dayDate,
-        changeFrequency: 'daily',
-        // 朝刊（日付詳細）: 毎日の入口
-        priority: 0.9,
+  if (!isJp) {
+    try {
+      const today = new Date()
+      const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+      const year = today.getFullYear()
+      const month = today.getMonth() + 1
+      const r = await fetchJson<{ days: DailyItem[]; meta: any }>(`/v1/${country}/daily?year=${year}&month=${month}`, {
+        next: { revalidate: CACHE_POLICY.meta },
       })
+      for (const day of r.days || []) {
+        const dayDate = new Date(day.dateLocal)
+        if (dayDate < thirtyDaysAgo) continue
+        dailyEntries.push({
+          url: `${base}/${country}/daily/${day.dateLocal}`.replace(/\/$/, ''),
+          lastModified: day.updatedAt ? new Date(day.updatedAt) : dayDate,
+          changeFrequency: 'daily',
+          // 朝刊（日付詳細）: 毎日の入口
+          priority: 0.9,
+        })
+      }
+    } catch (e) {
+      console.error(`Failed to fetch daily for sitemap (${country}):`, e)
     }
-  } catch (e) {
-    console.error(`Failed to fetch daily for sitemap (${country}):`, e)
   }
 
   return [...fixed, ...themeEntries, ...topicEntries, ...columnEntries, ...quoteEntries, ...dailyEntries]

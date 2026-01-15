@@ -212,7 +212,9 @@ export function generateHreflang(pathWithinCountry: string): Array<{ lang: strin
   const p = (() => {
     const raw = String(pathWithinCountry || '')
     if (!raw) return ''
-    return raw.startsWith('/') ? raw : `/${raw}`
+    const path = raw.startsWith('/') ? raw : `/${raw}`
+    // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
+    return path.replace(/\/$/, '') || ''
   })()
 
   const countries: Array<{ country: Country; lang: string }> = [

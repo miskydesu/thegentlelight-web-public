@@ -75,8 +75,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           const lastModified = topic.last_source_published_at
             ? new Date(topic.last_source_published_at)
             : new Date(topic.last_seen_at)
+          // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
           entries.push({
-            url: `${base}/${c.code}/news/n/${topic.topic_id}`,
+            url: `${base}/${c.code}/news/n/${topic.topic_id}`.replace(/\/$/, ''),
             lastModified,
             changeFrequency: 'daily' as const,
             // ニュース詳細（量産枠）: 0.3〜0.4 に明確に下げる
@@ -99,8 +100,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       for (const column of columnsResponse.columns) {
         const lastModified = column.published_at ? new Date(column.published_at) : new Date(column.updated_at)
+        // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
         entries.push({
-          url: `${base}/${c.code}/columns/${column.column_id}`,
+          url: `${base}/${c.code}/columns/${column.column_id}`.replace(/\/$/, ''),
           lastModified,
           changeFrequency: 'weekly' as const,
           // コラム詳細（少数精鋭）
@@ -128,8 +130,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         if (author) authors.add(author)
         // JPは試験運用：名言詳細は noindex 対象なので sitemap から外す
         if (c.code !== 'jp') {
+          // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
           entries.push({
-            url: `${base}/${c.code}/quotes/${quote.quote_id}`,
+            url: `${base}/${c.code}/quotes/${quote.quote_id}`.replace(/\/$/, ''),
             lastModified: new Date(quote.updated_at),
             changeFrequency: 'monthly' as const,
             priority: 0.4,
@@ -138,13 +141,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
 
       // 著者別名言一覧（人物名検索のハブ → その先のまとめ役）
-      for (const author of Array.from(authors)) {
-        entries.push({
-          url: `${base}/${c.code}/quotes/author/${encodeURIComponent(author)}`,
-          lastModified: now,
-          changeFrequency: 'weekly' as const,
-          priority: 0.6,
-        })
+      // JPは最低限の狙いのため除外（CA/US/UKを優先）
+      if (c.code !== 'jp') {
+        for (const author of Array.from(authors)) {
+          // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
+          entries.push({
+            url: `${base}/${c.code}/quotes/author/${encodeURIComponent(author)}`.replace(/\/$/, ''),
+            lastModified: now,
+            changeFrequency: 'weekly' as const,
+            priority: 0.6,
+          })
+        }
       }
     } catch (error) {
       console.error(`Failed to fetch quotes for ${c.code}:`, error)
@@ -174,16 +181,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })()
       if (maxUpdatedAt) dailyIndexLastModByCountry.set(c.code, maxUpdatedAt)
 
-      for (const day of dailyResponse.days) {
-        const dayDate = new Date(day.dateLocal)
-        if (dayDate >= thirtyDaysAgo) {
-          entries.push({
-            url: `${base}/${c.code}/daily/${day.dateLocal}`,
-            lastModified: day.updatedAt ? new Date(day.updatedAt) : dayDate,
-            changeFrequency: 'daily' as const,
-            // 朝刊（日付詳細）: 毎日の入口として 0.9
-            priority: 0.9,
-          })
+      // JPは最低限の狙いのため、朝刊の日付指定ページは除外（CA/US/UKを優先）
+      if (c.code !== 'jp') {
+        for (const day of dailyResponse.days) {
+          const dayDate = new Date(day.dateLocal)
+          if (dayDate >= thirtyDaysAgo) {
+            // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
+            entries.push({
+              url: `${base}/${c.code}/daily/${day.dateLocal}`.replace(/\/$/, ''),
+              lastModified: day.updatedAt ? new Date(day.updatedAt) : dayDate,
+              changeFrequency: 'daily' as const,
+              // 朝刊（日付詳細）: 毎日の入口として 0.9
+              priority: 0.9,
+            })
+          }
         }
       }
     } catch (error) {
@@ -234,8 +245,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         if (rest === '') {
           lastModified = homeLastModByCountry.get(cc) || now
           changeFrequency = 'hourly'
-          // JPは試験運用：国トップの優先度を少し下げる（indexは維持）
-          priority = cc === 'jp' ? 0.9 : 1.0
+          // 優先国: CA/US=1.0（最優先）、UK=0.95、JP=0.9（最低限）
+          priority = cc === 'ca' || cc === 'us' ? 1.0 : cc === 'uk' ? 0.95 : 0.9
         } else if (rest === '/about') {
           lastModified = now
           changeFrequency = 'yearly'
@@ -264,7 +275,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           lastModified = now
           changeFrequency = 'weekly'
           // コラム一覧（少数だが思想の核）
-          priority = cc === 'jp' ? 0.7 : 0.8
+          // 優先国: CA/US=0.85、UK=0.8、JP=0.7
+          priority = cc === 'ca' || cc === 'us' ? 0.85 : cc === 'uk' ? 0.8 : 0.7
         } else if (rest === '/quotes') {
           lastModified = now
           changeFrequency = 'weekly'
@@ -288,8 +300,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
     }
 
+    // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
+    const cleanPath = path.replace(/\/$/, '') || '/'
     return {
-      url: `${base}${path}`,
+      url: `${base}${cleanPath}`,
       lastModified,
       changeFrequency,
       priority,
