@@ -22,6 +22,7 @@ type RecentUpdateItem = {
   title: string
   excerpt: string | null
   last_seen_at: string | null
+  last_source_published_at: string | null
   importance_score: number | null
   source_count: number
   category: string
@@ -102,7 +103,7 @@ export default async function NewsPage({
 
   const recentUpdates = isDefaultView
     ? await fetchJson<{ topics: RecentUpdateItem[] }>(
-        `/v1/${country}/news/recent-updates?window=72h&limit=3${gentle ? `&gentle=1` : ''}`,
+        `/v1/${country}/news/recent-updates?limit=3${gentle ? `&gentle=1` : ''}`,
         { next: { revalidate: CACHE_POLICY.frequent } }
       ).catch(() => ({ topics: [] }))
     : { topics: [] as RecentUpdateItem[] }
@@ -207,16 +208,16 @@ export default async function NewsPage({
         <>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
             <div style={{ fontSize: '1.05rem', fontWeight: 900 }}>
-              {locale === 'ja' ? '継続して報じられている話' : 'Ongoing coverage'}
+              {locale === 'ja' ? '今日の気になる動き' : 'Today’s calm updates'}
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--muted)', opacity: 0.75 }}>
-              {locale === 'ja' ? '過去24〜72時間' : 'Last 24–72h'}
+              {locale === 'ja' ? '今日' : 'Today'}
             </div>
           </div>
           <div style={{ height: 10 }} />
           <div style={{ display: 'grid', gap: 10 }}>
             {recentUpdates.topics.slice(0, 3).map((x) => {
-              const updated = formatUpdatedAgo(x.last_seen_at)
+              const updated = formatUpdatedAgo(x.last_source_published_at ?? x.last_seen_at)
               return (
                 <Link
                   key={x.topic_id}

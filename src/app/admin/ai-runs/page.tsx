@@ -63,26 +63,26 @@ export default function AdminAiRunsPage() {
         <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>読み込み中...</div>
       ) : (
         <>
-          <div className="tglMuted" style={{ marginBottom: '0.75rem' }}>
-            recent: {runs.length} runs / total requests: {fmt(totalRequests)} / total tokens: {fmt(totalTokens)}
-          </div>
+      <div className="tglMuted" style={{ marginBottom: '0.75rem' }}>
+        recent: {runs.length} runs / total requests: {fmt(totalRequests)} / total tokens: {fmt(totalTokens)}
+      </div>
 
-          <div style={{ overflowX: 'auto' }}>
-            <table className="tglTable" style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th align="left">started</th>
-                  <th align="left">country</th>
-                  <th align="left">mode</th>
-                  <th align="left">status</th>
-                  <th align="right">topics</th>
-                  <th align="right">auto</th>
-                  <th align="right">req</th>
-                  <th align="right">tokens</th>
-                  <th align="left">model</th>
-                </tr>
-              </thead>
-              <tbody>
+      <div style={{ overflowX: 'auto' }}>
+        <table className="tglTable" style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th align="left">started</th>
+              <th align="left">country</th>
+              <th align="left">mode</th>
+              <th align="left">status</th>
+              <th align="right">topics</th>
+              <th align="right">auto</th>
+              <th align="right">req</th>
+              <th align="right">tokens</th>
+              <th align="left">model</th>
+            </tr>
+          </thead>
+          <tbody>
                 {runs.length === 0 ? (
                   <tr>
                     <td colSpan={9} style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
@@ -91,24 +91,24 @@ export default function AdminAiRunsPage() {
                   </tr>
                 ) : (
                   runs.map((r) => (
-                    <tr key={r.run_id}>
-                      <td>{r.started_at ? new Date(r.started_at).toLocaleString() : '-'}</td>
-                      <td>{r.country ?? '-'}</td>
-                      <td>{r.mode}</td>
-                      <td>{r.status}</td>
-                      <td align="right">
-                        {fmt(r.topics_processed)} ({fmt(r.topics_succeeded)}/{fmt(r.topics_failed)})
-                      </td>
-                      <td align="right">{fmt(r.auto_marked_ready)}</td>
-                      <td align="right">{fmt(r.llm_requests)}</td>
-                      <td align="right">{fmt(r.total_tokens)}</td>
-                      <td>{r.model ?? '-'}</td>
-                    </tr>
+              <tr key={r.run_id}>
+                <td>{r.started_at ? new Date(r.started_at).toLocaleString() : '-'}</td>
+                <td>{r.country ?? '-'}</td>
+                <td>{r.mode}</td>
+                <td>{r.status}</td>
+                <td align="right">
+                  {fmt(r.topics_processed)} ({fmt(r.topics_succeeded)}/{fmt(r.topics_failed)})
+                </td>
+                <td align="right">{fmt(r.auto_marked_ready)}</td>
+                <td align="right">{fmt(r.llm_requests)}</td>
+                <td align="right">{fmt(r.total_tokens)}</td>
+                <td>{r.model ?? '-'}</td>
+              </tr>
                   ))
                 )}
-              </tbody>
-            </table>
-          </div>
+          </tbody>
+        </table>
+      </div>
         </>
       )}
     </main>

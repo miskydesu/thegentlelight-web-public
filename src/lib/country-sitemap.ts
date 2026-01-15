@@ -259,13 +259,13 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     // 名言著者の名言（まとめ役）
     // JPは最低限の狙いのため除外（CA/US/UKを優先）
     if (!isJp) {
-      for (const author of Array.from(authors)) {
-        quoteEntries.push({
+    for (const author of Array.from(authors)) {
+      quoteEntries.push({
           url: `${base}/${country}/quotes/author/${encodeURIComponent(author)}`.replace(/\/$/, ''),
-          lastModified: now,
-          changeFrequency: 'weekly',
-          priority: 0.6,
-        })
+        lastModified: now,
+        changeFrequency: 'weekly',
+        priority: 0.6,
+      })
       }
     }
   } catch (e) {
@@ -276,27 +276,27 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
   // JPは最低限の狙いのため除外（CA/US/UKを優先）
   const dailyEntries: MetadataRoute.Sitemap = []
   if (!isJp) {
-    try {
-      const today = new Date()
-      const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
-      const year = today.getFullYear()
-      const month = today.getMonth() + 1
-      const r = await fetchJson<{ days: DailyItem[]; meta: any }>(`/v1/${country}/daily?year=${year}&month=${month}`, {
-        next: { revalidate: CACHE_POLICY.meta },
-      })
-      for (const day of r.days || []) {
-        const dayDate = new Date(day.dateLocal)
-        if (dayDate < thirtyDaysAgo) continue
-        dailyEntries.push({
+  try {
+    const today = new Date()
+    const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+    const year = today.getFullYear()
+    const month = today.getMonth() + 1
+    const r = await fetchJson<{ days: DailyItem[]; meta: any }>(`/v1/${country}/daily?year=${year}&month=${month}`, {
+      next: { revalidate: CACHE_POLICY.meta },
+    })
+    for (const day of r.days || []) {
+      const dayDate = new Date(day.dateLocal)
+      if (dayDate < thirtyDaysAgo) continue
+      dailyEntries.push({
           url: `${base}/${country}/daily/${day.dateLocal}`.replace(/\/$/, ''),
-          lastModified: day.updatedAt ? new Date(day.updatedAt) : dayDate,
-          changeFrequency: 'daily',
-          // 朝刊（日付詳細）: 毎日の入口
-          priority: 0.9,
-        })
-      }
-    } catch (e) {
-      console.error(`Failed to fetch daily for sitemap (${country}):`, e)
+        lastModified: day.updatedAt ? new Date(day.updatedAt) : dayDate,
+        changeFrequency: 'daily',
+        // 朝刊（日付詳細）: 毎日の入口
+        priority: 0.9,
+      })
+    }
+  } catch (e) {
+    console.error(`Failed to fetch daily for sitemap (${country}):`, e)
     }
   }
 

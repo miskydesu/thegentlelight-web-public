@@ -143,14 +143,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // 著者別名言一覧（人物名検索のハブ → その先のまとめ役）
       // JPは最低限の狙いのため除外（CA/US/UKを優先）
       if (c.code !== 'jp') {
-        for (const author of Array.from(authors)) {
+      for (const author of Array.from(authors)) {
           // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
-          entries.push({
+        entries.push({
             url: `${base}/${c.code}/quotes/author/${encodeURIComponent(author)}`.replace(/\/$/, ''),
-            lastModified: now,
-            changeFrequency: 'weekly' as const,
-            priority: 0.6,
-          })
+          lastModified: now,
+          changeFrequency: 'weekly' as const,
+          priority: 0.6,
+        })
         }
       }
     } catch (error) {
@@ -183,17 +183,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       // JPは最低限の狙いのため、朝刊の日付指定ページは除外（CA/US/UKを優先）
       if (c.code !== 'jp') {
-        for (const day of dailyResponse.days) {
-          const dayDate = new Date(day.dateLocal)
-          if (dayDate >= thirtyDaysAgo) {
+      for (const day of dailyResponse.days) {
+        const dayDate = new Date(day.dateLocal)
+        if (dayDate >= thirtyDaysAgo) {
             // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
-            entries.push({
+          entries.push({
               url: `${base}/${c.code}/daily/${day.dateLocal}`.replace(/\/$/, ''),
-              lastModified: day.updatedAt ? new Date(day.updatedAt) : dayDate,
-              changeFrequency: 'daily' as const,
-              // 朝刊（日付詳細）: 毎日の入口として 0.9
-              priority: 0.9,
-            })
+            lastModified: day.updatedAt ? new Date(day.updatedAt) : dayDate,
+            changeFrequency: 'daily' as const,
+            // 朝刊（日付詳細）: 毎日の入口として 0.9
+            priority: 0.9,
+          })
           }
         }
       }
