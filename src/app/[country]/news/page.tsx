@@ -208,7 +208,7 @@ export default async function NewsPage({
         <>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
             <div style={{ fontSize: '1.05rem', fontWeight: 900 }}>
-              {locale === 'ja' ? '今日の気になる動き' : 'Today’s calm updates'}
+              {locale === 'ja' ? '今日の少し気になる動き' : 'Today’s calm updates'}
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--muted)', opacity: 0.75 }}>
               {locale === 'ja' ? '今日' : 'Today'}

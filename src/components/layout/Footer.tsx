@@ -5,7 +5,6 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { useMemo } from 'react'
 import { isCountry, type Country } from '@/lib/tglApi'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
-import { getCategoryLabel } from '@/lib/categories'
 import { addGentleToUrl, getGentleFromUrl } from '@/lib/view-switch'
 import { RegionLangSwitch } from './RegionLangSwitch'
 import styles from './Footer.module.css'
@@ -32,27 +31,12 @@ export function Footer() {
   const primaryLinks = useMemo(() => {
     if (!country) return []
 
-    const labelTop = t?.nav.top ?? (isJa ? 'トップ' : 'Home')
-    const labelLatestNews = isJa ? '最新News' : 'Latest News'
-    const labelDaily = t?.nav.daily ?? (isJa ? '日報' : 'Daily')
-
     return [
-      { label: labelTop, href: `/${country}` },
-      { label: labelLatestNews, href: `/${country}/news` },
-      // 朝刊は「当日ページ」へ（未生成なら /daily/today が案内を表示）
-      { label: labelDaily, href: `/${country}/daily/today` },
-      { label: getCategoryLabel('heartwarming', locale), href: `/${country}/category/heartwarming` },
-      { label: getCategoryLabel('science_earth', locale), href: `/${country}/category/science_earth` },
-      { label: getCategoryLabel('politics', locale), href: `/${country}/category/politics` },
-      { label: getCategoryLabel('health', locale), href: `/${country}/category/health` },
-      { label: getCategoryLabel('technology', locale), href: `/${country}/category/technology` },
-      { label: getCategoryLabel('arts', locale), href: `/${country}/category/arts` },
-      { label: getCategoryLabel('business', locale), href: `/${country}/category/business` },
-      { label: getCategoryLabel('sports', locale), href: `/${country}/category/sports` },
+      { label: isJa ? 'ニュース' : 'News', href: `/${country}/news` },
       { label: isJa ? 'コラム' : 'Columns', href: `/${country}/columns` },
       { label: isJa ? '名言' : 'Quotes', href: `/${country}/quotes` },
     ]
-  }, [country, isJa, locale, t])
+  }, [country, isJa])
 
   const secondaryLinks = useMemo(() => {
     const legalHref = country ? `/${country}/legal` : '/legal'
@@ -68,16 +52,18 @@ export function Footer() {
     <footer className={styles.footer}>
       <div className={styles.inner}>
         {country ? (
-          <nav className={styles.row} aria-label={isJa ? 'フッター主要リンク' : 'Footer primary links'}>
-            {primaryLinks.map((x) => (
-              <Link key={x.href} href={withGentle(x.href)} className={styles.link}>
-                {x.label}
-              </Link>
-            ))}
-          </nav>
-        ) : null}
+          <>
+            <nav className={styles.row} aria-label={isJa ? 'フッター補助リンク' : 'Footer support links'}>
+              {primaryLinks.map((x) => (
+                <Link key={x.href} href={withGentle(x.href)} className={styles.link}>
+                  {x.label}
+                </Link>
+              ))}
+            </nav>
 
-        <div className={styles.divider} />
+            <div className={styles.divider} />
+          </>
+        ) : null}
 
         <nav className={styles.row} aria-label={isJa ? 'フッター情報リンク' : 'Footer info links'}>
           {country ? (
