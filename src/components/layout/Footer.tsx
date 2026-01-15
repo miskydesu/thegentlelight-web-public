@@ -54,12 +54,12 @@ export function Footer() {
         {country ? (
           <>
             <nav className={styles.row} aria-label={isJa ? 'フッター補助リンク' : 'Footer support links'}>
-              {primaryLinks.map((x) => (
-                <Link key={x.href} href={withGentle(x.href)} className={styles.link}>
-                  {x.label}
-                </Link>
-              ))}
-            </nav>
+            {primaryLinks.map((x) => (
+              <Link key={x.href} href={withGentle(x.href)} className={styles.link}>
+                {x.label}
+              </Link>
+            ))}
+          </nav>
 
             <div className={styles.divider} />
           </>

@@ -88,6 +88,16 @@ export type TopicsResponse = {
   meta: ApiMeta
 }
 
+export type HeartwarmingTodayPick = TopicSummary & {
+  pick_type?: string
+  pick_label?: string
+}
+
+export type HeartwarmingTodayThreeResponse = {
+  picks: HeartwarmingTodayPick[]
+  meta: ApiMeta
+}
+
 export type TopicDetailResponse = {
   topic: TopicSummary & {
     summaries?: { soft: string | null }

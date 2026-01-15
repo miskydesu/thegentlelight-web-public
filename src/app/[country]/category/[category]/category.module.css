@@ -90,4 +90,85 @@
   border-color: rgba(210, 80, 120, 0.12) !important;
 }
 
+.cardTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.toneBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  line-height: 1.2;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.02);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.toneBadge[data-tone="warm"] {
+  background: rgba(255, 120, 170, 0.08);
+  border-color: rgba(255, 120, 170, 0.22);
+}
+
+.toneBadge[data-tone="calm"] {
+  background: rgba(120, 200, 140, 0.08);
+  border-color: rgba(120, 200, 140, 0.22);
+}
+
+.toneBadge[data-tone="hope"] {
+  background: rgba(245, 210, 90, 0.12);
+  border-color: rgba(245, 210, 90, 0.28);
+}
+
+.readTime {
+  font-size: 0.74rem;
+  color: rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
+}
+
+.featuredSection {
+  margin-top: 6px;
+  margin-bottom: 16px;
+}
+
+.featuredTitleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.featuredGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.featuredCard {
+  border-color: rgba(0, 0, 0, 0.14) !important;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.05),
+    0 10px 26px rgba(0, 0, 0, 0.08);
+}
+
+.nextChoicesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .nextChoicesGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 
