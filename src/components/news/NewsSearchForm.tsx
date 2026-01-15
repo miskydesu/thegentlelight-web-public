@@ -81,13 +81,13 @@ export function NewsSearchForm({
       {/* カテゴリ棚（quotes のテーマ棚風） */}
       <div className={styles.categoryShelf} aria-label={locale === 'ja' ? 'カテゴリ' : 'Category'}>
         <div className={styles.categoryShelfHeader}>
-          <div className={styles.categoryShelfTitle}>{locale === 'ja' ? 'ニュースのカテゴリ' : 'News Categories'}</div>
+          <div className={styles.categoryShelfTitle}>{locale === 'ja' ? 'カテゴリで絞り込む' : 'Filter by category'}</div>
           <div className={styles.categoryShelfHint}>{locale === 'ja' ? 'タップで絞り込み' : 'Tap to filter'}</div>
         </div>
         <div className={styles.categoryGrid}>
           <Link
             href={buildHrefWithCategory('')}
-            className={`${styles.categoryItem} ${!category ? styles.categoryItemActive : ''}`}
+            className={`${styles.categoryItem} ${styles.categoryItemAll} ${!category ? styles.categoryItemActive : ''}`}
             aria-current={!category ? 'page' : undefined}
             onClick={() => setCategory('')}
             title={locale === 'ja' ? 'すべて' : 'All'}

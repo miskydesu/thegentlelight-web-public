@@ -101,6 +101,7 @@ export function Header({ country, className }: HeaderProps) {
   const getMenuTextColor = (href: string): string | null => {
     if (!country) return null
     const clean = String(href || '').split('?')[0] || ''
+    if (clean === `/${country}/category/heartwarming`) return '#c84b73' // heartwarming (subtle accent)
     if (clean === `/${country}/columns`) return '#d63384' // pink
     if (clean === `/${country}/quotes`) return '#1f8a5b' // green
     return null
@@ -110,7 +111,7 @@ export function Header({ country, className }: HeaderProps) {
     const clean = String(href || '').split('?')[0] || ''
     if (!clean) return false
     // 国トップは prefix 判定にすると常に当たるので「完全一致」のみ
-    if (country && clean === `/${country}`) return pathname === clean
+    if (country && clean === `/${country}`) return safePathname === clean
     return safePathname === clean || safePathname.startsWith(`${clean}/`)
   }
 
@@ -145,6 +146,29 @@ export function Header({ country, className }: HeaderProps) {
       { kind: 'sep' as const },
       { kind: 'link' as const, label: isJa ? 'サイトの説明' : 'About', href: `/${country}/about` },
     ]
+  }, [country, isJa, locale, t])
+
+  // Desktop (>=1024想定): 下段ナビは「レベル1」だけに絞る（カテゴリは /news 側の棚に集約）
+  const desktopNavItems = useMemo(() => {
+    if (!country) return { left: [], right: null as any }
+    const labelTop = t?.nav.top ?? (isJa ? 'トップ' : 'Home')
+    const labelDailyToday = isJa ? '今日の朝刊' : "Today's Briefing"
+    const labelNews = isJa ? 'ニュース' : 'News'
+    const labelColumns = isJa ? 'コラム' : 'Columns'
+    const labelQuotes = isJa ? '名言' : 'Quotes'
+    const labelAbout = isJa ? 'サイトの説明' : 'About'
+    const labelHeartwarming = getCategoryLabel('heartwarming', locale)
+
+    const left = [
+      { label: labelTop, href: `/${country}` },
+      { label: labelDailyToday, href: `/${country}/daily/today` },
+      { label: labelNews, href: `/${country}/news` },
+      { label: labelHeartwarming, href: `/${country}/category/heartwarming` },
+      { label: labelColumns, href: `/${country}/columns` },
+      { label: labelQuotes, href: `/${country}/quotes` },
+    ]
+    const right = { label: labelAbout, href: `/${country}/about` }
+    return { left, right }
   }, [country, isJa, locale, t])
 
   return (
@@ -377,43 +401,58 @@ export function Header({ country, className }: HeaderProps) {
             background: '#fff',
           }}
         >
-          <div style={{ maxWidth: '100%', margin: 0, padding: '5px 20px', display: 'flex', justifyContent: 'center' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 10,
-                flexWrap: 'wrap',
-                width: '100%',
-              }}
-            >
-              {menuItems.map((it, idx) => {
-                if ((it as any).kind === 'sep') {
-                  return null
-                }
-                const x = it as any
-                const active = isActiveHref(x.href)
-                const itemColor = getMenuTextColor(x.href)
-                return (
-                  <Link
-                    key={x.href}
-                    href={withGentle(x.href)}
-                    style={{
-                      fontSize: 14,
-                      color: active ? '#fff' : itemColor || 'var(--text)',
-                      borderRadius: 6,
-                      padding: '4px 10px',
-                      border: `1px solid ${active ? (itemColor || '#000') : 'transparent'}`,
-                      background: active ? (itemColor || '#000') : 'transparent',
-                      fontWeight: active ? 700 : 400,
-                    }}
-                    aria-current={active ? 'page' : undefined}
-                  >
-                    {x.label}
-                  </Link>
-                )
-              })}
+          <div style={{ maxWidth: '100%', margin: 0, padding: '6px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
+                {desktopNavItems.left.map((x) => {
+                  const active = isActiveHref(x.href)
+                  const itemColor = getMenuTextColor(x.href)
+                  return (
+                    <Link
+                      key={x.href}
+                      href={withGentle(x.href)}
+                      style={{
+                        fontSize: 14,
+                        color: active ? '#fff' : itemColor || 'var(--text)',
+                        borderRadius: 6,
+                        padding: '4px 10px',
+                        border: `1px solid ${active ? (itemColor || '#000') : 'transparent'}`,
+                        background: active ? (itemColor || '#000') : 'transparent',
+                        fontWeight: active ? 700 : 400,
+                        textDecoration: 'none',
+                      }}
+                      aria-current={active ? 'page' : undefined}
+                    >
+                      {x.label}
+                    </Link>
+                  )
+                })}
+              </div>
+
+              {desktopNavItems.right ? (
+                (() => {
+                  const x = desktopNavItems.right
+                  const active = isActiveHref(x.href)
+                  return (
+                    <Link
+                      href={withGentle(x.href)}
+                      style={{
+                        fontSize: 14,
+                        color: active ? '#fff' : 'var(--muted)',
+                        borderRadius: 6,
+                        padding: '4px 10px',
+                        border: `1px solid ${active ? '#000' : 'transparent'}`,
+                        background: active ? '#000' : 'transparent',
+                        fontWeight: active ? 700 : 400,
+                        textDecoration: 'none',
+                      }}
+                      aria-current={active ? 'page' : undefined}
+                    >
+                      {x.label}
+                    </Link>
+                  )
+                })()
+              ) : null}
             </div>
           </div>
         </div>

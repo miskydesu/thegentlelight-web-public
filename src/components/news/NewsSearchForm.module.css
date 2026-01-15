@@ -11,7 +11,7 @@
 }
 
 .categoryShelf {
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.7);
   padding: 10px;
@@ -42,13 +42,13 @@
 }
 
 .categoryShelfTitle {
-  font-size: 0.95rem;
-  font-weight: 800;
+  font-size: 0.9rem;
+  font-weight: 700;
   color: var(--text);
 }
 
 .categoryShelfHint {
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -56,7 +56,7 @@
 .categoryGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
 }
 
 @media (min-width: 560px) {
@@ -70,7 +70,7 @@
   .categoryGrid {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
   }
 }
 
@@ -80,9 +80,9 @@
   justify-content: flex-start;
   gap: 10px;
   min-width: 0;
-  padding: 10px 12px;
+  padding: 9px 11px;
   border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   background: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   color: inherit;
@@ -99,12 +99,21 @@
 
 .categoryItem:hover {
   transform: translateY(-1px);
-  border-color: rgba(0, 0, 0, 0.24);
+  border-color: rgba(0, 0, 0, 0.18);
 }
 
 .categoryItemActive {
-  border-color: rgba(0, 0, 0, 0.32);
-  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.22);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.categoryItemAll {
+  border-color: rgba(0, 0, 0, 0.18);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.categoryItemAll .categoryLabel {
+  font-weight: 900;
 }
 
 @media (max-width: 559px) {

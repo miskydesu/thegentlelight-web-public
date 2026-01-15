@@ -17,6 +17,17 @@ import { CACHE_POLICY } from '@/lib/cache-policy'
 
 // Categories are handled by dedicated category pages (/category/[category]).
 
+type RecentUpdateItem = {
+  topic_id: string
+  title: string
+  excerpt: string | null
+  last_seen_at: string | null
+  importance_score: number | null
+  source_count: number
+  category: string
+  event_type: string | null
+}
+
 export function generateMetadata({
   params,
   searchParams,
@@ -86,6 +97,36 @@ export default async function NewsPage({
 
   const cursor = Number.isFinite(Number(searchParams.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
   const limit = Number.isFinite(Number(searchParams.limit)) ? Math.min(100, Math.max(1, Math.trunc(Number(searchParams.limit)))) : 30
+  const gentleQs = gentle ? '?gentle=1' : ''
+  const isDefaultView = !query && !category && cursor === 0
+
+  const recentUpdates = isDefaultView
+    ? await fetchJson<{ topics: RecentUpdateItem[] }>(
+        `/v1/${country}/news/recent-updates?window=24h&limit=3${gentle ? `&gentle=1` : ''}`,
+        { next: { revalidate: CACHE_POLICY.frequent } }
+      ).catch(() => ({ topics: [] }))
+    : { topics: [] as RecentUpdateItem[] }
+
+  const formatUpdatedAgo = (iso: string | null): string | null => {
+    if (!iso) return null
+    const ts = new Date(iso).getTime()
+    if (!Number.isFinite(ts) || ts <= 0) return null
+    const diffMs = Date.now() - ts
+    if (!Number.isFinite(diffMs) || diffMs < 0) return null
+    const mins = Math.floor(diffMs / (60 * 1000))
+    const hours = Math.floor(diffMs / (60 * 60 * 1000))
+    const days = Math.floor(diffMs / (24 * 60 * 60 * 1000))
+    if (locale === 'ja') {
+      if (mins < 5) return '更新 たった今'
+      if (hours < 1) return `更新 ${mins}分前`
+      if (days < 1) return `更新 ${hours}時間前`
+      return `更新 ${days}日前`
+    }
+    if (mins < 5) return 'Updated just now'
+    if (hours < 1) return `Updated ${mins}m ago`
+    if (days < 1) return `Updated ${hours}h ago`
+    return `Updated ${days}d ago`
+  }
   // デフォルト表示は「最新（時系列）」を優先し、新しい順を担保する
   // - q（検索語）がある場合のみ /topics（棚検索）を使う（/latest は q を受けないため）
   const apiPath = query
@@ -123,9 +164,80 @@ export default async function NewsPage({
 
       <div style={{ height: 12 }} />
 
+      {/* /news の「重心」：まず安心できる足場（フィルタ無し初期表示だけ） */}
+      {isDefaultView ? (
+        <>
+          {/* レイヤーA（静的・説明）：テキストだけ。導線/検索と同じ重要度に見せない */}
+          <div style={{ marginTop: 2, marginBottom: 14 }}>
+            <div style={{ color: 'var(--text)', fontWeight: 800, fontSize: '0.95rem', lineHeight: 1.65 }}>
+              {locale === 'ja' ? (
+                <>
+                  世界のニュースを、分野や関心ごとから探せます。
+                  <br />
+                  気になる話題だけ、静かに追ってください。
+                </>
+              ) : (
+                <>
+                  Browse world news by topic and interest.
+                  <br />
+                  Follow only what matters to you—calmly.
+                </>
+              )}
+            </div>
+          </div>
+        </>
+      ) : null}
+
       <NewsSearchForm country={country} initialQuery={query} initialCategory={category} />
 
-      <div style={{ height: 16 }} />
+      <div style={{ height: 18 }} />
+      {isDefaultView ? <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }} /> : null}
+      <div style={{ height: 18 }} />
+
+      {/* /news の唯一の編集枠: 最近、動きがあった話（初期表示のみ / 3〜6件の上限固定） */}
+      {isDefaultView && (recentUpdates.topics || []).length > 0 ? (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: '1.05rem', fontWeight: 900 }}>
+              {locale === 'ja' ? '最近、動きがあった話' : 'Recently updated'}
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--muted)', opacity: 0.75 }}>
+              {locale === 'ja' ? '24時間以内' : 'Last 24h'}
+            </div>
+          </div>
+          <div style={{ height: 10 }} />
+          <div style={{ display: 'grid', gap: 10 }}>
+            {recentUpdates.topics.slice(0, 3).map((x) => {
+              const updated = formatUpdatedAgo(x.last_seen_at)
+              return (
+                <Link
+                  key={x.topic_id}
+                  href={`/${country}/news/n/${x.topic_id}${gentleQs}`}
+                  style={{
+                    textDecoration: 'none',
+                    color: 'inherit',
+                    border: '1px solid var(--border)',
+                    background: '#fff',
+                    borderRadius: 14,
+                    padding: '12px 14px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+                    <div style={{ fontWeight: 800, lineHeight: 1.35 }}>{x.title}</div>
+                    {updated ? <div style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>{updated}</div> : null}
+                  </div>
+                  {x.excerpt ? (
+                    <div style={{ marginTop: 6, color: 'var(--muted)', fontSize: '0.92rem', lineHeight: 1.55 }}>{x.excerpt}</div>
+                  ) : null}
+                </Link>
+              )
+            })}
+          </div>
+          <div style={{ height: 14 }} />
+          <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)' }} />
+          <div style={{ height: 18 }} />
+        </>
+      ) : null}
 
       {(query || category) && (
         <div style={{ marginBottom: '1rem' }}>
@@ -137,6 +249,13 @@ export default async function NewsPage({
           </p>
         </div>
       )}
+
+      {isDefaultView && !(query || category) ? (
+        <>
+          <div style={{ fontSize: '1.05rem', fontWeight: 900 }}>{locale === 'ja' ? '最新のニュース' : 'Latest news'}</div>
+          <div style={{ height: 10 }} />
+        </>
+      ) : null}
 
       {topics.length > 0 ? (
         <>
