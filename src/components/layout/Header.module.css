@@ -134,6 +134,42 @@
   z-index: 1;
 }
 
+.mobileHeader {
+  transition: transform 220ms ease, opacity 220ms ease;
+}
+
+.mobileHeaderHidden {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mobileHeaderFixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+}
+
+.mobileHeaderSpacer {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .mobileHeader {
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .mobileHeaderFixed {
+    position: sticky;
+  }
+  .mobileHeaderSpacer {
+    display: none;
+  }
+}
+
 @media (max-width: 640px) {
   .logoImg {
     height: 47px;

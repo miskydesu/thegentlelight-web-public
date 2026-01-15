@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { COUNTRIES, isCountry, type Country } from '@/lib/tglApi'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { CATEGORIES, getCategoryLabel } from '@/lib/categories'
@@ -29,6 +29,13 @@ export function Header({ country, className }: HeaderProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const safePathname = pathname || ''
+  const [isHiddenOnScroll, setIsHiddenOnScroll] = useState(false)
+  const [isMobileViewport, setIsMobileViewport] = useState(false)
+  const [headerHeight, setHeaderHeight] = useState(0)
+  const lastScrollYRef = useRef(0)
+  const tickingRef = useRef(false)
+  const headerRef = useRef<HTMLElement | null>(null)
+  const hiddenRef = useRef(false)
 
   // メイン言語固定（URLの ?lang= 切替は廃止）
   const lang: Locale | null = country ? getLocaleForCountry(country) : null
@@ -55,6 +62,79 @@ export function Header({ country, className }: HeaderProps) {
       window.location.replace(nextUrl)
     }
   }, [pathname, searchParams])
+
+  // Mobile header hide-on-scroll (down) / show-on-scroll (up)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia('(max-width: 767px)')
+    const syncViewport = () => {
+      const isMobile = mq.matches
+      setIsMobileViewport(isMobile)
+      if (!isMobile) {
+        setIsHiddenOnScroll(false)
+        hiddenRef.current = false
+      }
+    }
+    syncViewport()
+
+    const updateHeaderHeight = () => {
+      const h = headerRef.current?.getBoundingClientRect().height || 0
+      if (Number.isFinite(h) && h > 0) {
+        setHeaderHeight(h)
+      }
+    }
+
+    const onScroll = () => {
+      if (tickingRef.current) return
+      tickingRef.current = true
+      window.requestAnimationFrame(() => {
+        const y = window.scrollY || 0
+        const prev = lastScrollYRef.current
+        const delta = y - prev
+        const threshold = headerHeight > 0 ? headerHeight * 0.5 : 30
+        const nearTop = y <= threshold
+        if (nearTop) {
+          hiddenRef.current = false
+          setIsHiddenOnScroll(false)
+        } else if (delta > 6) {
+          hiddenRef.current = true
+          setIsHiddenOnScroll(true)
+        } else if (delta < (hiddenRef.current ? -1 : -6)) {
+          hiddenRef.current = false
+          setIsHiddenOnScroll(false)
+        }
+        lastScrollYRef.current = y
+        tickingRef.current = false
+      })
+    }
+
+    lastScrollYRef.current = window.scrollY || 0
+    updateHeaderHeight()
+    const rafId = window.requestAnimationFrame(updateHeaderHeight)
+    const timeoutId = window.setTimeout(updateHeaderHeight, 120)
+    const ro = window.ResizeObserver ? new ResizeObserver(updateHeaderHeight) : null
+    if (ro && headerRef.current) ro.observe(headerRef.current)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', updateHeaderHeight)
+    if (mq.addEventListener) {
+      mq.addEventListener('change', syncViewport)
+    } else {
+      // Safari fallback
+      mq.addListener(syncViewport)
+    }
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', updateHeaderHeight)
+      window.cancelAnimationFrame(rafId)
+      window.clearTimeout(timeoutId)
+      if (ro) ro.disconnect()
+      if (mq.removeEventListener) {
+        mq.removeEventListener('change', syncViewport)
+      } else {
+        mq.removeListener(syncViewport)
+      }
+    }
+  }, [])
 
   // Route marker for CSS-based sidebar overrides (server-side pathname is not always reliable in dev/edge)
   useEffect(() => {
@@ -192,27 +272,36 @@ export function Header({ country, className }: HeaderProps) {
   }, [country, isJa, locale, t])
 
   return (
-    <header
-      className={className}
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 10,
-        background: '#fff',
-      }}
-    >
-      <div
+    <>
+      <header
+        ref={headerRef}
+        className={[
+          className,
+          styles.mobileHeader,
+          isMobileViewport ? styles.mobileHeaderFixed : '',
+          isHiddenOnScroll ? styles.mobileHeaderHidden : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
         style={{
-          maxWidth: '100%',
-          margin: 0,
-          padding: '14px 20px',
-          display: 'grid',
-          gridTemplateColumns: '1fr auto 1fr',
-          alignItems: 'center',
-          columnGap: 16,
-          rowGap: 8,
+          position: isMobileViewport ? 'fixed' : 'sticky',
+          top: 0,
+          zIndex: 10,
+          background: '#fff',
         }}
       >
+        <div
+          style={{
+            maxWidth: '100%',
+            margin: 0,
+            padding: '14px 20px',
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
+            alignItems: 'center',
+            columnGap: 16,
+            rowGap: 8,
+          }}
+        >
         {/* 左：モバイル時だけハンバーガー */}
         <div>
           {country ? (
@@ -459,10 +548,10 @@ export function Header({ country, className }: HeaderProps) {
             ))
           )}
         </nav>
-      </div>
+        </div>
 
       {/* 下部メニュー（国別） */}
-      {country ? (
+        {country ? (
         <div
           className={`relative ${styles.desktopOnly}`}
           style={{
@@ -526,8 +615,10 @@ export function Header({ country, className }: HeaderProps) {
             </div>
           </div>
         </div>
-      ) : null}
-    </header>
+        ) : null}
+      </header>
+      {isMobileViewport ? <div className={styles.mobileHeaderSpacer} style={{ height: headerHeight }} /> : null}
+    </>
   )
 }
 
