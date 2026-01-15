@@ -194,7 +194,7 @@ export default async function CategoryPage({
           >
             {locale === 'ja' ? (
               <>
-                今日は、世界のどこかで起きた
+                今日、世界のどこかで起きた
                 <br />
                 小さなやさしさを集めました。
               </>

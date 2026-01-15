@@ -30,6 +30,34 @@
   padding: 14px;
 }
 
+.sidebarShortcuts {
+  display: grid;
+  gap: 8px;
+}
+
+.sidebarShortcutChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: #fff;
+  text-decoration: none;
+}
+
+.sidebarShortcutChip:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+@media (max-width: 1023px) {
+  .sidebarShortcutsCard {
+    display: none;
+  }
+}
+
 .sidebarTitle {
   font-weight: 800;
   font-size: 0.95rem;

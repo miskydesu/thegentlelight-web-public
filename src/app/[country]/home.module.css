@@ -41,6 +41,12 @@
   white-space: nowrap;
 }
 
+.cardDateTopRight {
+  top: 10px;
+  bottom: auto;
+  font-style: normal;
+}
+
 .cardTitleAccent {
   display: block;
   border-left: 4px solid var(--cat-color, rgba(0, 0, 0, 0.18));
@@ -65,6 +71,38 @@
   border-color: rgba(210, 80, 120, 0.12) !important;
 }
 
+.roleBadge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.02);
+  margin-bottom: 6px;
+}
+
+.roleBadgeToday {
+  background: rgba(255, 120, 120, 0.14);
+  border-color: rgba(255, 120, 120, 0.4);
+}
+
+.roleBadgeLife {
+  background: rgba(255, 170, 90, 0.14);
+  border-color: rgba(255, 170, 90, 0.4);
+}
+
+.roleBadgeProgress {
+  background: rgba(70, 200, 200, 0.14);
+  border-color: rgba(70, 200, 200, 0.4);
+}
+
+.roleBadgeIssues {
+  background: rgba(170, 140, 255, 0.14);
+  border-color: rgba(170, 140, 255, 0.4);
+}
+
 .topCard:hover {
   box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.05),
@@ -77,4 +115,56 @@
   }
 }
 
+.guideGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.guideCard {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.shortcutRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 12px;
+}
+
+.shortcutChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: #fff;
+  text-decoration: none;
+}
+
+.shortcutChip:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+@media (min-width: 1024px) {
+  .shortcutHeading {
+    display: none;
+  }
+
+  .shortcutRow {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .guideGrid {
+    grid-template-columns: 1fr;
+  }
+}
 

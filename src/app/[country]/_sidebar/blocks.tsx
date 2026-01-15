@@ -164,6 +164,26 @@ export async function SidebarGentleIntro({ country }: { country: 'us' | 'uk' | '
   )
 }
 
+export function SidebarQuickShortcuts({ country }: { country: 'us' | 'uk' | 'ca' | 'jp' }) {
+  const isJa = country === 'jp'
+  return (
+    <div className={`${styles.sidebarCard} ${styles.sidebarShortcutsCard}`}>
+      <div className={styles.sidebarTitle}>{isJa ? 'おすすめの行き先' : 'Quick shortcuts'}</div>
+      <div className={styles.sidebarShortcuts}>
+        <Link className={styles.sidebarShortcutChip} href={`/${country}/daily/today`}>
+          {isJa ? '🗞 今日の朝刊' : "🗞 Today's briefing"}
+        </Link>
+        <Link className={styles.sidebarShortcutChip} href={`#heartwarming`}>
+          {isJa ? '🤍 心温まる話' : '🤍 Heartwarming'}
+        </Link>
+        <Link className={styles.sidebarShortcutChip} href={`#must-know`}>
+          {isJa ? '📌 重要ニュース' : '📌 Must-know'}
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 export async function SidebarLatestColumns({ country }: { country: 'us' | 'uk' | 'ca' | 'jp' }) {
   const WELCOME_COLUMN_NAME_ID = 'mkcfunk9k7yk9nymsug0000000'
   const data = await fetchJson<ColumnsResponse>(`/v1/${country}/columns?limit=12`, { next: { revalidate: CACHE_POLICY.stable } })

@@ -7,18 +7,18 @@
 .inner {
   max-width: 100%;
   margin: 0;
-  padding: 18px 20px;
+  padding: 36px 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 24px;
 }
 
 .row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 20px;
   flex-wrap: wrap;
-  row-gap: 8px;
+  row-gap: 16px;
   justify-content: center;
 }
 
@@ -26,7 +26,7 @@
   font-size: 14px;
   color: var(--text);
   text-decoration: none;
-  padding: 6px 10px;
+  padding: 12px 20px;
   border-radius: 8px;
   white-space: normal;
 }
@@ -38,13 +38,14 @@
 .divider {
   height: 1px;
   background: var(--border);
+  margin: 16px 0;
 }
 
 .subLink {
   font-size: 13px;
   color: var(--muted);
   text-decoration: none;
-  padding: 6px 10px;
+  padding: 12px 20px;
   border-radius: 8px;
   white-space: normal;
 }
@@ -56,7 +57,7 @@
 .copyright {
   font-size: 12px;
   color: var(--muted);
-  padding: 10px 20px 18px;
+  padding: 20px 20px 36px;
   text-align: center;
   border-top: 1px solid var(--border);
 }

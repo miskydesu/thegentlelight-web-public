@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { isCountry } from '../../lib/tglApi'
 import type { Metadata } from 'next'
 import { Header } from '../../components/layout/Header'
-import { SidebarDailyCalendar, SidebarGentleIntro, SidebarLatestColumns, SidebarQuoteOfDay } from './_sidebar/blocks'
+import { SidebarDailyCalendar, SidebarGentleIntro, SidebarLatestColumns, SidebarQuoteOfDay, SidebarQuickShortcuts } from './_sidebar/blocks'
 import styles from './layout.module.css'
 
 export const runtime = 'edge'
@@ -50,6 +50,8 @@ export default async function CountryLayout({
               ) : (
                 <>
                   <SidebarGentleIntro country={country} />
+                  <div style={{ height: 14 }} />
+                  <SidebarQuickShortcuts country={country} />
                   <div style={{ height: 14 }} />
                   <SidebarLatestColumns country={country} />
                   <div style={{ height: 14 }} />

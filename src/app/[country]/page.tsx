@@ -121,8 +121,13 @@ export default async function CountryHome({
   const heartwarmingFinal = heartwarmingTopics.length ? heartwarmingTopics : fb.heartwarming
   const importantFinal = importantTopics.length ? importantTopics : fb.important
 
-  const renderTopicCards = (items: Array<any>) => {
+  const renderTopicCards = (
+    items: Array<any>,
+    options: { showCategory?: boolean; datePosition?: 'bottom' | 'topRight' } = {}
+  ) => {
     if (!items.length) return null
+    const showCategory = options.showCategory !== false
+    const datePosition = options.datePosition ?? 'bottom'
     return (
       <div className={styles.heroGrid}>
         {items.map((x: any) => (
@@ -132,29 +137,54 @@ export default async function CountryHome({
               const theme = getCategoryBadgeTheme(cat as any)
               const dateLabel = formatTopicListDate(x.last_source_published_at, locale)
               const isHeartwarming = cat === 'heartwarming'
+              const showWarning = Boolean(x.high_arousal) || (x.distress_score ?? 0) >= 50
               return (
                 <Card
                   clickable
                   className={`${styles.topCard}${isHeartwarming ? ` ${styles.topCardHeartwarming}` : ''}`}
                   style={{ ['--cat-color' as any]: theme.color } as any}
                 >
+                  {dateLabel && datePosition === 'topRight' ? (
+                    <span className={`${styles.cardDate} ${styles.cardDateTopRight}`}>{dateLabel}</span>
+                  ) : null}
+                  {x.gentle_role_label ? (
+                    <span
+                      className={`${styles.roleBadge} ${
+                        x.gentle_role === 'today'
+                          ? styles.roleBadgeToday
+                          : x.gentle_role === 'life'
+                            ? styles.roleBadgeLife
+                            : x.gentle_role === 'progress'
+                              ? styles.roleBadgeProgress
+                              : x.gentle_role === 'issues'
+                                ? styles.roleBadgeIssues
+                                : ''
+                      }`}
+                    >
+                      {x.gentle_role_label}
+                    </span>
+                  ) : null}
                   <CardTitle className={styles.cardTitleAccent}>{x.title}</CardTitle>
                   {x.summary ? (
                     <CardContent style={{ marginTop: '0.25rem' }}>
                       <p className={styles.cardSummary}>{x.summary}</p>
                     </CardContent>
                   ) : null}
-                  <CardMeta style={{ marginTop: '0.5rem' }}>
-                    <span className={styles.categoryBadge} style={theme}>
-                      {getCategoryLabel(cat as any, locale)}
-                    </span>
-                    {Boolean(x.high_arousal) || (x.distress_score ?? 0) >= 50 ? (
-                      <span className={styles.categoryBadge} style={{ opacity: 0.75 }}>
-                        {locale === 'ja' ? '心の負担に注意' : 'May be upsetting'}
-                      </span>
-                    ) : null}
-                  </CardMeta>
-                  {dateLabel ? <span className={styles.cardDate}>{dateLabel}</span> : null}
+                  {showCategory || showWarning ? (
+                    <CardMeta style={{ marginTop: '0.5rem' }}>
+                      {showCategory ? (
+                        <span className={styles.categoryBadge} style={theme}>
+                          {getCategoryLabel(cat as any, locale)}
+                        </span>
+                      ) : null}
+                      {showWarning ? (
+                        <span className={styles.categoryBadge} style={{ opacity: 0.75 }}>
+                          {locale === 'ja' ? '心の負担に注意' : 'May be upsetting'}
+                        </span>
+                      ) : null}
+                    </CardMeta>
+                  ) : null}
+                  {dateLabel && datePosition === 'bottom' ? <span className={styles.cardDate}>{dateLabel}</span> : null}
                 </Card>
               )
             })()}
@@ -164,20 +194,30 @@ export default async function CountryHome({
     )
   }
 
-  const sectionHeader = (title: string, moreHref?: string) => (
+  const sectionHeader = (
+    title: string,
+    moreHref?: string,
+    options: { divider?: 'top' | 'bottom' | 'none' } = {},
+    rightSlot?: React.ReactNode
+  ) => (
     <div
       style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'baseline',
         gap: '1rem',
-        borderBottom: '1px solid rgba(0, 0, 0, 0.22)',
-        paddingBottom: 8,
+        ...(options.divider === 'top'
+          ? { borderTop: '1px solid rgba(0, 0, 0, 0.22)', paddingTop: 15, marginTop: 15 }
+          : options.divider === 'bottom'
+            ? { borderBottom: '1px solid rgba(0, 0, 0, 0.22)', paddingBottom: 8 }
+            : {}),
         marginBottom: 10,
       }}
     >
       <h2 style={{ fontSize: '1.1rem', margin: 0 }}>{title}</h2>
-      {moreHref ? (
+      {rightSlot ? (
+        rightSlot
+      ) : moreHref ? (
         <Link href={moreHref} style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}>
           {t.pages.home.seeMore}
         </Link>
@@ -196,33 +236,99 @@ export default async function CountryHome({
         }}
       />
 
-      <main>
+      <main style={{ position: 'relative' }}>
+        {isPartial ? null : null}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
-          <h1 style={{ fontSize: '1.5rem' }}>{country === 'jp' ? 'やさしいニュース トップ' : 'Calm News Top'}</h1>
+          <h1 style={{ fontSize: '1.5rem' }}>{country === 'jp' ? 'やさしいニュース' : 'Calm News Top'}</h1>
           {isPartial ? (
-            <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>
+            <span style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>部分取得（partial）</span>
           ) : (
-            <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
-              updated: {new Date(data.updatedAt).toLocaleString()}
-            </span>
+            <span />
           )}
         </div>
 
       <div style={{ height: 12 }} />
+      <div
+        style={{
+          border: '1px solid rgba(0, 0, 0, 0.08)',
+          borderRadius: 12,
+          padding: '10px 12px',
+          color: 'var(--text)',
+          fontSize: '0.95rem',
+          lineHeight: 1.6,
+          background: '#fff',
+        }}
+      >
+        {locale === 'ja' ? (
+          <>
+            煽られない。置いていかれない。
+            <br />
+            まずは、今日のニュース4選から。
+          </>
+        ) : (
+          'We summarize today’s events with calm, non-sensational points.'
+        )}
+      </div>
+
+      <div style={{ height: 12 }} />
+      <div style={{ height: 12 }} />
 
       <section style={{ marginBottom: '1.5rem' }}>
-        {sectionHeader('Gentle News', `/${country}/news${gentle ? '?gentle=1' : ''}`)}
-        {renderTopicCards(gentleFinal) ?? (
+        {sectionHeader(
+          locale === 'ja' ? '今日のニュース4選' : 'Gentle Top News',
+          undefined,
+          { divider: 'none' },
+          !isPartial ? (
+            <span style={{ fontSize: '0.78rem', color: 'var(--muted)', opacity: 0.6 }}>
+              updated:{' '}
+              {new Date(data.updatedAt).toLocaleString(locale === 'ja' ? 'ja-JP' : 'en-US', {
+                month: 'numeric',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+              })}
+            </span>
+          ) : (
+            <span />
+          )
+        )}
+        {renderTopicCards(gentleFinal, { showCategory: false, datePosition: 'topRight' }) ?? (
           <EmptyState
             title={country === 'jp' ? 'Gentle Newsがまだありません' : 'No Gentle News yet'}
             description={country === 'jp' ? 'しばらくしてからもう一度お試しください。' : 'Please try again later.'}
-            action={{ label: t.pages.home.seeMore, href: `/${country}/news${gentle ? '?gentle=1' : ''}` }}
           />
         )}
+        <div
+          className={styles.shortcutHeading}
+          style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text)', marginTop: 14, marginBottom: 6 }}
+        >
+          {locale === 'ja' ? 'おすすめの行き先' : 'Quick shortcuts'}
+        </div>
+        <div className={styles.shortcutRow}>
+          <Link className={styles.shortcutChip} href={`/${country}/daily/today${gentle ? '?gentle=1' : ''}`}>
+            {locale === 'ja' ? '🗞 今日の朝刊' : "🗞 Today's briefing"}
+          </Link>
+          <Link className={styles.shortcutChip} href={`#heartwarming`}>
+            {locale === 'ja' ? '🤍 心温まる話' : '🤍 Heartwarming'}
+          </Link>
+          <Link className={styles.shortcutChip} href={`#must-know`}>
+            {locale === 'ja' ? '📌 重要ニュース' : '📌 Must-know'}
+          </Link>
+        </div>
       </section>
 
-      <section style={{ marginBottom: '1.5rem' }}>
-        {sectionHeader(locale === 'ja' ? '心温まる話' : 'Heartwarming', `/${country}/category/heartwarming${gentle ? '?gentle=1' : ''}`)}
+      <section id="heartwarming" style={{ marginBottom: '1.5rem' }}>
+        {sectionHeader(
+          locale === 'ja' ? '心温まる話' : 'Heartwarming',
+          undefined,
+          { divider: 'top' },
+          <Link
+            href={`/${country}/category/heartwarming${gentle ? '?gentle=1' : ''}`}
+            style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}
+          >
+            {locale === 'ja' ? '専用ページへ' : 'Go to page'}
+          </Link>
+        )}
         {renderTopicCards(heartwarmingFinal) ?? (
           <EmptyState
             title={country === 'jp' ? 'まだ心温まる話がありません' : 'No heartwarming topics yet'}
@@ -232,8 +338,15 @@ export default async function CountryHome({
         )}
       </section>
 
-      <section style={{ marginBottom: '1.5rem' }}>
-        {sectionHeader(locale === 'ja' ? '押さえておきたいNews' : 'Must-know News', `/${country}/latest${gentle ? '?gentle=1' : ''}`)}
+      <section id="must-know" style={{ marginBottom: '1.5rem' }}>
+        {sectionHeader(
+          locale === 'ja' ? '大事な動き' : 'Must-know News',
+          undefined,
+          { divider: 'top' },
+          <Link href={`/${country}/news${gentle ? '?gentle=1' : ''}`} style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}>
+            {locale === 'ja' ? 'ニュース一覧へ' : 'See all news'}
+          </Link>
+        )}
         {renderTopicCards(importantFinal) ?? (
           <EmptyState
             title={country === 'jp' ? '重要トピックスがありません' : 'No important topics'}
