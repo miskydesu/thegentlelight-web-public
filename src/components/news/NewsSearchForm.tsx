@@ -69,11 +69,11 @@ export function NewsSearchForm({
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius-md)',
             fontSize: '0.9rem',
-            backgroundColor: 'var(--surface)',
+            backgroundColor: '#fff',
             color: 'var(--text)',
           }}
         />
-        <Button type="submit" variant="primary" size="sm">
+        <Button type="submit" variant="primary" size="sm" className={styles.searchButton}>
           {t.common.search}
         </Button>
       </form>

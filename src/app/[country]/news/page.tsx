@@ -97,7 +97,8 @@ export default async function NewsPage({
   const locale = lang === 'ja' ? 'ja' : 'en'
 
   const cursor = Number.isFinite(Number(searchParams.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
-  const limit = Number.isFinite(Number(searchParams.limit)) ? Math.min(100, Math.max(1, Math.trunc(Number(searchParams.limit)))) : 30
+  const defaultLimit = 10
+  const limit = Number.isFinite(Number(searchParams.limit)) ? Math.min(100, Math.max(1, Math.trunc(Number(searchParams.limit)))) : defaultLimit
   const gentleQs = gentle ? '?gentle=1' : ''
   const isDefaultView = !query && !category && cursor === 0
 
@@ -163,12 +164,16 @@ export default async function NewsPage({
     const qs = sp.toString()
     return `/${country}/news${qs ? `?${qs}` : ''}`
   }
+  const hour = new Date().getHours()
+  const emphasizeKey = hour >= 18 ? 'heartwarming' : 'briefing'
 
   return (
     <main>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
         <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? 'ニュース一覧' : 'Browse News'}</h1>
-        {isPartial && <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
+          {isPartial && <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>}
+        </div>
       </div>
 
       <div style={{ height: 12 }} />
@@ -272,7 +277,14 @@ export default async function NewsPage({
 
       {isDefaultView && !(query || category) ? (
         <>
-          <div style={{ fontSize: '1.05rem', fontWeight: 900 }}>{locale === 'ja' ? '最新のニュース' : 'Latest news'}</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: '1.05rem', fontWeight: 900 }}>{locale === 'ja' ? '最新のニュース' : 'Latest news'}</div>
+            {start && end ? (
+              <div style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
+                {locale === 'ja' ? `表示：${start}-${end}` : `Showing: ${start}-${end}`}
+              </div>
+            ) : null}
+          </div>
           <div style={{ height: 10 }} />
         </>
       ) : null}
@@ -326,7 +338,7 @@ export default async function NewsPage({
 
           <div className={styles.pagerRow}>
             <div className={styles.pagerInfo}>
-              {start && end ? (locale === 'ja' ? `表示: ${start}-${end}` : `Showing: ${start}-${end}`) : null}
+              {start && end ? (locale === 'ja' ? `表示：${start}-${end}` : `Showing: ${start}-${end}`) : null}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               {hasPrev ? (
@@ -347,6 +359,75 @@ export default async function NewsPage({
                   {locale === 'ja' ? '次へ' : 'Next'}
                 </span>
               )}
+            </div>
+          </div>
+
+          <div style={{ marginTop: 18 }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--muted)', marginBottom: 10 }}>
+              {locale === 'ja' ? '今の気分に近いものを選んでください' : 'Choose what fits your mood'}
+            </div>
+            <div className={styles.nextChoicesGrid}>
+              <Link href={`/${country}/category/heartwarming${gentle ? '?gentle=1' : ''}`}>
+                <div
+                  style={{
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    borderRadius: 12,
+                    padding: '10px 12px',
+                    background: '#fff',
+                    ...(emphasizeKey === 'heartwarming'
+                      ? { borderColor: 'rgba(0,0,0,0.18)', boxShadow: '0 8px 18px rgba(0,0,0,0.06)' }
+                      : {}),
+                  }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: 4 }}>
+                    {locale === 'ja' ? '🤍 心温まる話を続ける' : '🤍 Keep it heartwarming'}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
+                    {locale === 'ja'
+                      ? '重たい話題は避けて、穏やかな出来事だけを'
+                      : 'Avoid heavy topics, stay calm'}
+                  </div>
+                </div>
+              </Link>
+              <Link href={`/${country}/daily/today${gentle ? '?gentle=1' : ''}`}>
+                <div
+                  style={{
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    borderRadius: 12,
+                    padding: '10px 12px',
+                    background: '#fff',
+                    ...(emphasizeKey === 'briefing'
+                      ? { borderColor: 'rgba(0,0,0,0.18)', boxShadow: '0 8px 18px rgba(0,0,0,0.06)' }
+                      : {}),
+                  }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: 4 }}>
+                    {locale === 'ja' ? '📰 今日の朝刊で、全体像をつかむ' : "📰 Read today's briefing"}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
+                    {locale === 'ja'
+                      ? '今日の朝刊で、世界を整理する'
+                      : 'A calm recap of the day'}
+                  </div>
+                </div>
+              </Link>
+              <Link href={`/${country}/columns${gentle ? '?gentle=1' : ''}`}>
+                <div
+                  style={{
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    borderRadius: 12,
+                    padding: '10px 12px',
+                    background: '#fff',
+                  }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: 4 }}>
+                    {locale === 'ja' ? '📖 心を整えるコラム' : '📖 Calming columns'}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
+                    {locale === 'ja' ? 'ニュースから離れて、視点を整えます' : 'Step away from the news'}
+                  </div>
+                </div>
+              </Link>
             </div>
           </div>
 
