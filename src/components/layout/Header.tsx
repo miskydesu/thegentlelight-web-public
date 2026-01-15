@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo } from 'react'
 import { COUNTRIES, isCountry, type Country } from '@/lib/tglApi'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
-import { getCategoryLabel } from '@/lib/categories'
+import { CATEGORIES, getCategoryLabel } from '@/lib/categories'
 import { addGentleToUrl, getGentleFromUrl, getPreferredGentle } from '@/lib/view-switch'
 import { getCountrySwitchUrl } from '@/lib/country-switch'
 import { RegionLangSwitch } from './RegionLangSwitch'
@@ -148,6 +148,26 @@ export function Header({ country, className }: HeaderProps) {
     ]
   }, [country, isJa, locale, t])
 
+  const mobilePrimaryItems = useMemo(() => {
+    if (!country) return []
+    const labelTop = t?.nav.top ?? (isJa ? 'トップ' : 'Home')
+    const labelDailyToday = isJa ? '今日の朝刊' : "Today's Briefing"
+    const labelNews = isJa ? 'ニュース' : 'News'
+    const labelColumns = isJa ? 'コラム' : 'Columns'
+    const labelQuotes = isJa ? '名言' : 'Quotes'
+    const labelAbout = isJa ? 'サイトの説明' : 'About'
+    const labelHeartwarming = getCategoryLabel('heartwarming', locale)
+    return [
+      { label: labelTop, href: `/${country}` },
+      { label: labelDailyToday, href: `/${country}/daily/today` },
+      { label: labelNews, href: `/${country}/news` },
+      { label: labelHeartwarming, href: `/${country}/category/heartwarming` },
+      { label: labelColumns, href: `/${country}/columns` },
+      { label: labelQuotes, href: `/${country}/quotes` },
+      { label: labelAbout, href: `/${country}/about` },
+    ]
+  }, [country, isJa, locale, t])
+
   // Desktop (>=1024想定): 下段ナビは「レベル1」だけに絞る（カテゴリは /news 側の棚に集約）
   const desktopNavItems = useMemo(() => {
     if (!country) return { left: [], right: null as any }
@@ -219,8 +239,8 @@ export function Header({ country, className }: HeaderProps) {
                     style={{
                       position: 'fixed',
                       left: '50%',
-                      top: 12,
-                      transform: 'translateX(-50%)',
+                      top: '50%',
+                      transform: 'translate(-50%, -50%)',
                       zIndex: 51,
                       width: 'calc(100vw - 2rem)',
                       maxWidth: 560,
@@ -278,48 +298,98 @@ export function Header({ country, className }: HeaderProps) {
                     <div className={styles.divider} />
                     <div className={styles.mobileMenuSectionTitle}>{isJa ? 'ページ' : 'Pages'}</div>
                     <div className={styles.mobileMenuLinks} style={{ marginBottom: 14 }}>
-                      {menuItems
-                        .filter((it: any) => it.kind !== 'sep')
-                        .map((it: any) => {
-                          const active = isActiveHref(it.href)
-                          const itemColor = getMenuTextColor(it.href)
-                          const activeTheme = active && itemColor ? itemColor : null
+                      {mobilePrimaryItems.map((it) => {
+                        const active = isActiveHref(it.href)
+                        const itemColor = getMenuTextColor(it.href)
+                        const activeTheme = active && itemColor ? itemColor : null
+                        return (
+                          <Dialog.Close asChild key={it.href}>
+                            <Link
+                              href={withGentle(it.href)}
+                              className={`${styles.mobileMenuLink} ${active ? styles.mobileMenuLinkActive : ''}`}
+                              style={
+                                activeTheme
+                                  ? { background: activeTheme, borderColor: activeTheme, color: '#fff' }
+                                  : !active && itemColor
+                                    ? { color: itemColor }
+                                    : undefined
+                              }
+                              aria-current={active ? 'page' : undefined}
+                            >
+                              {it.label}
+                            </Link>
+                          </Dialog.Close>
+                        )
+                      })}
+                    </div>
+
+                    <div className={styles.divider} />
+                    <details
+                      style={{
+                        border: '1px solid var(--border)',
+                        borderRadius: 10,
+                        padding: '8px 10px',
+                        background: '#fff',
+                        marginBottom: 14,
+                      }}
+                    >
+                      <summary
+                        style={{
+                          cursor: 'pointer',
+                          fontWeight: 800,
+                          listStyle: 'none',
+                        }}
+                      >
+                        {isJa ? 'ニュースカテゴリ' : 'News categories'}
+                      </summary>
+                      <div style={{ height: 8 }} />
+                      <div className={styles.mobileMenuLinks}>
+                        {CATEGORIES.map((c) => {
+                          const href = `/${country}/category/${c.code}`
                           return (
-                            <Dialog.Close asChild key={it.href}>
-                              <Link
-                                href={withGentle(it.href)}
-                                className={`${styles.mobileMenuLink} ${active ? styles.mobileMenuLinkActive : ''}`}
-                                style={
-                                  activeTheme
-                                    ? { background: activeTheme, borderColor: activeTheme, color: '#fff' }
-                                    : !active && itemColor
-                                      ? { color: itemColor }
-                                      : undefined
-                                }
-                                aria-current={active ? 'page' : undefined}
-                              >
-                                {it.label}
+                            <Dialog.Close asChild key={c.code}>
+                              <Link href={withGentle(href)} className={styles.mobileMenuLink}>
+                                {getCategoryLabel(c.code, locale)}
                               </Link>
                             </Dialog.Close>
                           )
                         })}
-                    </div>
+                      </div>
+                    </details>
 
                     <div className={styles.divider} />
-                    <div className={styles.mobileMenuSectionTitle}>{isJa ? '地域と言語' : 'Region & Language'}</div>
-                    <div className={styles.mobileMenuLinks}>
-                      {regionItems.map((x) => (
-                        <Dialog.Close asChild key={x.code}>
-                          <Link
-                            href={x.href}
-                            className={styles.mobileMenuLink}
-                            aria-current={x.active ? 'page' : undefined}
-                          >
-                            {x.label}
-                          </Link>
-                        </Dialog.Close>
-                      ))}
-                    </div>
+                    <details
+                      style={{
+                        border: '1px solid var(--border)',
+                        borderRadius: 10,
+                        padding: '8px 10px',
+                        background: '#fff',
+                      }}
+                    >
+                      <summary
+                        style={{
+                          cursor: 'pointer',
+                          fontWeight: 800,
+                          listStyle: 'none',
+                        }}
+                      >
+                        {isJa ? '地域と言語' : 'Region & Language'}
+                      </summary>
+                      <div style={{ height: 8 }} />
+                      <div className={styles.mobileMenuLinks}>
+                        {regionItems.map((x) => (
+                          <Dialog.Close asChild key={x.code}>
+                            <Link
+                              href={x.href}
+                              className={styles.mobileMenuLink}
+                              aria-current={x.active ? 'page' : undefined}
+                            >
+                              {x.label}
+                            </Link>
+                          </Dialog.Close>
+                        ))}
+                      </div>
+                    </details>
 
                     <div style={{ marginTop: 10, fontSize: 11, color: 'var(--muted)' }}>
                       {isJa ? 'Escキーでも閉じられます' : 'Press Esc to close'}

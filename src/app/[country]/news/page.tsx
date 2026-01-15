@@ -102,7 +102,7 @@ export default async function NewsPage({
 
   const recentUpdates = isDefaultView
     ? await fetchJson<{ topics: RecentUpdateItem[] }>(
-        `/v1/${country}/news/recent-updates?window=24h&limit=3${gentle ? `&gentle=1` : ''}`,
+        `/v1/${country}/news/recent-updates?window=72h&limit=3${gentle ? `&gentle=1` : ''}`,
         { next: { revalidate: CACHE_POLICY.frequent } }
       ).catch(() => ({ topics: [] }))
     : { topics: [] as RecentUpdateItem[] }
@@ -117,15 +117,23 @@ export default async function NewsPage({
     const hours = Math.floor(diffMs / (60 * 60 * 1000))
     const days = Math.floor(diffMs / (24 * 60 * 60 * 1000))
     if (locale === 'ja') {
-      if (mins < 5) return '更新 たった今'
-      if (hours < 1) return `更新 ${mins}分前`
-      if (days < 1) return `更新 ${hours}時間前`
-      return `更新 ${days}日前`
+      if (days < 1) {
+        if (mins < 10) return '最終更新 たった今'
+        if (mins < 60) return `最終更新 ${Math.floor(mins / 10) * 10}分前`
+        if (hours < 6) return `最終更新 ${hours}時間前`
+        return '最終更新 本日'
+      }
+      if (days === 1) return '最終更新 昨日'
+      return `最終更新 ${new Date(ts).toLocaleDateString('ja-JP')}`
     }
-    if (mins < 5) return 'Updated just now'
-    if (hours < 1) return `Updated ${mins}m ago`
-    if (days < 1) return `Updated ${hours}h ago`
-    return `Updated ${days}d ago`
+    if (days < 1) {
+      if (mins < 10) return 'Last updated just now'
+      if (mins < 60) return `Last updated ${Math.floor(mins / 10) * 10}m ago`
+      if (hours < 6) return `Last updated ${hours}h ago`
+      return 'Last updated today'
+    }
+    if (days === 1) return 'Last updated yesterday'
+    return `Last updated ${new Date(ts).toLocaleDateString('en-US')}`
   }
   // デフォルト表示は「最新（時系列）」を優先し、新しい順を担保する
   // - q（検索語）がある場合のみ /topics（棚検索）を使う（/latest は q を受けないため）
@@ -199,10 +207,10 @@ export default async function NewsPage({
         <>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
             <div style={{ fontSize: '1.05rem', fontWeight: 900 }}>
-              {locale === 'ja' ? '最近、動きがあった話' : 'Recently updated'}
+              {locale === 'ja' ? '継続して報じられている話' : 'Ongoing coverage'}
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--muted)', opacity: 0.75 }}>
-              {locale === 'ja' ? '24時間以内' : 'Last 24h'}
+              {locale === 'ja' ? '過去24〜72時間' : 'Last 24–72h'}
             </div>
           </div>
           <div style={{ height: 10 }} />
@@ -224,10 +232,21 @@ export default async function NewsPage({
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
                     <div style={{ fontWeight: 800, lineHeight: 1.35 }}>{x.title}</div>
-                    {updated ? <div style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>{updated}</div> : null}
                   </div>
                   {x.excerpt ? (
-                    <div style={{ marginTop: 6, color: 'var(--muted)', fontSize: '0.92rem', lineHeight: 1.55 }}>{x.excerpt}</div>
+                    <div style={{ marginTop: 6 }}>
+                      <p
+                        className={styles.cardSummary}
+                        style={{ color: 'var(--muted)', opacity: 0.85, lineHeight: 1.45 }}
+                      >
+                        {x.excerpt}
+                      </p>
+                    </div>
+                  ) : null}
+                  {updated ? (
+                    <div style={{ marginTop: 6, textAlign: 'right', fontSize: '0.82rem', color: 'var(--text)', fontWeight: 700 }}>
+                      {updated}
+                    </div>
                   ) : null}
                 </Link>
               )
