@@ -12,9 +12,8 @@ export default function AdminSummaryPage() {
   const [stats, setStats] = useState<any | null>(null)
 
   // NOTE (ops):
-  // Acquisition-policy change "since" used by /admin/v1/dashboard/stats?acq_change_since_jst=...
-  // Change this string in web only; API does NOT need changes anymore.
-  const ACQ_CHANGE_SINCE_JST = '2026-01-14 10:00'
+  // デフォルトはAPI側の直近24時間。必要ならJST起点を手動指定できるようにする。
+  const ACQ_CHANGE_SINCE_JST = ''
 
   const NUMERIC_STYLE: React.CSSProperties = {
     fontVariantNumeric: 'tabular-nums',
@@ -66,9 +65,10 @@ export default function AdminSummaryPage() {
     setError(null)
     setBusy(true)
     try {
-      const data = await adminFetchJson<any>(
-        `/admin/v1/dashboard/stats?since_hours=24&acq_change_since_jst=${encodeURIComponent(ACQ_CHANGE_SINCE_JST)}`
-      )
+      const qs = new URLSearchParams()
+      qs.set('since_hours', '24')
+      if (ACQ_CHANGE_SINCE_JST) qs.set('acq_change_since_jst', ACQ_CHANGE_SINCE_JST)
+      const data = await adminFetchJson<any>(`/admin/v1/dashboard/stats?${qs.toString()}`)
       setStats(data)
     } catch (err: any) {
       const msg = err?.message || '取得に失敗しました'
@@ -818,7 +818,7 @@ export default function AdminSummaryPage() {
             </div>
           </section>
 
-          {/* News Fetch（取得設定変更後）: 起点以後の fetched/inserted/updated/topics を並べて見る */}
+          {/* News Fetch（直近24時間）: 起点以後の fetched/inserted/updated/topics を並べて見る */}
           <section
             style={{
               marginBottom: 20,
@@ -830,10 +830,10 @@ export default function AdminSummaryPage() {
           >
             <div style={{ padding: '16px 20px', backgroundColor: '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
               <h2 style={{ fontSize: '1.15rem', margin: 0, fontWeight: 600, color: '#1a1a1a' }}>
-                記事取得（取得設定変更後）
+                記事取得（直近24時間）
               </h2>
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
-                集計範囲: 日本時間（JST）{String(stats?.news_fetch_runs_since_acq_change?.since_jst ?? ACQ_CHANGE_SINCE_JST)} 〜 現在
+                集計範囲: 日本時間（JST）{String(stats?.news_fetch_runs_since_acq_change?.since_jst ?? '直近24時間')} 〜 現在
               </div>
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
                 表記:{' '}
@@ -989,7 +989,7 @@ export default function AdminSummaryPage() {
             </div>
           </section>
 
-          {/* 取得設定変更後（ACQ_CHANGE_SINCE_JST 以降）の country×category（sources / new_topics / summarized_ready_topics） */}
+          {/* 直近24時間の country×category（sources / new_topics / summarized_ready_topics） */}
           <section
             style={{
               marginBottom: 32,
@@ -1001,7 +1001,7 @@ export default function AdminSummaryPage() {
           >
             <div style={{ padding: '16px 20px', backgroundColor: '#f8f9fa', borderBottom: '1px solid #e9ecef' }}>
               <h2 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 600, color: '#1a1a1a' }}>
-                トピック集計（取得設定変更後）
+                トピック集計（直近24時間）
               </h2>
               {!stats?.topic_metrics_by_country_category_since_acq_change ? (
                 <div
@@ -1020,7 +1020,7 @@ export default function AdminSummaryPage() {
                 </div>
               ) : null}
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.9rem' }}>
-                集計範囲: 日本時間（JST）{String(stats?.topic_metrics_by_country_category_since_acq_change?.since_jst ?? ACQ_CHANGE_SINCE_JST)} 〜 現在
+                集計範囲: 日本時間（JST）{String(stats?.topic_metrics_by_country_category_since_acq_change?.since_jst ?? '直近24時間')} 〜 現在
               </div>
               <div style={{ marginTop: 6, color: '#6c757d', fontSize: '0.85rem' }}>
                 debug: first_seen_since_total=
