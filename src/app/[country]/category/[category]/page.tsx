@@ -107,7 +107,7 @@ export default async function CategoryPage({
     ],
   })
 
-  const isHeartwarmingPage = category.code === 'heartwarming' && gentle
+  const isHeartwarmingPage = category.code === 'heartwarming'
   const cursor = Number.isFinite(Number(searchParams.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
   const defaultLimit = isHeartwarmingPage ? 10 : 30
   const parsedLimit = Number.isFinite(Number(searchParams.limit)) ? Math.min(100, Math.max(1, Math.trunc(Number(searchParams.limit)))) : defaultLimit
