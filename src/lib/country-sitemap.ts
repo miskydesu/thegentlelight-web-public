@@ -1,13 +1,18 @@
 import type { MetadataRoute } from 'next'
 import type { Country } from './tglApi'
 import { fetchJson } from './tglApi'
-import { getSiteBaseUrl } from './seo'
+import { getSiteBaseUrl, isIndexableTopic } from './seo'
 import { CACHE_POLICY } from './cache-policy'
 
 type TopicItem = {
   topic_id: string
   last_seen_at: string
   last_source_published_at: string | null
+  summary?: string | null
+  importance_score?: number | null
+  source_count?: number | null
+  high_arousal?: boolean | null
+  distress_score?: number | null
 }
 
 type DailyItem = {
@@ -200,15 +205,26 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
     })
     // JPは試験運用：トピック詳細は noindex 対象なので sitemap から外す
     if (!isJp) {
-    for (const t of (topicsResponse.topics || []).slice(0, 5000)) {
-      topicEntries.push({
-        url: `${base}/${country}/news/n/${t.topic_id}`.replace(/\/$/, ''),
-        lastModified: getLastModForTopic(t),
-        changeFrequency: 'daily',
-        // ニュース詳細（量産枠）: 0.3〜0.4 に明確に下げる
-        priority: 0.35,
-      })
-    }
+      for (const t of (topicsResponse.topics || []).slice(0, 5000)) {
+        if (
+          !isIndexableTopic({
+            summary: t.summary ?? null,
+            importance_score: t.importance_score ?? null,
+            source_count: t.source_count ?? null,
+            high_arousal: t.high_arousal ?? null,
+            distress_score: t.distress_score ?? null,
+          })
+        ) {
+          continue
+        }
+        topicEntries.push({
+          url: `${base}/${country}/news/n/${t.topic_id}`.replace(/\/$/, ''),
+          lastModified: getLastModForTopic(t),
+          changeFrequency: 'daily',
+          // ニュース詳細（量産枠）: 0.3〜0.4 に明確に下げる
+          priority: 0.35,
+        })
+      }
     }
   } catch (e) {
     console.error(`Failed to fetch topics for sitemap (${country}):`, e)

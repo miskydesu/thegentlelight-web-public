@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type TopicDetailResponse, type TopicSourcesResponse } from '../../../../../lib/tglApi'
-import { canonicalUrl } from '../../../../../lib/seo'
+import { canonicalUrl, isIndexableTopic } from '../../../../../lib/seo'
 import { getLocaleForCountry, type Locale } from '../../../../../lib/i18n'
 import { generateSEOMetadata, generateArticleJSONLD } from '../../../../../lib/seo-helpers'
 import { getSiteBaseUrl } from '../../../../../lib/seo'
@@ -51,8 +51,15 @@ export async function generateMetadata({
       publishedTime: t.last_source_published_at || undefined,
       canonical: `${base}${canonicalPath}`,
     })
+    const shouldIndex = isIndexableTopic({
+      summary: t.summary,
+      importance_score: t.importance_score,
+      source_count: t.source_count,
+      high_arousal: t.high_arousal,
+      distress_score: t.distress_score ?? null,
+    })
     // JPは試験運用：トピック詳細は noindex,follow
-    if (country === 'jp') {
+    if (country === 'jp' || !shouldIndex) {
       ;(meta as any).robots = { index: false, follow: true, googleBot: { index: false, follow: true } }
     }
     return meta
@@ -62,9 +69,8 @@ export async function generateMetadata({
       title: `${country.toUpperCase()} News${sep}${brandSuffix}`,
       canonical: canonicalUrl(`/${country}/news/n/${topicId}`),
     })
-    if (country === 'jp') {
-      ;(meta as any).robots = { index: false, follow: true, googleBot: { index: false, follow: true } }
-    }
+    // 不明確な状態は noindex,follow
+    ;(meta as any).robots = { index: false, follow: true, googleBot: { index: false, follow: true } }
     return meta
   }
 }

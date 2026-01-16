@@ -1,12 +1,17 @@
 import type { MetadataRoute } from 'next'
 import { COUNTRIES, fetchJson } from '../lib/tglApi'
-import { getSiteBaseUrl } from '../lib/seo'
+import { getSiteBaseUrl, isIndexableTopic } from '../lib/seo'
 import { CACHE_POLICY } from '../lib/cache-policy'
 
 type TopicItem = {
   topic_id: string
   last_seen_at: string
   last_source_published_at: string | null
+  summary?: string | null
+  importance_score?: number | null
+  source_count?: number | null
+  high_arousal?: boolean | null
+  distress_score?: number | null
 }
 
 type ColumnItem = {
@@ -72,6 +77,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // JPは試験運用：トピック詳細は noindex 対象なので sitemap から外す
       if (c.code !== 'jp') {
         for (const topic of topicsResponse.topics.slice(0, 5000)) {
+          if (
+            !isIndexableTopic({
+              summary: topic.summary ?? null,
+              importance_score: topic.importance_score ?? null,
+              source_count: topic.source_count ?? null,
+              high_arousal: topic.high_arousal ?? null,
+              distress_score: topic.distress_score ?? null,
+            })
+          ) {
+            continue
+          }
           const lastModified = topic.last_source_published_at
             ? new Date(topic.last_source_published_at)
             : new Date(topic.last_seen_at)

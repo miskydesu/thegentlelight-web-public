@@ -271,6 +271,10 @@ export function Header({ country, className }: HeaderProps) {
     return { left, right }
   }, [country, isJa, locale, t])
 
+  const desktopNavAll = useMemo(() => {
+    return desktopNavItems.right ? [...desktopNavItems.left, desktopNavItems.right] : desktopNavItems.left
+  }, [desktopNavItems])
+
   return (
     <>
       <header
@@ -561,9 +565,9 @@ export function Header({ country, className }: HeaderProps) {
           }}
         >
           <div style={{ maxWidth: '100%', margin: 0, padding: '6px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
-                {desktopNavItems.left.map((x) => {
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
+                {desktopNavAll.map((x) => {
                   const active = isActiveHref(x.href)
                   const itemColor = getMenuTextColor(x.href)
                   return (
@@ -587,31 +591,6 @@ export function Header({ country, className }: HeaderProps) {
                   )
                 })}
               </div>
-
-              {desktopNavItems.right ? (
-                (() => {
-                  const x = desktopNavItems.right
-                  const active = isActiveHref(x.href)
-                  return (
-                    <Link
-                      href={withGentle(x.href)}
-                      style={{
-                        fontSize: 14,
-                        color: active ? '#fff' : 'var(--muted)',
-                        borderRadius: 6,
-                        padding: '4px 10px',
-                        border: `1px solid ${active ? '#000' : 'transparent'}`,
-                        background: active ? '#000' : 'transparent',
-                        fontWeight: active ? 700 : 400,
-                        textDecoration: 'none',
-                      }}
-                      aria-current={active ? 'page' : undefined}
-                    >
-                      {x.label}
-                    </Link>
-                  )
-                })()
-              ) : null}
             </div>
           </div>
         </div>
