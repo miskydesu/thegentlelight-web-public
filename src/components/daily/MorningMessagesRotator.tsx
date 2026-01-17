@@ -113,8 +113,6 @@ export function MorningMessagesRotator(props: {
     }
   }, [lines.join('\n'), idx, typeMsPerChar, intervalMs, isPlaying, cyclesCompleted])
 
-  if (!lines.length) return null
-
   const canToggle = lines.length > 0
   const onToggle = () => {
     if (!canToggle) return
@@ -141,6 +139,8 @@ export function MorningMessagesRotator(props: {
     if (height <= 0) return
     setMaxMessageHeight((prev) => (prev === null || height > prev ? height : prev))
   }, [typed])
+
+  if (!lines.length) return null
 
   return (
     <div
