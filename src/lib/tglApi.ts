@@ -139,6 +139,9 @@ export type DailyDetailResponse = {
   }
   messages?: Array<{ rank: number; message: string }>
   topics: Array<TopicSummary & { rank: number }>
+  heartwarming_topics?: Array<TopicSummary & { source_domain?: string | null }>
+  important_topics?: Array<TopicSummary & { source_domain?: string | null }>
+  other_topics?: Array<TopicSummary & { source_domain?: string | null }>
   meta: ApiMeta
 }
 
@@ -160,6 +163,9 @@ export type TodayResponse = {
   } | null
   messages?: Array<{ rank: number; message: string }>
   topics: Array<TopicSummary & { rank: number }>
+  heartwarming_topics?: Array<TopicSummary & { source_domain?: string | null }>
+  important_topics?: Array<TopicSummary & { source_domain?: string | null }>
+  other_topics?: Array<TopicSummary & { source_domain?: string | null }>
   meta: ApiMeta
 }
 

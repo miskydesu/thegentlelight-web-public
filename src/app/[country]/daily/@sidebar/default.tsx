@@ -7,13 +7,13 @@ export default async function SidebarDefault({ params }: { params: { country: st
 
   return (
     <>
+      <SidebarDailyCalendar country={country} />
+      <div style={{ height: 14 }} />
       <SidebarGentleIntro country={country} />
       <div style={{ height: 14 }} />
       <SidebarLatestColumns country={country} />
       <div style={{ height: 14 }} />
       <SidebarQuoteOfDay country={country} />
-      <div style={{ height: 14 }} />
-      <SidebarDailyCalendar country={country} />
     </>
   )
 }

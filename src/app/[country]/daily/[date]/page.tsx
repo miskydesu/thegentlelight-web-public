@@ -56,6 +56,15 @@ function formatDailyTitleDateJa(dateLocal: string): string {
   return s.replace(/\(/g, '（').replace(/\)/g, '）')
 }
 
+function shiftDateLocal(dateLocal: string, days: number): string {
+  const d = new Date(`${dateLocal}T00:00:00.000Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  const y = d.getUTCFullYear()
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 function getLocalYmdForCountry(country: 'us' | 'uk' | 'ca' | 'jp', now: Date = new Date()): string {
   const tz: Record<string, string> = {
     us: 'America/New_York',
@@ -70,6 +79,44 @@ function getLocalYmdForCountry(country: 'us' | 'uk' | 'ca' | 'jp', now: Date = n
     month: '2-digit',
     day: '2-digit',
   }).format(now)
+}
+
+function formatDailyLabelJaAt6(dateLocal: string): string {
+  const d = new Date(`${dateLocal}T00:00:00.000Z`)
+  const s = new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    month: 'long',
+    day: 'numeric',
+  }).format(d)
+  return `${s} 朝6時時点の作成`
+}
+
+function formatDailyMetaLabel(
+  dateLocal: string,
+  locale: 'ja' | 'en',
+  isTodayLocal: boolean
+): { meta: string; note: string } {
+  const d = new Date(`${dateLocal}T00:00:00.000Z`)
+  if (locale === 'ja') {
+    const md = new Intl.DateTimeFormat('ja-JP', {
+      timeZone: 'Asia/Tokyo',
+      month: 'numeric',
+      day: 'numeric',
+    }).format(d)
+    return {
+      meta: `作成：${md} 6:00｜${isTodayLocal ? '前日〜今朝のまとめ' : '当日のまとめ'}`,
+      note: 'ここを押さえて置けば安心：5分で「1日の全体像」をつかむ朝刊です。',
+    }
+  }
+  const mdEn = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'UTC',
+    month: 'short',
+    day: 'numeric',
+  }).format(d)
+  return {
+    meta: `Created: ${mdEn} 6:00 | ${isTodayLocal ? 'Yesterday to this morning' : 'Summary of this date'}`,
+    note: 'We calmly review the key points without sensationalism.',
+  }
 }
 
 export default async function DailyDetailPage({
@@ -127,16 +174,23 @@ export default async function DailyDetailPage({
   const isPartial = Boolean(data.meta?.is_partial)
   const locale = lang === 'ja' ? 'ja' : 'en'
 
-  const gentleTopics = data.topics.filter((x: any) => (x.section ? x.section === 'A' : (x.rank ?? 0) >= 1 && (x.rank ?? 0) <= 4))
-  const heartwarmingTopics = data.topics
-    .filter((x: any) => (x.section ? x.section === 'B' : (x.rank ?? 0) >= 5 && (x.rank ?? 0) <= 8))
-    .slice(0, 2)
-  const importantTopics = data.topics.filter((x: any) => (x.section ? x.section === 'C' : (x.rank ?? 0) >= 9 && (x.rank ?? 0) <= 14))
+  const mainTopic = data.topics.find((x: any) => x.section === 'A') || data.topics.find((x: any) => (x.rank ?? 0) === 1) || null
+  const nearTopic = data.topics.find((x: any) => x.section === 'B') || data.topics.find((x: any) => (x.rank ?? 0) === 2) || null
+  const brightTopic = data.topics.find((x: any) => x.section === 'C') || data.topics.find((x: any) => (x.rank ?? 0) === 3) || null
+  const polEconTopic = data.topics.find((x: any) => x.section === 'D') || data.topics.find((x: any) => (x.rank ?? 0) === 4) || null
 
-  const renderTopicCards = (items: Array<any>) => {
+  const renderTopicCards = (
+    items: Array<any>,
+    options: {
+      showCategory?: boolean
+      datePosition?: 'bottom' | 'topRight'
+    } = {}
+  ) => {
     if (!items.length) return null
+    const showCategory = options.showCategory !== false
+    const datePosition = options.datePosition ?? 'bottom'
     return (
-      <div className={styles.heroGrid}>
+      <div className={`${styles.heroGrid} ${styles.dailyHeroGrid}`}>
         {items.map((x: any) => (
           <Link key={x.topic_id} href={`/${country}/news/n/${x.topic_id}`}>
             {(() => {
@@ -144,29 +198,42 @@ export default async function DailyDetailPage({
               const theme = getCategoryBadgeTheme(cat as any)
               const dateLabel = formatTopicListDate(x.last_source_published_at, locale)
               const isHeartwarming = cat === 'heartwarming'
+              const showWarning = Boolean(x.high_arousal) || (x.distress_score ?? 0) >= 50
+              const roleBadgeLabel = x._roleBadgeLabel as string | undefined
+              const roleBadgeClassName = x._roleBadgeClassName as string | undefined
               return (
                 <Card
                   clickable
                   className={`${styles.topCard}${isHeartwarming ? ` ${styles.topCardHeartwarming}` : ''}`}
                   style={{ ['--cat-color' as any]: theme.color } as any}
                 >
+                  {dateLabel && datePosition === 'topRight' ? (
+                    <span className={`${styles.cardDate} ${styles.cardDateTopRight}`}>{dateLabel}</span>
+                  ) : null}
+                  {roleBadgeLabel ? (
+                    <span className={`${styles.roleBadge} ${roleBadgeClassName || ''}`}>{roleBadgeLabel}</span>
+                  ) : null}
                   <CardTitle className={styles.cardTitleAccent}>{x.title}</CardTitle>
                   {x.summary ? (
                     <CardContent style={{ marginTop: '0.25rem' }}>
                       <p className={styles.cardSummary}>{x.summary}</p>
                     </CardContent>
                   ) : null}
-                  <CardMeta style={{ marginTop: '0.5rem' }}>
-                    <span className={styles.categoryBadge} style={theme}>
-                      {getCategoryLabel(cat as any, locale)}
-                    </span>
-                    {Boolean(x.high_arousal) || (x.distress_score ?? 0) >= 50 ? (
-                      <span className={styles.categoryBadge} style={{ opacity: 0.75 }}>
-                        {locale === 'ja' ? '心の負担に注意' : 'May be upsetting'}
-                      </span>
-                    ) : null}
-                  </CardMeta>
-                  {dateLabel ? <span className={styles.cardDate}>{dateLabel}</span> : null}
+                  {showCategory || showWarning ? (
+                    <CardMeta style={{ marginTop: '0.5rem' }}>
+                      {showCategory ? (
+                        <span className={styles.categoryBadge} style={theme}>
+                          {getCategoryLabel(cat as any, locale)}
+                        </span>
+                      ) : null}
+                      {showWarning ? (
+                        <span className={styles.categoryBadge} style={{ opacity: 0.75 }}>
+                          {locale === 'ja' ? '心の負担に注意' : 'May be upsetting'}
+                        </span>
+                      ) : null}
+                    </CardMeta>
+                  ) : null}
+                  {dateLabel && datePosition === 'bottom' ? <span className={styles.cardDate}>{dateLabel}</span> : null}
                 </Card>
               )
             })()}
@@ -176,25 +243,160 @@ export default async function DailyDetailPage({
     )
   }
 
-  const sectionHeader = (title: string) => (
+  const renderListSection = (options: {
+    title: string
+    guide: string
+    items: Array<any>
+    kind: 'heartwarming' | 'important' | 'other'
+    rightSlot?: React.ReactNode
+  }) => {
+    if (!options.items.length) return null
+    return (
+      <section className={styles.listSection}>
+        {sectionHeader(options.title, undefined, { divider: 'top' }, options.rightSlot)}
+        <div className={styles.listGuide}>{options.guide}</div>
+        <ul className={styles.listItems}>
+          {options.items.map((item) => {
+            const cat = String(item.category || 'unknown')
+            const theme = getCategoryBadgeTheme(cat as any)
+            const dateLabel = formatTopicListDate(item.last_source_published_at, locale)
+            const sourceLabel = String(item.source_domain || '').trim()
+            return (
+              <li key={item.topic_id} className={styles.listItem}>
+                <Link className={styles.listItemLink} href={`/${country}/news/n/${item.topic_id}`}>
+                  <div className={`${styles.listTitle} ${styles.listTitleAccent}`} style={{ ['--cat-color' as any]: theme.color } as any}>
+                    {item.title}
+                  </div>
+                  {options.kind === 'heartwarming' ? (
+                    sourceLabel || dateLabel ? (
+                      <div className={styles.listMeta}>
+                        {sourceLabel ? <span>{sourceLabel}</span> : null}
+                        {dateLabel ? <span>{dateLabel}</span> : null}
+                      </div>
+                    ) : null
+                  ) : options.kind === 'important' ? (
+                    <div className={styles.listMeta}>
+                      <span className={`${styles.categoryBadge} ${styles.listBadge}`} style={theme}>
+                        {getCategoryLabel(cat as any, locale)}
+                      </span>
+                    </div>
+                  ) : options.kind === 'other' ? (
+                    sourceLabel || dateLabel ? (
+                      <div className={styles.listMeta}>
+                        <span className={styles.listCategoryText} style={{ ['--cat-color' as any]: theme.color } as any}>
+                          {getCategoryLabel(cat as any, locale)}
+                        </span>
+                        {sourceLabel ? <span>{sourceLabel}</span> : null}
+                        {dateLabel ? <span>{dateLabel}</span> : null}
+                      </div>
+                    ) : (
+                      <div className={styles.listMeta}>
+                        <span className={styles.listCategoryText} style={{ ['--cat-color' as any]: theme.color } as any}>
+                          {getCategoryLabel(cat as any, locale)}
+                        </span>
+                      </div>
+                    )
+                  ) : null}
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      </section>
+    )
+  }
+
+  const sectionHeader = (
+    title: string,
+    moreHref?: string,
+    options: { divider?: 'top' | 'bottom' | 'none' } = {},
+    rightSlot?: React.ReactNode
+  ) => (
     <div
       style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'baseline',
         gap: '1rem',
-        borderBottom: '1px solid rgba(0, 0, 0, 0.22)',
-        paddingBottom: 8,
+        ...(options.divider === 'top'
+          ? { borderTop: '1px solid rgba(0, 0, 0, 0.22)', paddingTop: 15, marginTop: 15 }
+          : options.divider === 'bottom'
+            ? { borderBottom: '1px solid rgba(0, 0, 0, 0.22)', paddingBottom: 8 }
+            : {}),
         marginBottom: 10,
       }}
     >
       <h2 style={{ fontSize: '1.1rem', margin: 0 }}>{title}</h2>
-      <span />
+      {rightSlot ? (
+        rightSlot
+      ) : moreHref ? (
+        <Link href={moreHref} style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}>
+          {t.pages.home.seeMore}
+        </Link>
+      ) : (
+        <span />
+      )}
     </div>
   )
 
+  const isTodayLocal = date === getLocalYmdForCountry(country)
+  const briefHeadline = locale === 'ja'
+    ? isTodayLocal
+      ? '昨日〜今朝の朝刊（直近24時間）'
+      : `この日の朝刊（${formatDailyLabelJaAt6(date)}）`
+    : isTodayLocal
+      ? 'Daily briefing (last 24 hours)'
+      : 'Briefing for this date (last 24 hours)'
+  const meta = formatDailyMetaLabel(date, locale, isTodayLocal)
+
+  const dailySummaryTopics = [
+    mainTopic
+      ? {
+          ...mainTopic,
+          _roleBadgeLabel:
+            locale === 'ja' ? (isTodayLocal ? '今日のトップニュース' : 'この日のトップニュース') : isTodayLocal ? "Today's top news" : 'Top news of the day',
+          _roleBadgeClassName: styles.roleBadgeToday,
+        }
+      : null,
+    nearTopic
+      ? {
+          ...nearTopic,
+          _roleBadgeLabel:
+            locale === 'ja' ? (isTodayLocal ? '今日の身近な出来事' : 'この日の身近な出来事') : isTodayLocal ? "Today's local news" : 'Local news of the day',
+          _roleBadgeClassName: styles.roleBadgeLife,
+        }
+      : null,
+    brightTopic
+      ? {
+          ...brightTopic,
+          _roleBadgeLabel:
+            locale === 'ja' ? (isTodayLocal ? '今日の明るい話題' : 'この日の明るい話題') : isTodayLocal ? "Today's bright topic" : 'Bright topic of the day',
+          _roleBadgeClassName: styles.roleBadgeProgress,
+        }
+      : null,
+    polEconTopic
+      ? {
+          ...polEconTopic,
+          _roleBadgeLabel:
+            locale === 'ja' ? (isTodayLocal ? '今日の政治・経済' : 'この日の政治・経済') : isTodayLocal ? "Today's politics & economy" : 'Politics & economy of the day',
+          _roleBadgeClassName: styles.roleBadgeIssues,
+        }
+      : null,
+  ].filter(Boolean)
+
   return (
-    <main>
+    <main style={{ position: 'relative' }}>
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          fontSize: '0.85rem',
+          color: 'var(--muted)',
+        }}
+      >
+        {meta.meta}
+      </div>
       <div className="tglMuted" style={{ marginBottom: 10 }}>
         <Link href={`/${country}/daily`}>← {country === 'jp' ? '朝刊一覧' : 'Morning Briefing'}</Link>
       </div>
@@ -202,7 +404,8 @@ export default async function DailyDetailPage({
       <h1 style={{ fontSize: '1.45rem' }}>
         {country === 'jp' ? `${formatDailyTitleDateJa(date)}の朝刊` : `Morning Briefing ${date}`}
       </h1>
-      <div style={{ height: 10 }} />
+      <div style={{ height: 6 }} />
+      <div style={{ fontSize: '0.98rem', lineHeight: 1.6, color: 'var(--text)', marginBottom: 10 }}>{meta.note}</div>
 
       {data.daily.status === 'failed' ? (
         <>
@@ -228,62 +431,85 @@ export default async function DailyDetailPage({
         </>
       ) : (
         <>
-          {data.messages?.length ? (
-            <>
-              <MorningMessagesRotator country={country} messages={data.messages} intervalMs={5000} />
-              <div style={{ height: 12 }} />
-            </>
-          ) : null}
-
-          <div style={{ height: 12 }} />
-
-          {data.daily.summary ? (
-            <>
-              <div
-                style={{
-                  fontSize: '0.98rem',
-                  lineHeight: 1.75,
-                  color: 'var(--text)',
-                  fontWeight: 700,
-                  marginBottom: '1.25rem',
-                }}
-              >
-                {data.daily.summary}
-              </div>
-            </>
-          ) : null}
+          <div style={{ marginBottom: 12 }} />
 
           <section style={{ marginBottom: '1.5rem' }}>
-            {sectionHeader('Gentle News')}
-            {renderTopicCards(gentleTopics) ?? (
-              <EmptyState
-                title={country === 'jp' ? 'GentleNews枠のトピックがありません' : 'No GentleNews topics'}
-                description={country === 'jp' ? '対象期間の条件に合うトピックが少ない可能性があります。' : 'There may have been too few eligible topics.'}
-                action={{ label: country === 'jp' ? '朝刊一覧へ' : 'Back to Briefings', href: `/${country}/daily` }}
-              />
-            )}
+            {data.messages?.length ? (
+              <>
+                <MorningMessagesRotator
+                  country={country}
+                  messages={data.messages}
+                  intervalMs={5000}
+                  title={locale === 'ja' ? (isTodayLocal ? '今日の一言' : 'この日の一言') : isTodayLocal ? "Today's note" : 'Note of the day'}
+                />
+                <div style={{ height: 10 }} />
+              </>
+            ) : null}
+            {sectionHeader(locale === 'ja' ? '1日まとめニュース' : '5-minute news')}
+            {renderTopicCards(dailySummaryTopics as any[], { showCategory: false, datePosition: 'topRight' })}
           </section>
 
-          <section style={{ marginBottom: '1.5rem' }}>
-            {sectionHeader(locale === 'ja' ? '心温まる話' : 'Heartwarming')}
-            {renderTopicCards(heartwarmingTopics) ?? (
-              <EmptyState
-                title={country === 'jp' ? '心温まる話枠のトピックがありません' : 'No heartwarming topics'}
-                description={country === 'jp' ? '対象期間の条件に合うトピックが少ない可能性があります。' : 'There may have been too few eligible topics.'}
-                action={{ label: country === 'jp' ? '朝刊一覧へ' : 'Back to Briefings', href: `/${country}/daily` }}
-              />
-            )}
-          </section>
+          {renderListSection({
+            title: locale === 'ja' ? `🤍 心温まる話（${data.heartwarming_topics?.length ?? 0}）` : `🤍 Heartwarming (${data.heartwarming_topics?.length ?? 0})`,
+            guide: locale === 'ja' ? '気持ちがほどける出来事を、2つだけ。' : 'Two gentle moments to soften the day.',
+            items: Array.isArray(data.heartwarming_topics) ? data.heartwarming_topics : [],
+            kind: 'heartwarming',
+            rightSlot: (
+              <Link className={styles.listMore} href={`/${country}/category/heartwarming`}>
+                {locale === 'ja' ? '心温まる話をもっと見る →' : 'See more heartwarming →'}
+              </Link>
+            ),
+          })}
 
-          <section style={{ marginBottom: '1.5rem' }}>
-            {sectionHeader(locale === 'ja' ? '押さえておきたいNews' : 'Must-know News')}
-            {renderTopicCards(importantTopics) ?? (
-              <EmptyState
-                title={country === 'jp' ? '重要トピックスがありません' : 'No important topics'}
-                description={country === 'jp' ? '対象期間の条件に合うトピックが少ない可能性があります。' : 'There may have been too few eligible topics.'}
-                action={{ label: country === 'jp' ? '朝刊一覧へ' : 'Back to Briefings', href: `/${country}/daily` }}
-              />
+          {renderListSection({
+            title: locale === 'ja'
+              ? `その他、この日にあった出来事（${data.important_topics?.length ?? 0}）`
+              : `Other events of the day (${data.important_topics?.length ?? 0})`,
+            guide: locale === 'ja' ? 'その日の出来事を短くまとめておきます。' : "Other events worth noting, briefly.",
+            items: Array.isArray(data.important_topics) ? data.important_topics : [],
+            kind: 'other',
+            rightSlot: (
+              <Link className={styles.listMore} href={`/${country}/news`}>
+                {locale === 'ja' ? 'ニュース一覧へ →' : 'See all news →'}
+              </Link>
+            ),
+          })}
+
+          <section style={{ marginTop: '1.5rem' }}>
+            {sectionHeader(
+              locale === 'ja' ? 'ひと息ついたら、次へ' : 'Take a breath, then continue',
+              undefined,
+              { divider: 'top' }
             )}
+            <div className={styles.listGuide}>
+              {locale === 'ja' ? '朝刊を読み終えた方、続けて読むならこちら' : 'After the briefing, pick what you want to read next.'}
+            </div>
+            <div className={styles.guideGrid}>
+              <Link href={`/${country}/category/heartwarming?gentle=1`} className={styles.guideCardLink}>
+                <div className={styles.guideCard}>
+                  <div style={{ fontWeight: 700, marginBottom: 6 }}>{locale === 'ja' ? '🤍 心温まる話を読む' : '🤍 Read heartwarming'}</div>
+                  <div className="tglMuted" style={{ fontSize: '0.92rem' }}>
+                    {locale === 'ja' ? '気持ちがほどける話だけを集めました' : 'Only gentle, heartwarming stories.'}
+                  </div>
+                </div>
+              </Link>
+              <Link href={`/${country}/columns`} className={styles.guideCardLink}>
+                <div className={styles.guideCard}>
+                  <div style={{ fontWeight: 700, marginBottom: 6 }}>{locale === 'ja' ? '📝 やさしいコラムへ' : '📝 Go to columns'}</div>
+                  <div className="tglMuted" style={{ fontSize: '0.92rem' }}>
+                    {locale === 'ja' ? 'やさしい視点で、日々を整える短いコラム' : 'Short columns to steady your day.'}
+                  </div>
+                </div>
+              </Link>
+              <Link href={`/${country}/daily`} className={styles.guideCardLink}>
+                <div className={styles.guideCard}>
+                  <div style={{ fontWeight: 700, marginBottom: 6 }}>{locale === 'ja' ? '📅 他の日の朝刊を見る' : '📅 See other briefings'}</div>
+                  <div className="tglMuted" style={{ fontSize: '0.92rem' }}>
+                    {locale === 'ja' ? '朝刊一覧から選べます' : 'Pick from the briefing list.'}
+                  </div>
+                </div>
+              </Link>
+            </div>
           </section>
 
           {isPartial && <PartialNotice country={country} />}

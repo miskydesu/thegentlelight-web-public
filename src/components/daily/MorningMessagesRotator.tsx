@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getLocaleForCountry } from '@/lib/i18n'
 
 export function MorningMessagesRotator(props: {
@@ -8,6 +8,7 @@ export function MorningMessagesRotator(props: {
   country?: 'jp' | 'us' | 'uk' | 'ca' | string
   intervalMs?: number
   typeMsPerChar?: number
+  title?: string
 }) {
   const intervalMs = Math.max(1000, Math.trunc(props.intervalMs ?? 5000))
   const typeMsPerChar = Math.max(10, Math.trunc(props.typeMsPerChar ?? 75))
@@ -27,12 +28,15 @@ export function MorningMessagesRotator(props: {
   const [typed, setTyped] = useState('')
   const [isPlaying, setIsPlaying] = useState(true)
   const [cyclesCompleted, setCyclesCompleted] = useState(0)
+  const [maxMessageHeight, setMaxMessageHeight] = useState<number | null>(null)
+  const messageRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     setIdx(0)
     setTyped('')
     setIsPlaying(true)
     setCyclesCompleted(0)
+    setMaxMessageHeight(null)
   }, [lines.join('\n')])
 
   // Typewriter + cycle control:
@@ -127,6 +131,17 @@ export function MorningMessagesRotator(props: {
     setIsPlaying(true)
   }
 
+  const defaultTitle = isJa ? '朝刊メッセージ' : 'Morning messages'
+  const title = String(props.title || '').trim() || defaultTitle
+
+  useEffect(() => {
+    const el = messageRef.current
+    if (!el) return
+    const height = el.scrollHeight
+    if (height <= 0) return
+    setMaxMessageHeight((prev) => (prev === null || height > prev ? height : prev))
+  }, [typed])
+
   return (
     <div
       style={{
@@ -162,8 +177,19 @@ export function MorningMessagesRotator(props: {
       >
         {isPlaying ? '❚❚' : '▶'}
       </button>
-      <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>{isJa ? '朝刊メッセージ' : 'Morning messages'}</div>
-      <div style={{ fontSize: 16, fontWeight: 700, whiteSpace: 'pre-wrap', minHeight: 28 }}>{typed}</div>
+      <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>{title}</div>
+      <div
+        ref={messageRef}
+        style={{
+          fontSize: 16,
+          fontWeight: 700,
+          whiteSpace: 'pre-wrap',
+          minHeight: 28,
+          height: maxMessageHeight ? `${maxMessageHeight}px` : 'auto',
+        }}
+      >
+        {typed}
+      </div>
     </div>
   )
 }
