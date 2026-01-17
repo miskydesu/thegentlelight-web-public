@@ -243,6 +243,15 @@ export default async function DailyDetailPage({
     )
   }
 
+  const resolveSourceLabel = (item: any) => {
+    const name = String(item?.source_name || '').trim()
+    const domain = String(item?.source_domain || '').trim()
+    const isBroken = (s: string) => s.includes('�')
+    if (name && !isBroken(name)) return name
+    if (domain && !isBroken(domain)) return domain
+    return ''
+  }
+
   const renderListSection = (options: {
     title: string
     guide: string
@@ -260,7 +269,7 @@ export default async function DailyDetailPage({
             const cat = String(item.category || 'unknown')
             const theme = getCategoryBadgeTheme(cat as any)
             const dateLabel = formatTopicListDate(item.last_source_published_at, locale)
-            const sourceLabel = String(item.source_domain || '').trim()
+            const sourceLabel = resolveSourceLabel(item)
             return (
               <li key={item.topic_id} className={styles.listItem}>
                 <Link className={styles.listItemLink} href={`/${country}/news/n/${item.topic_id}`}>

@@ -78,10 +78,7 @@ export function RegionLangSwitch({
               ...(className
                 ? {
                     // フッター等で className を当てたいときは、見た目は CSS に寄せる
-                    background: 'transparent',
-                    border: 'none',
                     cursor: 'pointer',
-                    color: 'inherit',
                   }
                 : defaultButtonStyle),
             }}

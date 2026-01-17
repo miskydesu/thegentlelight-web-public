@@ -64,6 +64,8 @@ export type TopicSummary = {
   title: string
   importance_score: number
   source_count: number
+  source_domain?: string | null
+  source_name?: string | null
   last_seen_at?: string | null
   last_source_published_at: string | null
   high_arousal: boolean
@@ -139,9 +141,9 @@ export type DailyDetailResponse = {
   }
   messages?: Array<{ rank: number; message: string }>
   topics: Array<TopicSummary & { rank: number }>
-  heartwarming_topics?: Array<TopicSummary & { source_domain?: string | null }>
-  important_topics?: Array<TopicSummary & { source_domain?: string | null }>
-  other_topics?: Array<TopicSummary & { source_domain?: string | null }>
+  heartwarming_topics?: Array<TopicSummary & { source_domain?: string | null; source_name?: string | null }>
+  important_topics?: Array<TopicSummary & { source_domain?: string | null; source_name?: string | null }>
+  other_topics?: Array<TopicSummary & { source_domain?: string | null; source_name?: string | null }>
   meta: ApiMeta
 }
 
@@ -163,9 +165,9 @@ export type TodayResponse = {
   } | null
   messages?: Array<{ rank: number; message: string }>
   topics: Array<TopicSummary & { rank: number }>
-  heartwarming_topics?: Array<TopicSummary & { source_domain?: string | null }>
-  important_topics?: Array<TopicSummary & { source_domain?: string | null }>
-  other_topics?: Array<TopicSummary & { source_domain?: string | null }>
+  heartwarming_topics?: Array<TopicSummary & { source_domain?: string | null; source_name?: string | null }>
+  important_topics?: Array<TopicSummary & { source_domain?: string | null; source_name?: string | null }>
+  other_topics?: Array<TopicSummary & { source_domain?: string | null; source_name?: string | null }>
   meta: ApiMeta
 }
 

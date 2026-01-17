@@ -1,65 +1,110 @@
 .footer {
   border-top: 1px solid var(--border);
-  background: #fff;
+  background: #f8f5ef;
   margin-top: 28px;
 }
 
 .inner {
   max-width: 100%;
   margin: 0;
-  padding: 36px 20px;
+  padding: 32px 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
 }
 
-.row {
+.brand {
   display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-  row-gap: 16px;
-  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
 }
 
-.link {
-  font-size: 14px;
+.brandTitle {
+  font-size: 1rem;
+  font-weight: 700;
   color: var(--text);
-  text-decoration: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  white-space: normal;
 }
 
-.link:hover {
-  background: rgba(0, 0, 0, 0.04);
+.brandTagline {
+  font-size: 0.82rem;
+  color: var(--muted);
 }
 
 .divider {
   height: 1px;
-  background: var(--border);
-  margin: 16px 0;
+  background: rgba(0, 0, 0, 0.05);
 }
 
-.subLink {
-  font-size: 13px;
-  color: var(--muted);
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.colTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+
+.pill {
+  font-size: 0.85rem;
+  color: var(--text);
   text-decoration: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  white-space: normal;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
 }
 
-.subLink:hover {
+.pill:hover {
   background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.pillPrimary {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.18);
+  font-weight: 700;
+}
+
+.pillPrimary:hover {
+  background: rgba(0, 0, 0, 0.06);
 }
 
 .copyright {
   font-size: 12px;
   color: var(--muted);
-  padding: 20px 20px 36px;
+  padding: 16px 20px 28px;
   text-align: center;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  background: #f8f5ef;
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pill {
+    white-space: normal;
+  }
 }
 
 

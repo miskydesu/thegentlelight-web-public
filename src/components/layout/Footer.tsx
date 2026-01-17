@@ -32,7 +32,9 @@ export function Footer() {
     if (!country) return []
 
     return [
+      { label: isJa ? '朝刊（5分）' : 'Briefing (5 min)', href: `/${country}/daily`, isPrimary: true },
       { label: isJa ? 'ニュース' : 'News', href: `/${country}/news` },
+      { label: isJa ? '心温まる話' : 'Heartwarming', href: `/${country}/category/heartwarming?gentle=1` },
       { label: isJa ? 'コラム' : 'Columns', href: `/${country}/columns` },
       { label: isJa ? '名言' : 'Quotes', href: `/${country}/quotes` },
     ]
@@ -41,7 +43,7 @@ export function Footer() {
   const secondaryLinks = useMemo(() => {
     const legalHref = country ? `/${country}/legal` : '/legal'
     return [
-      { label: isJa ? 'このサイトについて' : 'About', href: '/about' },
+      { label: isJa ? 'サイトについて' : 'About', href: '/about' },
       { label: isJa ? '利用規約・プライバシー' : 'Legal', href: legalHref },
     ]
   }, [country, isJa])
@@ -51,34 +53,56 @@ export function Footer() {
   return (
     <footer className={styles.footer}>
       <div className={styles.inner}>
+        <div className={styles.brand}>
+          <div className={styles.brandTitle}>The Gentle Light</div>
+          <div className={styles.brandTagline}>
+            {isJa ? '煽らない要点で、世界の流れを静かに整理します。' : 'Calm, non-sensational news at a gentle pace.'}
+          </div>
+        </div>
+
+        <div className={styles.divider} />
+
+        <div className={styles.grid}>
+          <div className={styles.col}>
+            <div className={styles.colTitle}>{isJa ? '読む' : 'Read'}</div>
+            <nav className={styles.links} aria-label={isJa ? 'フッターメインリンク' : 'Footer main links'}>
+              {primaryLinks.map((x) => (
+                <Link key={x.href} href={withGentle(x.href)} className={`${styles.pill} ${x.isPrimary ? styles.pillPrimary : ''}`}>
+                  {x.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          <div className={styles.col}>
+            <div className={styles.colTitle}>{isJa ? 'このサイト' : 'About'}</div>
+            <nav className={styles.links} aria-label={isJa ? 'フッター情報リンク' : 'Footer info links'}>
+              {country ? (
+                <RegionLangSwitch currentCountry={country} className={styles.pill} />
+              ) : (
+                <Link href={withGentle('/')} className={styles.pill}>
+                  {isJa ? '地域と言語' : 'Region & Language'}
+                </Link>
+              )}
+              {secondaryLinks.map((x) => (
+                <Link key={x.href} href={withGentle(x.href)} className={styles.pill}>
+                  {x.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+        </div>
+
         {country ? (
-          <>
-            <nav className={styles.row} aria-label={isJa ? 'フッター補助リンク' : 'Footer support links'}>
-            {primaryLinks.map((x) => (
-              <Link key={x.href} href={withGentle(x.href)} className={styles.link}>
-                {x.label}
+          <div className={styles.col}>
+            <div className={styles.colTitle}>{isJa ? '迷ったら' : 'Start here'}</div>
+            <div className={styles.links}>
+              <Link className={styles.pill} href={withGentle(`/${country}/daily/today`)}>
+                {isJa ? 'きょうの朝刊を見る' : "Today's briefing"}
               </Link>
-            ))}
-          </nav>
-
-            <div className={styles.divider} />
-          </>
+            </div>
+          </div>
         ) : null}
-
-        <nav className={styles.row} aria-label={isJa ? 'フッター情報リンク' : 'Footer info links'}>
-          {country ? (
-            <RegionLangSwitch currentCountry={country} className={styles.subLink} />
-          ) : (
-            <Link href={withGentle('/')} className={styles.subLink}>
-              {isJa ? '地域と言語' : 'Region & Language'}
-            </Link>
-          )}
-          {secondaryLinks.map((x) => (
-            <Link key={x.href} href={withGentle(x.href)} className={styles.subLink}>
-              {x.label}
-            </Link>
-          ))}
-        </nav>
       </div>
 
       <div className={styles.copyright}>© {year} The Gentle Light - by Misky</div>

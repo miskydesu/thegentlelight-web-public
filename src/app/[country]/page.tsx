@@ -214,6 +214,64 @@ export default async function CountryHome({
     )
   }
 
+  const resolveSourceLabel = (item: any) => {
+    const name = String(item?.source_name || '').trim()
+    const domain = String(item?.source_domain || '').trim()
+    const isBroken = (s: string) => s.includes('�')
+    if (name && !isBroken(name)) return name
+    if (domain && !isBroken(domain)) return domain
+    return ''
+  }
+
+  const renderListSection = (options: {
+    title: string
+    guide?: string
+    items: Array<any>
+    kind: 'heartwarming' | 'other'
+    rightSlot?: React.ReactNode
+  }) => {
+    if (!options.items.length) return null
+    return (
+      <section className={styles.listSection}>
+        {sectionHeader(options.title, undefined, { divider: 'top' }, options.rightSlot)}
+        {options.guide ? <div className={styles.listGuide}>{options.guide}</div> : null}
+        <ul className={styles.listItems}>
+          {options.items.map((item) => {
+            const cat = String(item.category || 'unknown')
+            const theme = getCategoryBadgeTheme(cat as any)
+            const dateLabel = formatTopicListDate(item.last_source_published_at, locale)
+            const sourceLabel = resolveSourceLabel(item)
+            return (
+              <li key={item.topic_id} className={styles.listItem}>
+                <Link className={styles.listItemLink} href={`/${country}/news/n/${item.topic_id}`}>
+                  <div className={`${styles.listTitle} ${styles.listTitleAccent}`} style={{ ['--cat-color' as any]: theme.color } as any}>
+                    {item.title}
+                  </div>
+                  {options.kind === 'heartwarming' ? (
+                    sourceLabel || dateLabel ? (
+                      <div className={styles.listMeta}>
+                        {sourceLabel ? <span>{sourceLabel}</span> : null}
+                        {dateLabel ? <span>{dateLabel}</span> : null}
+                      </div>
+                    ) : null
+                  ) : (
+                    <div className={styles.listMeta}>
+                      <span className={styles.listCategoryText} style={{ ['--cat-color' as any]: theme.color } as any}>
+                        {getCategoryLabel(cat as any, locale)}
+                      </span>
+                      {sourceLabel ? <span>{sourceLabel}</span> : null}
+                      {dateLabel ? <span>{dateLabel}</span> : null}
+                    </div>
+                  )}
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      </section>
+    )
+  }
+
   const sectionHeader = (
     title: string,
     moreHref?: string,
@@ -286,7 +344,11 @@ export default async function CountryHome({
             まずは、今日のニュース4選から。
           </>
         ) : (
-          'We summarize today’s events with calm, non-sensational points.'
+          <>
+            No hype. No feeling left behind.
+            <br />
+            First, 4 selected news stories from today.
+          </>
         )}
       </div>
 
@@ -295,7 +357,7 @@ export default async function CountryHome({
 
       <section style={{ marginBottom: '1.5rem' }}>
         {sectionHeader(
-          locale === 'ja' ? '今日のニュース4選' : 'Gentle Top News',
+          locale === 'ja' ? '最新トップニュース4選' : 'Top News (4)',
           undefined,
           { divider: 'none' },
           !isPartial ? (
@@ -338,18 +400,17 @@ export default async function CountryHome({
       </section>
 
       <section id="heartwarming" style={{ marginBottom: '1.5rem' }}>
-        {sectionHeader(
-          locale === 'ja' ? '心温まる話' : 'Heartwarming',
-          undefined,
-          { divider: 'top' },
-          <Link
-            href={`/${country}/category/heartwarming${gentle ? '?gentle=1' : ''}`}
-            style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}
-          >
-            {locale === 'ja' ? '専用ページへ' : 'Go to page'}
-          </Link>
-        )}
-        {renderTopicCards(heartwarmingFinal) ?? (
+        {renderListSection({
+          title: locale === 'ja' ? '🤍 心温まる話' : '🤍 Heartwarming',
+          guide: locale === 'ja' ? '今起こっている心温まる出来事をご紹介' : 'Two gentle moments to soften the day.',
+          items: heartwarmingFinal,
+          kind: 'heartwarming',
+          rightSlot: (
+            <Link className={styles.listMore} href={`/${country}/category/heartwarming${gentle ? '?gentle=1' : ''}`}>
+              {locale === 'ja' ? '心温まる話をもっと見る →' : 'See more heartwarming →'}
+            </Link>
+          ),
+        }) ?? (
           <EmptyState
             title={country === 'jp' ? 'まだ心温まる話がありません' : 'No heartwarming topics yet'}
             description={country === 'jp' ? 'しばらくしてからもう一度お試しください。' : 'Please try again later.'}
@@ -359,21 +420,58 @@ export default async function CountryHome({
       </section>
 
       <section id="must-know" style={{ marginBottom: '1.5rem' }}>
-        {sectionHeader(
-          locale === 'ja' ? '大事な動き' : 'Must-know News',
-          undefined,
-          { divider: 'top' },
-          <Link href={`/${country}/news${gentle ? '?gentle=1' : ''}`} style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}>
-            {locale === 'ja' ? 'ニュース一覧へ' : 'See all news'}
-          </Link>
-        )}
-        {renderTopicCards(importantFinal) ?? (
+        {renderListSection({
+          title: locale === 'ja' ? '📌 大事な動き' : 'Must-know News',
+          guide: locale === 'ja' ? '今世界で起こっている大事な動きを抜粋' : 'Other events worth noting, briefly.',
+          items: importantFinal,
+          kind: 'other',
+          rightSlot: (
+            <Link className={styles.listMore} href={`/${country}/news${gentle ? '?gentle=1' : ''}`}>
+              {locale === 'ja' ? 'ニュース一覧へ →' : 'See all news →'}
+            </Link>
+          ),
+        }) ?? (
           <EmptyState
             title={country === 'jp' ? '重要トピックスがありません' : 'No important topics'}
             description={country === 'jp' ? 'しばらくしてからもう一度お試しください。' : 'Please try again later.'}
             action={{ label: t.pages.home.seeMore, href: `/${country}/latest${gentle ? '?gentle=1' : ''}` }}
           />
         )}
+      </section>
+
+      <section style={{ marginTop: '1.5rem' }}>
+        {sectionHeader(locale === 'ja' ? '次に読むなら、こちら' : 'Take a breath, then continue', undefined, { divider: 'top' })}
+        <div className={styles.listGuide}>
+          {locale === 'ja' ? '今日の気分に合わせて、読みやすいものからどうぞ。' : 'After the briefing, pick what you want to read next.'}
+        </div>
+        <div className={styles.guideGrid}>
+          <Link href={`/${country}/category/heartwarming?gentle=1`} className={styles.guideCardLink}>
+            <div className={styles.guideCard}>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>{locale === 'ja' ? '🤍 心温まる話を読む' : '🤍 Read heartwarming'}</div>
+              <div className="tglMuted" style={{ fontSize: '0.92rem' }}>
+                {locale === 'ja' ? '気持ちがほどける話だけを集めました' : 'Only gentle, heartwarming stories.'}
+              </div>
+            </div>
+          </Link>
+          <Link href={`/${country}/columns`} className={styles.guideCardLink}>
+            <div className={styles.guideCard}>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>{locale === 'ja' ? '📝 やさしいコラムへ' : '📝 Go to columns'}</div>
+              <div className="tglMuted" style={{ fontSize: '0.92rem' }}>
+                {locale === 'ja' ? 'やさしい視点で、日々を整える短いコラム' : 'Short columns to steady your day.'}
+              </div>
+            </div>
+          </Link>
+          <Link href={`/${country}/daily/today${gentle ? '?gentle=1' : ''}`} className={styles.guideCardLink}>
+            <div className={styles.guideCard}>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>
+                {locale === 'ja' ? '🗞 今日の朝刊を見る' : "🗞 Today's briefing"}
+              </div>
+              <div className="tglMuted" style={{ fontSize: '0.92rem' }}>
+                {locale === 'ja' ? '最新の朝刊へ案内します' : 'Go to the latest morning briefing.'}
+              </div>
+            </div>
+          </Link>
+        </div>
       </section>
 
       {isPartial && <PartialNotice country={country} />}
