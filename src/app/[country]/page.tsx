@@ -118,8 +118,28 @@ export default async function CountryHome({
   }
   const fb = fallbackFromHero()
   const gentleFinal = gentleTopics.length ? gentleTopics : fb.gentle
-  const heartwarmingFinal = heartwarmingTopics.length ? heartwarmingTopics : fb.heartwarming
   const importantFinal = importantTopics.length ? importantTopics : fb.important
+
+  const fillHeartwarming = () => {
+    const picked = [...heartwarmingTopics]
+    if (picked.length >= 2) return picked.slice(0, 2)
+    const hero = data.hero_topics || []
+    for (const t of hero) {
+      if (picked.length >= 2) break
+      if (t?.category !== 'heartwarming') continue
+      if (picked.some((x) => x.topic_id === t.topic_id)) continue
+      picked.push(t)
+    }
+    if (picked.length < 2) {
+      for (const t of fb.heartwarming) {
+        if (picked.length >= 2) break
+        if (picked.some((x) => x.topic_id === t.topic_id)) continue
+        picked.push(t)
+      }
+    }
+    return picked.slice(0, 2)
+  }
+  const heartwarmingFinal = heartwarmingTopics.length ? heartwarmingTopics : fillHeartwarming()
 
   const renderTopicCards = (
     items: Array<any>,
