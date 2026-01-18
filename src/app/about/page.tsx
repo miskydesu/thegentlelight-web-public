@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { cookies, headers } from 'next/headers'
 
 export const metadata = {
   // Root layout の title.template による重複を避けるため absolute を使用
@@ -7,6 +8,32 @@ export const metadata = {
 
 export default function AboutRedirect({ searchParams }: { searchParams: { gentle?: string } }) {
   const gentle = searchParams?.gentle === '1' || searchParams?.gentle === 'true'
-  redirect(`/jp/about${gentle ? '?gentle=1' : ''}`)
+
+  const cookieStore = cookies()
+  const savedCountry = (cookieStore.get('tgl_country')?.value || '').trim().toLowerCase()
+  const validSaved = savedCountry === 'us' || savedCountry === 'ca' || savedCountry === 'uk' || savedCountry === 'jp'
+
+  const h = headers()
+  const headerCountry =
+    h.get('x-vercel-ip-country') || h.get('cf-ipcountry') || h.get('x-country-code') || ''
+  const normalizedCountry = headerCountry.toUpperCase() === 'GB' ? 'UK' : headerCountry.toUpperCase()
+  const detected =
+    normalizedCountry === 'US'
+      ? 'us'
+      : normalizedCountry === 'CA'
+        ? 'ca'
+        : normalizedCountry === 'UK'
+          ? 'uk'
+          : normalizedCountry === 'JP'
+            ? 'jp'
+            : null
+
+  // Policy:
+  // - Prefer last choice (cookie)
+  // - Then Geo
+  // - Fallback to English-first default (US)
+  const country = (validSaved ? (savedCountry as 'us' | 'ca' | 'uk' | 'jp') : detected) || 'us'
+
+  redirect(`/${country}/about${gentle ? '?gentle=1' : ''}`)
 }
 
