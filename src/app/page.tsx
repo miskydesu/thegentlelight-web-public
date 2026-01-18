@@ -160,7 +160,7 @@ export default function Home() {
               <img className={styles.logo} src={logoSrc} alt="The Gentle Light" />
             </div>
             <h1 className={styles.headline}>{isJa ? '穏やかに世界を知る' : 'Gentle World News'}</h1>
-            <p className={styles.tagline}>煽られない。でも世界に置いていかれない情報サイト</p>
+            <p className={styles.tagline}>{isJa ? '煽られない。でも世界に置いていかれない情報サイト' : 'News, without the noise.'}</p>
           </section>
 
           <section className={styles.picker}>
