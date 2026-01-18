@@ -7,8 +7,17 @@ import { generateHreflang, generateWebSiteJSONLD } from '../lib/seo-helpers'
 
 export function generateMetadata(): Metadata {
   const h = headers()
-  const acceptLanguage = h.get('accept-language') ?? ''
-  const isJa = /(^|,)\s*ja([-_][A-Za-z]+)?\s*(;|,|$)/i.test(acceptLanguage)
+  const cookieStore = cookies()
+  const savedCountry = (cookieStore.get('tgl_country')?.value || '').trim().toLowerCase()
+  const headerCountry =
+    h.get('x-vercel-ip-country') || h.get('cf-ipcountry') || h.get('x-country-code') || ''
+  const normalizedCountry = headerCountry.toUpperCase() === 'GB' ? 'UK' : headerCountry.toUpperCase()
+  const detected = normalizedCountry === 'JP' ? 'jp' : normalizedCountry === 'US' ? 'us' : normalizedCountry === 'UK' ? 'uk' : normalizedCountry === 'CA' ? 'ca' : null
+
+  // Root page language policy:
+  // - If country can be inferred as JP (geo) OR the user previously chose JP (cookie), show Japanese.
+  // - Otherwise, default to English (JP is optional; site priority is CA/US -> UK -> JP).
+  const isJa = detected === 'jp' || savedCountry === 'jp'
 
   const base = getSiteBaseUrl()
   const hreflang = generateHreflang('')
@@ -86,8 +95,7 @@ export default function Home() {
           : normalizedCountry === 'CA'
             ? 'ca'
             : null
-  const acceptLanguage = h.get('accept-language') ?? ''
-  const isJa = detected === 'jp' || /(^|,)\s*ja([-_][A-Za-z]+)?\s*(;|,|$)/i.test(acceptLanguage)
+  const isJa = detected === 'jp' || savedCountry === 'jp'
   const logoKey = 'assets/brand/logo.png'
   const logoSrc = b ? `${b}/${logoKey}` : `/${logoKey}`
 
@@ -107,6 +115,41 @@ export default function Home() {
     ? [defaultOrder.find((x) => x.code === preferred)!, ...defaultOrder.filter((x) => x.code !== preferred)]
     : defaultOrder
 
+  const toCountryLabel = (code: 'us' | 'uk' | 'ca' | 'jp', opts: { isJa: boolean; withLang?: boolean }) => {
+    const withLang = opts.withLang !== false
+    if (opts.isJa) {
+      return code === 'us'
+        ? withLang
+          ? 'アメリカ（英語）'
+          : 'アメリカ'
+        : code === 'uk'
+          ? withLang
+            ? 'イギリス（英語）'
+            : 'イギリス'
+          : code === 'ca'
+            ? withLang
+              ? 'カナダ（英語）'
+              : 'カナダ'
+            : withLang
+              ? '日本（日本語）'
+              : '日本'
+    }
+    // English
+    const base =
+      code === 'us' ? 'United States' : code === 'uk' ? 'United Kingdom' : code === 'ca' ? 'Canada' : 'Japan'
+    const lang = code === 'jp' ? 'Japanese' : 'English'
+    return withLang ? `${base} (${lang})` : base
+  }
+
+  const validSaved = savedCountry === 'jp' || savedCountry === 'us' || savedCountry === 'uk' || savedCountry === 'ca'
+  const lastChoiceCode = validSaved ? (savedCountry as 'us' | 'uk' | 'ca' | 'jp') : null
+  const recommendedCode = !validSaved ? detected : null
+  const recommendReason = recommendedCode
+    ? isJa
+      ? 'この端末の推定'
+      : 'Detected from this device'
+    : ''
+
   const base = getSiteBaseUrl()
   const webSiteJSONLD = generateWebSiteJSONLD({ url: base, name: 'The Gentle Light' })
 
@@ -120,6 +163,16 @@ export default function Home() {
   const COOKIE = 'tgl_country';
   const isValid = (v) => v === 'us' || v === 'uk' || v === 'ca' || v === 'jp';
   const hasCookie = () => (document.cookie || '').split(';').some((x) => x.trim().startsWith(COOKIE + '='));
+  const getCookie = () => {
+    try {
+      const parts = (document.cookie || '').split(';').map((x) => x.trim());
+      const hit = parts.find((x) => x.startsWith(COOKIE + '='));
+      if (!hit) return '';
+      return decodeURIComponent(hit.slice((COOKIE + '=').length) || '').trim().toLowerCase();
+    } catch {
+      return '';
+    }
+  };
   const setCookie = (v) => {
     try {
       document.cookie = COOKIE + '=' + encodeURIComponent(v) + '; Max-Age=31536000; Path=/; SameSite=Lax';
@@ -130,6 +183,20 @@ export default function Home() {
     if (!hasCookie()) {
       const v = (localStorage.getItem(COOKIE) || '').trim().toLowerCase();
       if (isValid(v)) setCookie(v);
+    }
+  } catch {}
+
+  // 2回目以降は国別トップへ（ただし初回は自動転送しない／stay=1 なら滞在する）
+  try {
+    const url = new URL(location.href);
+    const stay = url.searchParams.get('stay');
+    if (!stay && location.pathname === '/') {
+      const v = getCookie();
+      if (isValid(v)) {
+        // ユーザーが一度選んだ国へ。戻る導線のため from=root を付ける
+        location.replace('/' + v + '?from=root');
+        return;
+      }
     }
   } catch {}
 
@@ -161,11 +228,46 @@ export default function Home() {
             </div>
             <h1 className={styles.headline}>{isJa ? '穏やかに世界を知る' : 'Gentle World News'}</h1>
             <p className={styles.tagline}>{isJa ? '煽られない。でも世界に置いていかれない情報サイト' : 'News, without the noise.'}</p>
+
+            {/* 1) 推定できたら「おすすめ」を1つだけ（自動転送はしない） */}
+            {lastChoiceCode || recommendedCode ? (
+              <div className={styles.recommendWrap}>
+                <div className={styles.recommendLine}>
+                  {lastChoiceCode ? (isJa ? '前回：' : 'Last time: ') : isJa ? 'おすすめ：' : 'Recommended: '}
+                  <strong>{toCountryLabel((lastChoiceCode || recommendedCode)!, { isJa, withLang: true })}</strong>
+                  {recommendReason ? (isJa ? `（${recommendReason}）` : ` (${recommendReason})`) : ''}
+                </div>
+                <a
+                  className={styles.continueButton}
+                  href={`/${(lastChoiceCode || recommendedCode)!}`}
+                  aria-label={isJa ? 'この国で続ける' : 'Continue'}
+                >
+                  {isJa ? 'この国で続ける' : 'Continue'}
+                </a>
+              </div>
+            ) : null}
           </section>
 
           <section className={styles.picker}>
             <div className={styles.pickerTitle}>
               {isJa ? 'あなたの国と言語を選んで下さい。' : 'Choose your country and language.'}
+            </div>
+
+            <div className={styles.pickerNote}>{isJa ? '次回のために覚えておきます。' : 'We’ll remember your choice for next time.'}</div>
+
+            {/* 3) 「ただの分岐ページ」ではなく、入口として価値を1つ置く */}
+            <div className={styles.valueHint}>
+              {isJa ? (
+                <>
+                  <div className={styles.valueHintLead}>今日の朝刊（5分）で「1日の全体像」をつかむ</div>
+                  <div className={styles.valueHintSub}>煽りを抑えた要点で、静かに整理します。</div>
+                </>
+              ) : (
+                <>
+                  <div className={styles.valueHintLead}>Read today’s Morning Briefing in 5 calm minutes.</div>
+                  <div className={styles.valueHintSub}>A gentle daily digest, without the noise.</div>
+                </>
+              )}
             </div>
 
             <div className={styles.grid}>
@@ -205,11 +307,18 @@ export default function Home() {
                       <div className={styles.countryLabel}>{label}</div>
                       <div className={styles.countryMeta}>{meta}</div>
                     </div>
-                    <span className={styles.arrow} aria-hidden="true">→</span>
+                    <span className={styles.arrow} aria-hidden="true">
+                      {isJa ? '開く' : 'Open'}
+                    </span>
                   </a>
                 )
               })}
             </div>
+
+            {/* 2) redirect済みユーザーが戻って来られる導線（/?stay=1 で自動転送を止める） */}
+            <a className={styles.changeLink} href="/?stay=1">
+              {isJa ? '国と言語の設定' : 'Country & language settings'}
+            </a>
           </section>
         </div>
       </main>

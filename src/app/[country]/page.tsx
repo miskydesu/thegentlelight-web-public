@@ -73,7 +73,7 @@ export default async function CountryHome({
   searchParams,
 }: {
   params: { country: string }
-  searchParams: { gentle?: string; allow_important?: string }
+  searchParams: { gentle?: string; allow_important?: string; from?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
@@ -81,6 +81,7 @@ export default async function CountryHome({
   const lang: Locale = getLocaleForCountry(country)
   const gentle = getGentleFromSearchParams(searchParams)
   const allowImportant = getAllowImportantFromSearchParams(searchParams)
+  const fromRoot = String(searchParams?.from || '') === 'root'
   const base = getSiteBaseUrl()
   const isJa = country === 'jp'
   const breadcrumbJSONLD = generateBreadcrumbListJSONLD({
@@ -319,6 +320,20 @@ export default async function CountryHome({
 
       <main style={{ position: 'relative' }}>
         {isPartial ? null : null}
+        {fromRoot ? (
+          <div style={{ marginBottom: 10 }}>
+            <Link
+              href="/?stay=1"
+              style={{
+                fontSize: '0.88rem',
+                color: 'var(--muted)',
+                textDecoration: 'underline',
+              }}
+            >
+              {isJa ? '国と言語を変更' : 'Change country & language'}
+            </Link>
+          </div>
+        ) : null}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
           <h1 style={{ fontSize: '1.5rem' }}>{country === 'jp' ? 'やさしいニュース' : 'Calm News Top'}</h1>
           {isPartial ? (
