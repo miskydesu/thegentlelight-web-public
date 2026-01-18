@@ -35,6 +35,17 @@ export function middleware(req: NextRequest) {
 
   // ルート以外は自動振り分けしない（既存の /jp や /us などを壊さない）
   if (p !== '/') {
+    // guestのGentleModeはCookieを正にする（URLパラメータが無い場合は付与してSSRでも反映）
+    // - 既存実装は query param を参照する箇所が多いため、cookie→URL をここでブリッジする
+    const hasGentleParam = req.nextUrl.searchParams.has('gentle')
+    const gentleCookie = req.cookies.get('tgl_gentle_mode')?.value
+    const cookieGentleOn = gentleCookie === '1' || gentleCookie === 'true'
+    if (!hasGentleParam && cookieGentleOn) {
+      const url = req.nextUrl.clone()
+      url.searchParams.set('gentle', '1')
+      return NextResponse.redirect(url)
+    }
+
     // 後段のServer Componentでパス判定できるように、pathnameをヘッダで渡す
     const h = new Headers(req.headers)
     h.set('x-tgl-pathname', p)

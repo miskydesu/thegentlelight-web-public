@@ -19,6 +19,8 @@ export function UserStatus({ country }: { country: string }) {
           setEmail(null)
           return
         }
+        // localStorageのみのログインでもサーバー側で判定できるよう、存在フラグCookieを更新
+        setUserToken(token)
         const s = await getSession()
         setEmail(s.user?.email ?? null)
         // ユーザー設定でON/OFF固定されている場合は、サイト全体の持ち回り挙動に合わせてlocalStorageへ反映

@@ -5,7 +5,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
-import { getGentleFromSearchParams } from '@/lib/view-switch'
+import { getGentleFromSearchParams, getAllowImportantFromSearchParams } from '@/lib/view-switch'
 import { CATEGORIES, getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import styles from './category.module.css'
 import { formatTopicListDate } from '@/lib/topicDate'
@@ -86,7 +86,7 @@ export default async function CategoryPage({
   searchParams,
 }: {
   params: { country: string; category: string }
-  searchParams: { gentle?: string; cursor?: string; limit?: string }
+  searchParams: { gentle?: string; allow_important?: string; cursor?: string; limit?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
@@ -96,6 +96,7 @@ export default async function CategoryPage({
   if (!category) return notFound()
   const t = getTranslationsForCountry(country, lang)
   const gentle = getGentleFromSearchParams(searchParams)
+  const allowImportant = getAllowImportantFromSearchParams(searchParams)
   const locale = lang === 'ja' ? 'ja' : 'en'
   const base = getSiteBaseUrl()
   const isJa = country === 'jp'
@@ -114,7 +115,7 @@ export default async function CategoryPage({
   const limit = isHeartwarmingPage ? 10 : parsedLimit
 
   const data = await fetchJson<TopicsResponse>(
-    `/v1/${country}/topics?category=${encodeURIComponent(category.code)}&limit=${limit}&cursor=${cursor}${gentle ? `&gentle=1` : ''}`,
+    `/v1/${country}/topics?category=${encodeURIComponent(category.code)}&limit=${limit}&cursor=${cursor}${gentle ? `&gentle=1${allowImportant ? '' : '&allow_important=0'}` : ''}`,
     { next: { revalidate: CACHE_POLICY.frequent } }
   )
   const isPartial = Boolean(data.meta?.is_partial)
@@ -126,6 +127,7 @@ export default async function CategoryPage({
   const buildUrl = (nextCursor: number) => {
     const sp = new URLSearchParams()
     if (gentle) sp.set('gentle', '1')
+    if (gentle && !allowImportant) sp.set('allow_important', '0')
     if (!isHeartwarmingPage && limit !== 30) sp.set('limit', String(limit))
     if (nextCursor > 0) sp.set('cursor', String(nextCursor))
     const qs = sp.toString()
@@ -135,7 +137,7 @@ export default async function CategoryPage({
   if (isHeartwarmingPage) {
     try {
       const pickData = await fetchJson<HeartwarmingTodayThreeResponse>(
-        `/v1/${country}/heartwarming/today-three?limit=3${gentle ? '&gentle=1' : ''}`,
+        `/v1/${country}/heartwarming/today-three?limit=3${gentle ? `&gentle=1${allowImportant ? '' : '&allow_important=0'}` : ''}`,
         { next: { revalidate: CACHE_POLICY.frequent } }
       )
       todayPicks = (pickData.picks || []).map((p) => ({
@@ -302,7 +304,10 @@ export default async function CategoryPage({
                         </CardContent>
                       ) : null}
                       <CardMeta style={{ marginTop: '0.5rem', columnGap: 0, rowGap: 0 }}>
-                        {Boolean(x.high_arousal) || (x.distress_score ?? 0) >= 50 ? (
+                        {(() => {
+                          const distress = Number(x.distress_score ?? 0)
+                          return distress >= 60 || (Boolean(x.high_arousal) && distress >= 30)
+                        })() ? (
                           <span className={`${styles.categoryBadge} ${styles.metaItem}`} style={{ opacity: 0.75 }}>
                             {locale === 'ja' ? '心の負担に注意' : 'May be upsetting'}
                           </span>

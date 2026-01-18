@@ -131,6 +131,98 @@
   color: var(--muted);
 }
 
+.dailyListGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.dailyGuideCard {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 14px;
+  padding: 12px 14px;
+  line-height: 1.6;
+}
+
+.dailyGuideLine1 {
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.dailyGuideLine2 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.dailyWideDivider {
+  width: 100%;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.dailyOneLineEllipsis {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dailyRecentMeta {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  max-width: 100%;
+  overflow: hidden; /* 子のellipsisが確実に効くように */
+}
+
+.dailyRecentMessage {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 720px) {
+  /* SP: 1行目は改行（折返し）しない */
+  .dailyGuideLine1 {
+    white-space: nowrap;
+    font-size: 0.92rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .dailyListGrid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.dailyMonthMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dailyMonthLabel {
+  font-weight: 800;
+  font-size: 1.2rem;
+}
+
+@media (min-width: 900px) {
+  .dailyMonthLabel {
+    font-size: 1.1rem;
+  }
+}
+
 .sidebarItemRow {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr);
@@ -225,8 +317,17 @@
 }
 
 .calendarDotReady {
+  /* fallback */
   background: var(--accent);
-  opacity: 0.9;
+  /* slightly brighter accent (supported browsers) */
+  background: color-mix(in srgb, var(--accent) 82%, white);
+  opacity: 1;
+}
+
+.calendarDotPending {
+  background: transparent;
+  border: 1px solid var(--muted);
+  opacity: 0.32;
 }
 
 .sidebarMuted {

@@ -3,8 +3,8 @@
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { getSession, setUserToken, updateGentleMode, changePassword, requestEmailVerify, requestEmailChange, confirmEmailChange } from '@/lib/userAuth'
-import { setPreferredGentle } from '@/lib/view-switch'
+import { getSession, setUserToken, updateGentleMode, updateGentleAllowImportantNews, changePassword, requestEmailVerify, requestEmailChange, confirmEmailChange } from '@/lib/userAuth'
+import { addGentleToUrl, getPreferredGentle, setPreferredGentle, setPreferredGentleAllowImportantNews } from '@/lib/view-switch'
 import styles from './me.module.css'
 
 export default function MyPage() {
@@ -19,6 +19,8 @@ export default function MyPage() {
   const [email, setEmail] = useState<string | null>(null)
   const [googleSub, setGoogleSub] = useState<string | null>(null)
   const [gentleMode, setGentleMode] = useState<boolean | null>(null)
+  const [gentleAllowImportant, setGentleAllowImportant] = useState<boolean>(true)
+  const [currentGentle, setCurrentGentle] = useState<boolean>(false)
   const [emailVerifiedAt, setEmailVerifiedAt] = useState<string | null>(null)
   const [newEmail, setNewEmail] = useState('')
   const [emailToken, setEmailToken] = useState('')
@@ -41,6 +43,11 @@ export default function MyPage() {
       setGoogleSub(s.user.google_sub)
       setEmailVerifiedAt((s.user as any).email_verified_at ?? null)
       setGentleMode(s.settings?.gentle_mode ?? null)
+      setGentleAllowImportant(Boolean((s.settings as any)?.gentle_allow_important_news ?? true))
+      // 現在の表示モード（サイト全体に効く）: 固定設定がある場合はそれを優先、なければlocalStorageの最後状態
+      const fixed = s.settings?.gentle_mode
+      if (typeof fixed === 'boolean') setCurrentGentle(fixed)
+      else setCurrentGentle(getPreferredGentle() ?? false)
     } catch (e: any) {
       const status = e?.status
       const msg = String(e?.message || '')
@@ -70,6 +77,24 @@ export default function MyPage() {
     } catch (e: any) {
       setError(e?.message || '更新に失敗しました')
     }
+  }
+
+  const saveGentleAllowImportant = async (next: boolean) => {
+    setError(null)
+    try {
+      const r = await updateGentleAllowImportantNews(next)
+      setGentleAllowImportant(r.settings.gentle_allow_important_news)
+      setPreferredGentleAllowImportantNews(r.settings.gentle_allow_important_news)
+    } catch (e: any) {
+      setError(e?.message || '更新に失敗しました')
+    }
+  }
+
+  const toggleCurrentGentle = (next: boolean) => {
+    setCurrentGentle(next)
+    setPreferredGentle(next)
+    // その場で体感できるよう、トップへ遷移して反映（URLも揃える）
+    router.push(addGentleToUrl(`/${country}`, next))
   }
 
   const savePw = async () => {
@@ -239,10 +264,56 @@ export default function MyPage() {
         {showDev && devInfo ? <div style={{ marginTop: 8, fontSize: 12, color: 'var(--muted)', whiteSpace: 'pre-wrap' }}>{devInfo}</div> : null}
       </section>
 
+      {/* 1) Gentle Mode 設定（今の表示を切り替える） */}
       <section style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.06)', marginBottom: 14 }}>
-        <div style={{ fontWeight: 800, marginBottom: 8 }}>{isJp ? 'Gentle Mode 設定' : 'Gentle Mode preference'}</div>
+        <div style={{ fontWeight: 800, marginBottom: 8 }}>{isJp ? '負担を減らす（Gentle Mode） 設定' : 'Gentle Mode'}</div>
+        <div style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 10, lineHeight: 1.55 }}>
+          {isJp
+            ? '表示の基準を切り替えます。「負担を減らす（Gentle Mode）」では、心の負担が大きい可能性がある話題を抑えます（数値は表示しません）。'
+            : 'Switch the display rule. Gentle Mode reduces potentially upsetting topics based on our evaluation and filtering policy (we do not show raw scores).'}
+        </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => toggleCurrentGentle(true)}
+            style={{
+              padding: '10px 12px',
+              borderRadius: 10,
+              border: currentGentle ? '1px solid #000' : '1px solid rgba(0,0,0,0.18)',
+              background: currentGentle ? '#000' : '#fff',
+              color: currentGentle ? '#fff' : 'var(--text)',
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            {isJp ? 'ON' : 'ON'}
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleCurrentGentle(false)}
+            style={{
+              padding: '10px 12px',
+              borderRadius: 10,
+              border: !currentGentle ? '1px solid #000' : '1px solid rgba(0,0,0,0.18)',
+              background: !currentGentle ? '#000' : '#fff',
+              color: !currentGentle ? '#fff' : 'var(--text)',
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            {isJp ? 'OFF' : 'OFF'}
+          </button>
+        </div>
+        <div className="tglMuted" style={{ marginTop: 10, fontSize: 12 }}>
+          {isJp ? '※この切り替えは、サイト全体の表示に反映されます。' : 'Applies to the whole site.'}
+        </div>
+      </section>
+
+      {/* 2) Gentle Mode 保持設定（ログイン時の固定/引き継ぎ） */}
+      <section style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.06)', marginBottom: 14 }}>
+        <div style={{ fontWeight: 800, marginBottom: 8 }}>{isJp ? '負担を減らす（Gentle Mode） 保持設定' : 'Gentle Mode persistence'}</div>
         <div style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 10 }}>
-          {isJp ? 'ON / OFF 固定、または最後の状態を引き継ぐ（サイトで切り替えた状態）を選べます。' : 'Choose ON, OFF, or inherit the last state you used on the site.'}
+          {isJp ? 'ON / OFF 固定、または最後の状態を引き継ぐ（サイトで切り替えた状態）を選べます。（対象：負担を減らす（Gentle Mode））' : 'Choose ON, OFF, or inherit the last state you used on the site.'}
         </div>
         <div className={styles.gentleRadioGrid}>
           <label
@@ -255,7 +326,7 @@ export default function MyPage() {
             <input className={styles.srOnly} type="radio" name="gentlePref" checked={gentleMode === true} onChange={() => void saveGentlePref(true)} />
             <div className={styles.gentleRadioLeft}>
               <div className={styles.gentleRadioTitle}>{isJp ? 'ON（固定）' : 'ON (fixed)'}</div>
-              <div className={styles.gentleRadioDesc}>{isJp ? 'ログイン時Gentle ModeをONに設定' : 'Always show with Gentle Mode ON'}</div>
+              <div className={styles.gentleRadioDesc}>{isJp ? 'ログイン時「負担を減らす（Gentle Mode）」をONに固定' : 'Always show with Gentle Mode ON'}</div>
             </div>
             <span className={styles.gentleRadioDot} aria-hidden="true" />
           </label>
@@ -270,7 +341,7 @@ export default function MyPage() {
             <input className={styles.srOnly} type="radio" name="gentlePref" checked={gentleMode === false} onChange={() => void saveGentlePref(false)} />
             <div className={styles.gentleRadioLeft}>
               <div className={styles.gentleRadioTitle}>{isJp ? 'OFF（固定）' : 'OFF (fixed)'}</div>
-              <div className={styles.gentleRadioDesc}>{isJp ? 'ログイン時Gentle ModeをOFFに設定' : 'Always show with Gentle Mode OFF'}</div>
+              <div className={styles.gentleRadioDesc}>{isJp ? 'ログイン時「負担を減らす（Gentle Mode）」をOFFに固定' : 'Always show with Gentle Mode OFF'}</div>
             </div>
             <span className={styles.gentleRadioDot} aria-hidden="true" />
           </label>
@@ -285,11 +356,34 @@ export default function MyPage() {
             <input className={styles.srOnly} type="radio" name="gentlePref" checked={gentleMode === null} onChange={() => void saveGentlePref(null)} />
             <div className={styles.gentleRadioLeft}>
               <div className={styles.gentleRadioTitle}>{isJp ? '最後の状態を引き継ぐ' : 'Inherit last state'}</div>
-              <div className={styles.gentleRadioDesc}>{isJp ? '最後に切り替えた状態を引き継ぐ' : 'Use the last state you toggled on the site'}</div>
+              <div className={styles.gentleRadioDesc}>{isJp ? 'サイトで最後に切り替えた状態を引き継ぐ' : 'Use the last state you toggled on the site'}</div>
             </div>
             <span className={styles.gentleRadioDot} aria-hidden="true" />
           </label>
         </div>
+      </section>
+
+      {/* 3) 重要ニュースの表示設定 */}
+      <section style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.06)', marginBottom: 14 }}>
+        <div style={{ fontWeight: 800, marginBottom: 8 }}>{isJp ? '重要ニュースの表示設定' : 'Important news visibility'}</div>
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={gentleAllowImportant}
+            onChange={(e) => void saveGentleAllowImportant(e.target.checked)}
+            style={{ marginTop: 3 }}
+          />
+          <div>
+            <div style={{ fontWeight: 800, marginBottom: 4 }}>
+              {isJp ? '負担を減らす（Gentle Mode）でも重要ニュースだけは表示する' : 'Show important news even in Gentle Mode'}
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.55 }}>
+              {isJp
+                ? 'おすすめはONです。心の負担に注意の可能性がある重要ニュースを、「負担を減らす（Gentle Mode）」でも最小限だけ残します。'
+                : 'Recommended ON. Keeps only the most important potentially upsetting news in Gentle Mode.'}
+            </div>
+          </div>
+        </label>
       </section>
 
       <section style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.06)', marginBottom: 14 }}>

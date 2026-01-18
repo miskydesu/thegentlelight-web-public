@@ -6,8 +6,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { COUNTRIES, isCountry, type Country } from '@/lib/tglApi'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { CATEGORIES, getCategoryLabel } from '@/lib/categories'
-import { addGentleToUrl, getGentleFromUrl, getPreferredGentle } from '@/lib/view-switch'
+import { addGentleToUrl, getGentleFromUrl, getPreferredGentle, hasEverEnabledGentle } from '@/lib/view-switch'
 import { getCountrySwitchUrl } from '@/lib/country-switch'
+import { getUserToken } from '@/lib/userAuth'
 import { RegionLangSwitch } from './RegionLangSwitch'
 import { ViewSwitch } from './ViewSwitch'
 import { UserStatus } from './UserStatus'
@@ -148,6 +149,7 @@ export function Header({ country, className }: HeaderProps) {
 
   const gentle = getGentleFromUrl(`${safePathname}?${searchParams?.toString() || ''}`)
   const withGentle = (url: string) => addGentleToUrl(url, gentle)
+  const showGentleSwitch = Boolean(getUserToken()) || gentle || hasEverEnabledGentle()
 
   // mobile menu: Region & Language items (Dialog内に直接表示したいので、RegionLangSwitchのロジックをここでも生成)
   const regionItems = useMemo(() => {
@@ -372,21 +374,24 @@ export function Header({ country, className }: HeaderProps) {
                       <Dialog.Title style={{ fontWeight: 800 }}>{isJa ? 'メニュー' : 'Menu'}</Dialog.Title>
                     </div>
 
-                    <div className={styles.divider} />
-                    <div className={styles.mobileMenuRow} style={{ marginBottom: 14 }}>
-                      <div style={{ fontWeight: 800 }}>{isJa ? 'Gentle Mode' : 'Gentle Mode'}</div>
-                      <ViewSwitch />
-                    </div>
-                    <div style={{ color: 'var(--muted)', fontSize: '0.85rem', lineHeight: 1.55, marginTop: -6, marginBottom: 14 }}>
-                      {(isJa
-                        ? '当サイトでは、心の負担が少ないニュースを優先して表示しております。更にGentleModeをONにする事で負担が大きいニュースを自動的に非表示にすることが出来ます。'
-                        : 'This site prioritizes stories that may feel less emotionally intense.\nTurn Gentle Mode ON to automatically hide stories that may feel more upsetting.'
-                      )
-                        .split('\n')
-                        .map((line, idx) => (
-                          <div key={idx}>{line}</div>
-                        ))}
-                    </div>
+                    {showGentleSwitch ? (
+                      <>
+                        <div className={styles.divider} />
+                        <div style={{ color: 'var(--muted)', fontSize: '0.85rem', lineHeight: 1.55, marginBottom: 10 }}>
+                          {(isJa
+                            ? '当サイトでは、心の負担が少ないニュースを優先して表示しております。「負担を減らす」をONにすると、心の負担になる可能性がある話題を非表示にできます。'
+                            : 'This site prioritizes stories that may feel less emotionally intense.\nTurn Gentle Mode ON to automatically hide stories that may feel more upsetting.'
+                          )
+                            .split('\n')
+                            .map((line, idx) => (
+                              <div key={idx}>{line}</div>
+                            ))}
+                        </div>
+                        <div className={styles.mobileMenuRow} style={{ marginBottom: 14 }}>
+                          <ViewSwitch labelJa="負担を減らす（Gentle Mode）" />
+                        </div>
+                      </>
+                    ) : null}
 
                     <div className={styles.divider} />
                     <div className={styles.mobileMenuSectionTitle}>{isJa ? 'ページ' : 'Pages'}</div>

@@ -4,7 +4,7 @@ import { fetchJson, isCountry, type HomeResponse } from '../../lib/tglApi'
 import { canonicalUrl, getSiteBaseUrl } from '../../lib/seo'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '../../lib/i18n'
 import { generateSEOMetadata, generateHreflang, generateBreadcrumbListJSONLD } from '../../lib/seo-helpers'
-import { getGentleFromSearchParams } from '../../lib/view-switch'
+import { getGentleFromSearchParams, getAllowImportantFromSearchParams } from '../../lib/view-switch'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
@@ -73,13 +73,14 @@ export default async function CountryHome({
   searchParams,
 }: {
   params: { country: string }
-  searchParams: { gentle?: string }
+  searchParams: { gentle?: string; allow_important?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = getLocaleForCountry(country)
   const gentle = getGentleFromSearchParams(searchParams)
+  const allowImportant = getAllowImportantFromSearchParams(searchParams)
   const base = getSiteBaseUrl()
   const isJa = country === 'jp'
   const breadcrumbJSONLD = generateBreadcrumbListJSONLD({
@@ -91,6 +92,7 @@ export default async function CountryHome({
 
   const sp = new URLSearchParams()
   if (gentle) sp.set('gentle', '1')
+  if (gentle && !allowImportant) sp.set('allow_important', '0')
   // /home は朝刊と同じ 4/2/6（合計12）を返すのが基本。limit は互換のため残す。
   sp.set('limit', '12')
   const qs = sp.toString()
@@ -157,7 +159,8 @@ export default async function CountryHome({
               const theme = getCategoryBadgeTheme(cat as any)
               const dateLabel = formatTopicListDate(x.last_source_published_at, locale)
               const isHeartwarming = cat === 'heartwarming'
-              const showWarning = Boolean(x.high_arousal) || (x.distress_score ?? 0) >= 50
+              const distress = Number(x.distress_score ?? 0)
+              const showWarning = distress >= 60 || (Boolean(x.high_arousal) && distress >= 30)
               return (
                 <Card
                   clickable

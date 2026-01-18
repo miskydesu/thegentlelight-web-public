@@ -2,10 +2,11 @@ import { getApiBaseUrl } from './tglApi'
 
 const LS_KEY = 'tgl_user_token'
 const COOKIE_KEY = 'tgl_user_token_v1'
+const LOGIN_PRESENCE_COOKIE_KEY = 'tgl_user_logged_in_v1'
 
 export type UserSession = {
   user: { user_id: string; email: string | null; role: string; google_sub: string | null; email_verified_at?: string | null }
-  settings: { gentle_mode: boolean | null } | null
+  settings: { gentle_mode: boolean | null; gentle_allow_important_news?: boolean } | null
 }
 
 function getCookieValue(name: string): string | null {
@@ -68,9 +69,13 @@ export function setUserToken(token: string | null) {
     if (!token) {
       window.localStorage.removeItem(LS_KEY)
       deleteCookie(COOKIE_KEY)
+      deleteCookie(LOGIN_PRESENCE_COOKIE_KEY)
     } else {
       window.localStorage.setItem(LS_KEY, token)
       // Cookieは「自動ログイン」選択時のみ保存する（login()から制御）
+      // サーバー側でも「ログイン状態」を判定できるよう、存在フラグだけは常にCookieへ（値は持たない）
+      // 30 days
+      setCookieValue(LOGIN_PRESENCE_COOKIE_KEY, '1', 60 * 60 * 24 * 30)
     }
   } catch {
     // ignore
@@ -166,6 +171,13 @@ export async function updateGentleMode(gentle_mode: boolean | null) {
   return userFetchJson<{ settings: { gentle_mode: boolean | null } }>('/v1/me/settings', {
     method: 'PATCH',
     body: JSON.stringify({ gentle_mode }),
+  })
+}
+
+export async function updateGentleAllowImportantNews(gentle_allow_important_news: boolean) {
+  return userFetchJson<{ settings: { gentle_allow_important_news: boolean } }>('/v1/me/settings', {
+    method: 'PATCH',
+    body: JSON.stringify({ gentle_allow_important_news }),
   })
 }
 

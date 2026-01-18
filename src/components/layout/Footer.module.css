@@ -20,6 +20,20 @@
   align-items: flex-start;
 }
 
+.brandRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brandRight {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 .brandTitle {
   font-size: 1rem;
   font-weight: 700;
@@ -104,6 +118,11 @@
 
   .pill {
     white-space: normal;
+  }
+
+  /* SPではフッターにスイッチを出さない（メニュー側で操作） */
+  .brandRight {
+    display: none;
   }
 }
 

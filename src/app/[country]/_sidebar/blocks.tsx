@@ -1,7 +1,5 @@
 import Link from 'next/link'
 import { fetchJson, type DailyListResponse, type ApiMeta } from '@/lib/tglApi'
-import { ViewSwitch } from '@/components/layout/ViewSwitch'
-import viewSwitchStyles from '@/components/layout/ViewSwitch.module.css'
 import styles from '../layout.module.css'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 
@@ -84,7 +82,7 @@ export async function SidebarGentleIntro({ country }: { country: 'us' | 'uk' | '
   const title = country === 'jp' ? 'The Gentle Lightへようこそ' : 'Welcome to The Gentle Light'
   const desc =
     country === 'jp'
-      ? '当サイトでは、心の負担が少ないニュースを優先して表示しております。更にGentleModeをONにする事で負担が大きいニュースを自動的に非表示にすることが出来ます。'
+      ? '当サイトでは、心の負担が少ないニュースを優先して表示しております。「負担を減らす」をONにすると、心の負担になる可能性がある話題を非表示にできます。'
       : 'This site prioritizes stories that may feel less emotionally intense.\nTurn Gentle Mode ON to automatically hide stories that may feel more upsetting.'
 
   const imageBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || process.env.IMAGE_BASE_URL || ''
@@ -126,9 +124,6 @@ export async function SidebarGentleIntro({ country }: { country: 'us' | 'uk' | '
         {desc.split('\n').map((line, idx) => (
           <div key={idx}>{line}</div>
         ))}
-      </div>
-      <div style={{ marginTop: 12 }}>
-        <ViewSwitch className={viewSwitchStyles.sidebarOffset} />
       </div>
 
       {/* Welcome columns (oldest first) */}

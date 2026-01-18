@@ -6,7 +6,7 @@ import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { NewsSearchForm } from '@/components/news/NewsSearchForm'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
-import { getGentleFromSearchParams } from '@/lib/view-switch'
+import { getGentleFromSearchParams, getAllowImportantFromSearchParams } from '@/lib/view-switch'
 import { formatTopicListDate } from '@/lib/topicDate'
 import { getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import styles from './news.module.css'
@@ -84,7 +84,7 @@ export default async function NewsPage({
   searchParams,
 }: {
   params: { country: string }
-  searchParams: { q?: string; category?: string; gentle?: string; cursor?: string; limit?: string }
+  searchParams: { q?: string; category?: string; gentle?: string; allow_important?: string; cursor?: string; limit?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
@@ -94,17 +94,18 @@ export default async function NewsPage({
   const category = searchParams.category || ''
   const t = getTranslationsForCountry(country, lang)
   const gentle = getGentleFromSearchParams(searchParams)
+  const allowImportant = getAllowImportantFromSearchParams(searchParams)
   const locale = lang === 'ja' ? 'ja' : 'en'
 
   const cursor = Number.isFinite(Number(searchParams.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
   const defaultLimit = 10
   const limit = Number.isFinite(Number(searchParams.limit)) ? Math.min(100, Math.max(1, Math.trunc(Number(searchParams.limit)))) : defaultLimit
-  const gentleQs = gentle ? '?gentle=1' : ''
+  const gentleQs = gentle ? `?gentle=1${allowImportant ? '' : '&allow_important=0'}` : ''
   const isDefaultView = !query && !category && cursor === 0
 
   const recentUpdates = isDefaultView
     ? await fetchJson<{ topics: RecentUpdateItem[] }>(
-        `/v1/${country}/news/recent-updates?limit=3${gentle ? `&gentle=1` : ''}`,
+        `/v1/${country}/news/recent-updates?limit=3${gentle ? `&gentle=1${allowImportant ? '' : '&allow_important=0'}` : ''}`,
         { next: { revalidate: CACHE_POLICY.frequent } }
       ).catch(() => ({ topics: [] }))
     : { topics: [] as RecentUpdateItem[] }
@@ -313,7 +314,10 @@ export default async function NewsPage({
                         <span className={`${styles.categoryBadge} ${styles.metaItem}`} style={theme}>
                           {getCategoryLabel(x.category, locale)}
                         </span>
-                        {Boolean(x.high_arousal) || (x.distress_score ?? 0) >= 50 ? (
+                        {(() => {
+                          const distress = Number(x.distress_score ?? 0)
+                          return distress >= 60 || (Boolean(x.high_arousal) && distress >= 30)
+                        })() ? (
                           <span className={`${styles.categoryBadge} ${styles.metaItem}`} style={{ opacity: 0.75 }}>
                             {locale === 'ja' ? '心の負担に注意' : 'May be upsetting'}
                           </span>

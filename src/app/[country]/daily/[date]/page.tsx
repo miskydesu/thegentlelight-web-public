@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { fetchJson, isCountry, type DailyDetailResponse } from '../../../../lib/tglApi'
+import { fetchJson, isCountry, type DailyDetailResponse, type HomeResponse } from '../../../../lib/tglApi'
 import { canonicalUrl, getSiteBaseUrl } from '../../../../lib/seo'
 import { getLocaleForCountry, getTranslationsForCountry, type Locale } from '../../../../lib/i18n'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -119,10 +119,54 @@ function formatDailyMetaLabel(
   }
 }
 
+function formatPlannedMetaLabel(dateLocal: string, locale: 'ja' | 'en'): string {
+  const d = new Date(`${dateLocal}T00:00:00.000Z`)
+  if (locale === 'ja') {
+    const md = new Intl.DateTimeFormat('ja-JP', {
+      timeZone: 'Asia/Tokyo',
+      month: 'numeric',
+      day: 'numeric',
+    }).format(d)
+    return `作成予定：${md} 7:00`
+  }
+  const mdEn = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'UTC',
+    month: 'short',
+    day: 'numeric',
+  }).format(d)
+  return `Planned: ${mdEn} 7:00`
+}
+
+function formatDateLabel(dateValue: string, locale: 'ja' | 'en'): string {
+  if (!dateValue) return ''
+  const date = dateValue.includes('T') ? new Date(dateValue) : new Date(`${dateValue}T00:00:00.000Z`)
+  if (Number.isNaN(date.getTime())) return String(dateValue)
+  if (locale === 'ja') {
+    return new Intl.DateTimeFormat('ja-JP', {
+      timeZone: 'Asia/Tokyo',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }).format(date)
+  }
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(date)
+}
+
+function normalizeDailyDate(dateValue: string): string {
+  if (!dateValue) return ''
+  return dateValue.includes('T') ? dateValue.slice(0, 10) : dateValue
+}
+
 export default async function DailyDetailPage({
   params,
+  searchParams,
 }: {
   params: { country: string; date: string }
+  searchParams?: { from?: string }
 }) {
   const { country, date } = params
   if (!isCountry(country)) return notFound()
@@ -173,6 +217,14 @@ export default async function DailyDetailPage({
   }
   const isPartial = Boolean(data.meta?.is_partial)
   const locale = lang === 'ja' ? 'ja' : 'en'
+  const fromToday = searchParams?.from === 'today'
+  const needsFallback = data.daily.status === 'pending' || data.daily.status === 'missing'
+  const home = needsFallback
+    ? await fetchJson<HomeResponse>(`/v1/${country}/home`, { next: { revalidate: CACHE_POLICY.frequent } })
+    : null
+  const latestDailyDate = home?.daily_latest?.date_local ?? null
+  const plannedMeta = needsFallback ? formatPlannedMetaLabel(date, locale) : null
+  const showMeta = !fromToday
 
   const mainTopic = data.topics.find((x: any) => x.section === 'A') || data.topics.find((x: any) => (x.rank ?? 0) === 1) || null
   const nearTopic = data.topics.find((x: any) => x.section === 'B') || data.topics.find((x: any) => (x.rank ?? 0) === 2) || null
@@ -198,7 +250,8 @@ export default async function DailyDetailPage({
               const theme = getCategoryBadgeTheme(cat as any)
               const dateLabel = formatTopicListDate(x.last_source_published_at, locale)
               const isHeartwarming = cat === 'heartwarming'
-              const showWarning = Boolean(x.high_arousal) || (x.distress_score ?? 0) >= 50
+              const distress = Number(x.distress_score ?? 0)
+              const showWarning = distress >= 60 || (Boolean(x.high_arousal) && distress >= 30)
               const roleBadgeLabel = x._roleBadgeLabel as string | undefined
               const roleBadgeClassName = x._roleBadgeClassName as string | undefined
               return (
@@ -393,22 +446,80 @@ export default async function DailyDetailPage({
       : null,
   ].filter(Boolean)
 
+  const latestDailyLabel = formatDateLabel(date, locale)
+
   return (
     <main style={{ position: 'relative' }}>
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          fontSize: '0.85rem',
-          color: 'var(--muted)',
-        }}
-      >
-        {meta.meta}
-      </div>
+      {showMeta ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            fontSize: '0.85rem',
+            color: 'var(--muted)',
+          }}
+        >
+          {plannedMeta ?? meta.meta}
+        </div>
+      ) : null}
       <div className="tglMuted" style={{ marginBottom: 10 }}>
         <Link href={`/${country}/daily`}>← {country === 'jp' ? '朝刊一覧' : 'Morning Briefing'}</Link>
       </div>
+
+      {fromToday ? (
+        <div style={{ marginBottom: 10 }}>
+          <div
+            style={{
+              border: '1px solid rgba(0,0,0,0.08)',
+              background: 'rgba(255,255,255,0.8)',
+              borderRadius: 14,
+              padding: '8px 12px',
+              fontSize: '0.88rem',
+              color: 'var(--muted)',
+              display: 'inline-block',
+              lineHeight: 1.55,
+            }}
+          >
+            {country === 'jp' ? (
+              <>
+                <div style={{ color: 'var(--text)', fontWeight: 600 }}>今日の朝刊は準備中です。</div>
+                <div style={{ color: 'var(--mutedText)' }}>
+                  いまは直近の朝刊（{latestDailyLabel}）を表示しています（完成後に今日の朝刊へ切り替わります）。
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ color: 'var(--text)', fontWeight: 600 }}>Today&apos;s briefing is being prepared.</div>
+                <div style={{ color: 'var(--mutedText)' }}>
+                  We&apos;re showing the latest briefing ({latestDailyLabel}) now and will switch to today&apos;s briefing once
+                  it&apos;s ready.
+                </div>
+              </>
+            )}
+          </div>
+          <div
+            style={{
+              marginTop: 10,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+              color: 'var(--muted)',
+              fontSize: '0.88rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span aria-hidden="true" style={{ fontSize: '0.9rem' }}>
+                💡
+              </span>
+              <Link href={`/${country}/daily`} style={{ color: 'inherit', textDecoration: 'underline' }}>
+                {country === 'jp' ? '朝刊一覧へ（日付で選ぶ）' : 'Browse briefings by date'}
+              </Link>
+            </div>
+          </div>
+          <div style={{ marginTop: 8, borderTop: '1px solid rgba(0,0,0,0.08)' }} />
+        </div>
+      ) : null}
 
       <h1 style={{ fontSize: '1.45rem' }}>
         {country === 'jp' ? `${formatDailyTitleDateJa(date)}の朝刊` : `Morning Briefing ${date}`}
@@ -424,19 +535,62 @@ export default async function DailyDetailPage({
             action={{ label: country === 'jp' ? '朝刊一覧へ' : 'Back to Briefings', href: `/${country}/daily` }}
           />
         </>
-      ) : data.daily.status === 'pending' ? (
-        <EmptyState
-          title={country === 'jp' ? '朝刊を生成中です' : 'Generating morning briefing...'}
-          description={country === 'jp' ? 'しばらくお待ちください。' : 'Please wait a moment.'}
-          action={{ label: country === 'jp' ? '朝刊一覧へ' : 'Back to Briefings', href: `/${country}/daily` }}
-        />
-      ) : data.daily.status === 'missing' ? (
+      ) : data.daily.status === 'pending' || data.daily.status === 'missing' ? (
         <>
-          <EmptyState
-            title={country === 'jp' ? 'この日の朝刊はまだありません' : 'No morning briefing for this date'}
-            description={country === 'jp' ? '別の日付をお試しください。' : 'Please try another date.'}
-            action={{ label: country === 'jp' ? '朝刊一覧へ' : 'Back to Briefings', href: `/${country}/daily` }}
-          />
+          <div style={{ height: 6 }} />
+          <Card>
+            <CardTitle>{country === 'jp' ? 'この日の朝刊は、まだ準備中です。' : 'This briefing is still being prepared.'}</CardTitle>
+            <CardContent style={{ marginTop: 8, color: 'var(--muted)', lineHeight: 1.6 }}>
+              {country === 'jp'
+                ? '作成が完了し次第、ここに表示されます。よければ、次のいずれかをご利用ください。'
+                : 'It will appear here once ready. In the meantime, choose one of the options below.'}
+              <div style={{ marginTop: 8, fontSize: '0.88rem' }}>
+                {country === 'jp' ? '朝刊は毎朝7時ごろに更新されます。' : 'Briefings are updated around 7 AM local time.'}
+              </div>
+            </CardContent>
+          </Card>
+          <div style={{ height: 12 }} />
+          <div className={styles.guideGrid}>
+            <Link
+              href={latestDailyDate ? `/${country}/daily/${normalizeDailyDate(latestDailyDate)}` : `/${country}/daily`}
+              className={styles.guideCardLink}
+            >
+              <div className={styles.guideCard} style={{ borderColor: 'var(--accent)' }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>
+                  {country === 'jp' ? '🗞 直近の朝刊を見る' : '🗞 Latest briefing'}
+                </div>
+                <div className="tglMuted" style={{ fontSize: '0.92rem' }}>
+                  {latestDailyDate
+                    ? country === 'jp'
+                      ? `${formatDateLabel(latestDailyDate, 'ja')}の朝刊へ`
+                      : `Go to the briefing for ${formatDateLabel(latestDailyDate, 'en')}`
+                    : country === 'jp'
+                      ? '最新の朝刊へ'
+                      : 'Go to the most recent briefing.'}
+                </div>
+              </div>
+            </Link>
+            <Link href={`/${country}/daily`} className={styles.guideCardLink}>
+              <div className={styles.guideCard}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>
+                  {country === 'jp' ? '📅 朝刊一覧で日付を選ぶ' : '📅 Pick a date'}
+                </div>
+                <div className="tglMuted" style={{ fontSize: '0.92rem' }}>
+                  {country === 'jp' ? 'カレンダーから朝刊を選べます' : 'Choose from the calendar.'}
+                </div>
+              </div>
+            </Link>
+            <Link href={`/${country}`} className={styles.guideCardLink}>
+              <div className={styles.guideCard}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>
+                  {country === 'jp' ? '📰 最新のトップニュース4選を見る' : "📰 Latest top news"}
+                </div>
+                <div className="tglMuted" style={{ fontSize: '0.92rem' }}>
+                  {country === 'jp' ? 'やさしいニューストップページへ' : 'Go to the gentle news top page.'}
+                </div>
+              </div>
+            </Link>
+          </div>
         </>
       ) : (
         <>

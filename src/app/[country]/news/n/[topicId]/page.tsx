@@ -5,13 +5,14 @@ import { canonicalUrl, isIndexableTopic } from '../../../../../lib/seo'
 import { getLocaleForCountry, type Locale } from '../../../../../lib/i18n'
 import { generateSEOMetadata, generateArticleJSONLD } from '../../../../../lib/seo-helpers'
 import { getSiteBaseUrl } from '../../../../../lib/seo'
-import { getGentleFromSearchParams } from '../../../../../lib/view-switch'
+import { getGentleFromSearchParams, getAllowImportantFromSearchParams } from '../../../../../lib/view-switch'
 import { Card, CardContent, CardMeta, CardTitle } from '../../../../../components/ui/Card'
 import { getCategoryBadgeTheme, getCategoryLabel } from '../../../../../lib/categories'
 import styles from './topic.module.css'
 import { SaveTopicButton } from '../../../../../components/topic/SaveTopicButton'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 import { ExternalLinkWithConfirm } from '@/components/ExternalLinkWithConfirm'
+import { GentleCautionBadge } from '@/components/gentle/GentleCautionBadge'
 // 表示はsoft一本（UX方針）
 
 function isApiNotFoundError(err: unknown): boolean {
@@ -80,19 +81,23 @@ export default async function TopicPage({
   searchParams,
 }: {
   params: { country: string; topicId: string }
-  searchParams: { gentle?: string }
+  searchParams: { gentle?: string; allow_important?: string }
 }) {
   const { country, topicId } = params
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = getLocaleForCountry(country)
   const gentle = getGentleFromSearchParams(searchParams)
+  const allowImportant = getAllowImportantFromSearchParams(searchParams)
 
   let data: TopicDetailResponse
   try {
-    data = await fetchJson<TopicDetailResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}${gentle ? '?gentle=1' : ''}`, {
+    data = await fetchJson<TopicDetailResponse>(
+      `/v1/${country}/topics/${encodeURIComponent(topicId)}${gentle ? `?gentle=1${allowImportant ? '' : '&allow_important=0'}` : ''}`,
+      {
       next: { revalidate: CACHE_POLICY.stable },
-    })
+      }
+    )
   } catch (e) {
     // Ensure a clean 404 page for deleted/hidden/nonexistent topics (e.g. Google indexed old URLs)
     if (isApiNotFoundError(e)) return notFound()
@@ -102,9 +107,12 @@ export default async function TopicPage({
   // Sources are optional for rendering; if this fails, show the topic page with no sources.
   let sourcesData: TopicSourcesResponse = { sources: [], meta: { is_partial: false } as any }
   try {
-    sourcesData = await fetchJson<TopicSourcesResponse>(`/v1/${country}/topics/${encodeURIComponent(topicId)}/sources${gentle ? '?gentle=1' : ''}`, {
+    sourcesData = await fetchJson<TopicSourcesResponse>(
+      `/v1/${country}/topics/${encodeURIComponent(topicId)}/sources${gentle ? `?gentle=1${allowImportant ? '' : '&allow_important=0'}` : ''}`,
+      {
       next: { revalidate: CACHE_POLICY.stable },
-    })
+      }
+    )
   } catch (e) {
     if (isApiNotFoundError(e)) {
       // If sources endpoint returns 404, treat it as "no sources" rather than breaking the page.
@@ -138,7 +146,8 @@ export default async function TopicPage({
       ? `参照元 : ${topic.source_count}記事`
       : `Sources: ${topic.source_count} ${topic.source_count === 1 ? 'article' : 'articles'}`
   const highArousalLabel = locale === 'ja' ? '心の負担に注意' : 'May be upsetting'
-  const showCaution = Boolean(topic.high_arousal) || (topic.distress_score ?? 0) >= 50
+  const distress = Number(topic.distress_score ?? 0)
+  const showCaution = distress >= 60 || (Boolean(topic.high_arousal) && distress >= 30)
   const pickSourceBadgeLabel = (s: { source_name: string | null; source_domain: string | null }) => {
     const name = String(s.source_name || '').trim()
     // 文字化け（置換文字 U+FFFD）が混ざる場合は domain にフォールバック
@@ -160,7 +169,7 @@ export default async function TopicPage({
       <main>
         <div className={styles.pageHeader}>
           <Link
-            href={`/${country}/news${gentle ? '?gentle=1' : ''}`}
+            href={`/${country}/news${gentle ? `?gentle=1${allowImportant ? '' : '&allow_important=0'}` : ''}`}
             style={{ fontSize: '0.95rem', color: 'var(--muted)', textDecoration: 'none' }}
           >
             {isJa ? '← ニュース' : '← News'}
@@ -178,9 +187,15 @@ export default async function TopicPage({
                 {categoryLabel}
               </span>
               {showCaution ? (
-                <span className={styles.categoryBadge} style={{ opacity: 0.75 }}>
-                  {highArousalLabel}
-                </span>
+                <GentleCautionBadge
+                  label={highArousalLabel}
+                  gentle={gentle}
+                  allowImportant={allowImportant}
+                  isJa={isJa}
+                  autoOpen
+                  className={styles.categoryBadge}
+                  style={{ opacity: 0.75 }}
+                />
               ) : null}
               <span className={styles.countPill}>{sourceCountLabel}</span>
               <SaveTopicButton

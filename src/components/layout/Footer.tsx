@@ -7,6 +7,7 @@ import { isCountry, type Country } from '@/lib/tglApi'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { addGentleToUrl, getGentleFromUrl } from '@/lib/view-switch'
 import { RegionLangSwitch } from './RegionLangSwitch'
+import { ViewSwitch } from './ViewSwitch'
 import styles from './Footer.module.css'
 
 function detectCountryFromPathname(pathname: string): Country | null {
@@ -54,7 +55,12 @@ export function Footer() {
     <footer className={styles.footer}>
       <div className={styles.inner}>
         <div className={styles.brand}>
-          <div className={styles.brandTitle}>The Gentle Light</div>
+          <div className={styles.brandRow}>
+            <div className={styles.brandTitle}>The Gentle Light</div>
+            <div className={styles.brandRight}>
+              <ViewSwitch labelJa="負担を減らす（Gentle Mode）" />
+            </div>
+          </div>
           <div className={styles.brandTagline}>
             {isJa ? '煽らない要点で、世界の流れを静かに整理します。' : 'Calm, non-sensational news at a gentle pace.'}
           </div>

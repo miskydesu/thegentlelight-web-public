@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type TopicSourcesResponse } from '../../../../../../lib/tglApi'
 import { canonicalUrl } from '../../../../../../lib/seo'
 import { getLocaleForCountry } from '../../../../../../lib/i18n'
-import { getGentleFromSearchParams } from '../../../../../../lib/view-switch'
+import { getGentleFromSearchParams, getAllowImportantFromSearchParams } from '../../../../../../lib/view-switch'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 import { ExternalLinkWithConfirm } from '@/components/ExternalLinkWithConfirm'
 
@@ -21,15 +21,16 @@ export default async function TopicSourcesPage({
   searchParams,
 }: {
   params: { country: string; topicId: string }
-  searchParams: { gentle?: string }
+  searchParams: { gentle?: string; allow_important?: string }
 }) {
   const { country, topicId } = params
   if (!isCountry(country)) return notFound()
 
   const gentle = getGentleFromSearchParams(searchParams)
+  const allowImportant = getAllowImportantFromSearchParams(searchParams)
   const isJa = getLocaleForCountry(country) === 'ja'
   const data = await fetchJson<TopicSourcesResponse>(
-    `/v1/${country}/topics/${encodeURIComponent(topicId)}/sources${gentle ? '?gentle=1' : ''}`,
+    `/v1/${country}/topics/${encodeURIComponent(topicId)}/sources${gentle ? `?gentle=1${allowImportant ? '' : '&allow_important=0'}` : ''}`,
     { next: { revalidate: CACHE_POLICY.stable } }
   )
 
