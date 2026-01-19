@@ -68,15 +68,23 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   if (isCountry(country)) {
     const { descriptionSuffixEn, descriptionSuffixJa } = getCountrySeoMeta(country)
     const base = isJa
-      ? '朝刊（デイリー）を日付ごとに一覧で。気になる日だけ落ち着いて振り返れます。'
-      : 'Browse daily briefings by date. Catch up calmly, one day at a time.'
+      ? 'ニュースを、煽らない言葉で毎日まとめた「朝刊」。今日の朝刊へすぐ移動でき、過去の朝刊も日付で静かに振り返れます。'
+      : "A daily briefing is a calm summary of the news. Jump to today's briefing or browse past days by date."
     const description = isJa ? `${base}${descriptionSuffixJa}` : `${base}${descriptionSuffixEn}`
     return {
-      title: isJa ? '朝刊一覧' : 'Daily Briefings',
+      title: isJa ? '今日のニュースが5分でわかる朝刊アーカイブ' : "Daily Briefing Archive — 5-Minute News",
       description,
       keywords: isJa
-        ? ['朝刊', 'デイリーニュース', '穏やかなニュース', '不安のないニュース']
-        : ['daily briefing', 'morning news', 'calm news', 'news without anxiety'],
+        ? [
+            '朝刊',
+            '朝刊アーカイブ',
+            '過去の朝刊',
+            'ニュースまとめ',
+            'デイリーブリーフィング',
+            '日付で探す',
+            'ニュース疲れ',
+          ]
+        : ['daily briefing archive', 'daily news summary', 'morning briefing', 'news digest', 'calm news', 'world news summary'],
       alternates: {
         canonical: canonicalUrl(`/${country}/daily`),
         languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
@@ -84,13 +92,13 @@ export function generateMetadata({ params }: { params: { country: string } }) {
     }
   }
   return {
-    title: isJa ? '朝刊一覧' : 'Daily Briefings',
+    title: isJa ? '今日のニュースが5分でわかる朝刊アーカイブ' : "Daily Briefing Archive — 5-Minute News",
     description: isJa
-      ? '朝刊（デイリー）を日付ごとに一覧で。気になる日だけ落ち着いて振り返れます。'
-      : 'Browse daily briefings by date. Catch up calmly, one day at a time.',
+      ? 'ニュースを、煽らない言葉で毎日まとめた「朝刊」。今日の朝刊へすぐ移動でき、過去の朝刊も日付で静かに振り返れます。'
+      : "A daily briefing is a calm summary of the news. Jump to today's briefing or browse past days by date.",
     keywords: isJa
-      ? ['朝刊', 'デイリーニュース', '穏やかなニュース', '不安のないニュース']
-      : ['daily briefing', 'morning news', 'calm news', 'news without anxiety'],
+      ? ['朝刊', '朝刊アーカイブ', '過去の朝刊', 'ニュースまとめ', 'デイリーブリーフィング', '日付で探す', 'ニュース疲れ']
+      : ['daily briefing archive', 'daily news summary', 'morning briefing', 'news digest', 'calm news', 'world news summary'],
     alternates: {
       canonical: canonicalUrl(`/${country}/daily`),
       languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),

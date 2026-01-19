@@ -47,8 +47,10 @@ export function generateMetadata({ params }: { params: { country: string } }) {
     ? 'ニュースと付き合うためのコラム。不安にならない、煽られない、心が落ち着く“静かさ”の考察（メンタルヘルスにも配慮）。'
     : 'Thoughtful columns on news, mental health, and how to stay informed without anxiety or doomscrolling.'
   return {
-    title: isJa ? 'コラム・考察' : 'Thoughtful Columns',
-    description: isJa ? `${baseDescription}${descriptionSuffixJa}` : `${baseDescription}${descriptionSuffixEn}`,
+    title: isJa ? 'ニュースと心の距離を、整えるコラム' : 'Thoughtful Columns',
+    description: isJa
+      ? `${baseDescription}${descriptionSuffixJa}`
+      : `Columns to build a calmer relationship with the news. ${baseDescription}${descriptionSuffixEn}`,
     keywords: isJa
       ? [
           'ニュース疲れ',

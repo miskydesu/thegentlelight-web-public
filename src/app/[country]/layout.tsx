@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { isCountry } from '../../lib/tglApi'
 import type { Metadata } from 'next'
+import { getCountrySeoMeta } from '../../lib/seo'
 import { Header } from '../../components/layout/Header'
 import { SidebarDailyCalendar, SidebarGentleIntro, SidebarLatestColumns, SidebarQuoteOfDay, SidebarQuickShortcuts } from './_sidebar/blocks'
 import styles from './layout.module.css'
@@ -18,10 +19,12 @@ export function generateMetadata({
   const isJa = params.country === 'jp'
   // JP/EN で suffix を出し分け（ルートの template に依存しない）
   const suffix = isJa ? 'やさしいニュース The Gentle Light' : 'Calm News The Gentle Light'
+  const country = isCountry(params.country) ? params.country : null
+  const countrySuffix = country ? getCountrySeoMeta(country).titleSuffix : ''
   return {
     title: {
       default: 'The Gentle Light',
-      template: `%s | ${suffix}`,
+      template: `%s | ${suffix}${countrySuffix}`,
     },
   }
 }

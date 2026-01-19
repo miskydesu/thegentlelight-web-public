@@ -58,10 +58,10 @@ export function generateMetadata({
   }
 
   return {
-    title: isJa ? 'ニュース一覧' : 'Browse Calm News by Topic',
+    title: isJa ? '今日の気になる動きが、さっとわかるニュース' : 'Browse Calm News by Topic',
     description: isJa
-      ? `やさしいニュース一覧。穏やかで、煽られない・不安にならない。心が落ち着く、静かなニュースをカテゴリ別に。${descriptionSuffixJa}`
-      : `Browse gentle news organized by category. World news without anxiety, stress, or doomscrolling.${descriptionSuffixEn}`,
+      ? `やさしいニュース一覧。今日の少し気になる動きが、さっとわかる。穏やかで、煽られない・不安にならない言葉で整理。${descriptionSuffixJa}`
+      : `A gentle news list. Quickly see what’s moving today—summarized in calm, non-sensational language.${descriptionSuffixEn}`,
     keywords: isJa
       ? [
           'やさしいニュース',
@@ -72,10 +72,11 @@ export function generateMetadata({
           '心が落ち着くニュース',
           '静かなニュース',
           'ニュース一覧',
-          'カテゴリ別ニュース',
+          '今日のニュース',
+          '気になるニュース',
           'ニュース疲れ',
         ]
-      : ['browse news', 'organized news', 'news by topic', 'gentle news', 'calm news alternatives'],
+      : ['today news', 'news at a glance', 'calm news', 'news without anxiety', 'gentle news', 'daily news summary'],
     alternates: {
       canonical,
       ...(hreflang ? { languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])) } : {}),

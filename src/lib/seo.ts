@@ -39,7 +39,7 @@ export function canonicalUrl(path: string): string {
 export function getCountrySeoMeta(country: 'us' | 'ca' | 'uk' | 'jp'): {
   /**
    * SERP/タブでの最小差分（略称OK）
-   * 例: " - US"
+   * 例: " US"
    */
   titleSuffix: string
   /**
@@ -57,8 +57,11 @@ export function getCountrySeoMeta(country: 'us' | 'ca' | 'uk' | 'jp'): {
   const nameEn =
     country === 'us' ? 'United States' : country === 'ca' ? 'Canada' : country === 'uk' ? 'United Kingdom' : 'Japan'
   return {
-    // タイトル末尾の国差分はハイフン（ASCII）で “ささやかに”
-    titleSuffix: ` - ${titleLabel}`,
+    // タイトル末尾の国差分（SERP用の最小差分）
+    // - US/UK は括弧が自然（The Gentle Light (US) / (UK)）
+    // - Canada も括弧の方が自然（The Gentle Light (Canada)）
+    // - Japan は今のままスペース区切りでOK
+    titleSuffix: country === 'us' || country === 'uk' || country === 'ca' ? ` (${titleLabel})` : ` ${titleLabel}`,
     descriptionSuffixEn: ` (${nameEn} edition)`,
     // 日本語ページでも国差分は英字で “ささやかに” 付ける（例: （Japan））
     descriptionSuffixJa: `（${nameEn}）`,

@@ -69,12 +69,23 @@ export function generateMetadata({
   }
 
   return {
-    title: isJa ? '癒しの名言・言葉' : 'Calming Quotes & Inspiration',
+    title: isJa ? '偉人の言葉を、やさしい視点で｜学びと癒やしの名言' : 'Calming Quotes & Inspiration',
     description: isJa
-      ? `ニュースと共に心を落ち着かせる名言と癒しの言葉。${descriptionSuffixJa}`
-      : `Calming quotes and inspirational words to help you reflect and find peace alongside the news.${descriptionSuffixEn}`,
+      ? `偉人の言葉に、やさしい視点を添えて。学びと癒やしを大切に、心がほどける言葉を集めました（引用・要約を中心に再編集しています）。${descriptionSuffixJa}`
+      : `Famous words and quotes, curated with a gentle lens—focused on learning and calm (mainly quotations and summaries).${descriptionSuffixEn}`,
     keywords: isJa
-      ? ['癒しの名言', '心に響く言葉', '穏やかな言葉', 'メンタルウェルネス', 'マインドフルネス']
+      ? [
+          '偉人の言葉',
+          '名言',
+          '心に響く言葉',
+          '学び',
+          '癒やし',
+          'やさしい言葉',
+          '前向きになれる言葉',
+          '穏やかな言葉',
+          'メンタルウェルネス',
+          'マインドフルネス',
+        ]
       : ['calming quotes', 'inspirational quotes', 'peaceful words', 'mental wellness', 'mindfulness'],
     alternates: {
       canonical: canonicalUrl(`/${country}/quotes`),
