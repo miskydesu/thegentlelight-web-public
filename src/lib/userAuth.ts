@@ -6,7 +6,15 @@ const LOGIN_PRESENCE_COOKIE_KEY = 'tgl_user_logged_in_v1'
 
 export type UserSession = {
   user: { user_id: string; email: string | null; role: string; google_sub: string | null; email_verified_at?: string | null }
-  settings: { gentle_mode: boolean | null; gentle_allow_important_news?: boolean } | null
+  settings: {
+    gentle_mode: boolean | null
+    gentle_allow_important_news?: boolean
+    default_country?: 'us' | 'ca' | 'uk' | 'jp' | null
+    default_lang?: 'en' | 'ja' | null
+    default_soft?: string | null
+    keyword_excludes?: string[]
+    updated_at?: string
+  } | null
 }
 
 function getCookieValue(name: string): string | null {
@@ -164,7 +172,18 @@ export async function signupWithGoogleIdToken(idToken: string, opts?: { remember
 }
 
 export async function getSession(): Promise<UserSession> {
-  return userFetchJson<UserSession>('/v1/auth/session')
+  const s = await userFetchJson<UserSession>('/v1/auth/session')
+  // ログインユーザーの設定（default_country）があれば、ゲストcookie/LSにも反映して「版の迷子」を減らす
+  try {
+    const dc = (s as any)?.settings?.default_country
+    if (dc === 'us' || dc === 'ca' || dc === 'uk' || dc === 'jp') {
+      const { setCountryPreference } = await import('@/lib/client/set-country-preference')
+      setCountryPreference(dc)
+    }
+  } catch {
+    // ignore
+  }
+  return s
 }
 
 export async function updateGentleMode(gentle_mode: boolean | null) {
@@ -178,6 +197,14 @@ export async function updateGentleAllowImportantNews(gentle_allow_important_news
   return userFetchJson<{ settings: { gentle_allow_important_news: boolean } }>('/v1/me/settings', {
     method: 'PATCH',
     body: JSON.stringify({ gentle_allow_important_news }),
+  })
+}
+
+export async function updateDefaultCountry(default_country: 'us' | 'ca' | 'uk' | 'jp' | null) {
+  const lang = default_country === 'jp' ? 'ja' : default_country ? 'en' : null
+  return userFetchJson<{ settings: { default_country: string | null; default_lang: string | null } }>('/v1/me/settings', {
+    method: 'PATCH',
+    body: JSON.stringify({ default_country, default_lang: lang }),
   })
 }
 

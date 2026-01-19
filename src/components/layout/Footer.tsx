@@ -12,6 +12,8 @@ import styles from './Footer.module.css'
 
 function detectCountryFromPathname(pathname: string): Country | null {
   const seg = String(pathname || '').split('?')[0].split('#')[0].split('/')[1] || ''
+  // /en は言語ページ（英語）。Footerは国が必要なので、便宜上 us として扱う（表示は英語）。
+  if (seg === 'en') return 'us'
   return isCountry(seg) ? seg : null
 }
 
@@ -32,14 +34,19 @@ export function Footer() {
   const primaryLinks = useMemo(() => {
     if (!country) return []
 
+    const isEnLangPage = String(pathname || '').split('?')[0].split('#')[0].startsWith('/en/')
+    const isEnEdition = country === 'us' || country === 'ca' || country === 'uk'
+    const columnsHref = isEnLangPage || isEnEdition ? '/en/columns' : `/${country}/columns`
+    const quotesHref = isEnLangPage || isEnEdition ? '/en/quotes' : `/${country}/quotes`
+
     return [
       { label: isJa ? '朝刊（5分）' : 'Briefing (5 min)', href: `/${country}/daily`, isPrimary: true },
       { label: isJa ? 'ニュース' : 'News', href: `/${country}/news` },
       { label: isJa ? '心温まる話' : 'Heartwarming', href: `/${country}/category/heartwarming?gentle=1` },
-      { label: isJa ? 'コラム' : 'Columns', href: `/${country}/columns` },
-      { label: isJa ? '名言' : 'Quotes', href: `/${country}/quotes` },
+      { label: isJa ? 'コラム' : 'Columns', href: columnsHref },
+      { label: isJa ? '名言' : 'Quotes', href: quotesHref },
     ]
-  }, [country, isJa])
+  }, [country, isJa, pathname])
 
   const secondaryLinks = useMemo(() => {
     const legalHref = country ? `/${country}/legal` : '/legal'

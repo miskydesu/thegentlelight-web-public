@@ -12,6 +12,7 @@ import { formatTopicListDate } from '@/lib/topicDate'
 import { canonicalUrl, getCountrySeoMeta, getSiteBaseUrl } from '@/lib/seo'
 import { generateHreflang, generateBreadcrumbListJSONLD } from '@/lib/seo-helpers'
 import { CACHE_POLICY } from '@/lib/cache-policy'
+import { CategorySearchForm } from '@/components/category/CategorySearchForm'
 // 表示はsoft一本（UX方針）
 
 const TONE_LABELS_JA = ['静かな良い話', '支援とつながり', '回復につながる動き'] as const
@@ -125,7 +126,7 @@ export default async function CategoryPage({
   searchParams,
 }: {
   params: { country: string; category: string }
-  searchParams: { gentle?: string; allow_important?: string; cursor?: string; limit?: string }
+  searchParams: { q?: string; gentle?: string; allow_important?: string; cursor?: string; limit?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
@@ -139,6 +140,7 @@ export default async function CategoryPage({
   const locale = lang === 'ja' ? 'ja' : 'en'
   const base = getSiteBaseUrl()
   const isJa = country === 'jp'
+  const query = String(searchParams.q || '').trim()
   const breadcrumbJSONLD = generateBreadcrumbListJSONLD({
     items: [
       { name: 'The Gentle Light', url: `${base}/` },
@@ -154,7 +156,7 @@ export default async function CategoryPage({
   const limit = isHeartwarmingPage ? 10 : parsedLimit
 
   const data = await fetchJson<TopicsResponse>(
-    `/v1/${country}/topics?category=${encodeURIComponent(category.code)}&limit=${limit}&cursor=${cursor}${gentle ? `&gentle=1${allowImportant ? '' : '&allow_important=0'}` : ''}`,
+    `/v1/${country}/topics?category=${encodeURIComponent(category.code)}&limit=${limit}&cursor=${cursor}${gentle ? `&gentle=1${allowImportant ? '' : '&allow_important=0'}` : ''}${query ? `&q=${encodeURIComponent(query)}` : ''}`,
     { next: { revalidate: CACHE_POLICY.frequent } }
   )
   const isPartial = Boolean(data.meta?.is_partial)
@@ -165,6 +167,7 @@ export default async function CategoryPage({
 
   const buildUrl = (nextCursor: number) => {
     const sp = new URLSearchParams()
+    if (query) sp.set('q', query)
     if (gentle) sp.set('gentle', '1')
     if (gentle && !allowImportant) sp.set('allow_important', '0')
     if (!isHeartwarmingPage && limit !== 30) sp.set('limit', String(limit))
@@ -173,7 +176,7 @@ export default async function CategoryPage({
     return `/${country}/category/${encodeURIComponent(category.code)}${qs ? `?${qs}` : ''}`
   }
   let todayPicks: Array<{ item: TopicItem; label: string }> = []
-  if (isHeartwarmingPage) {
+  if (isHeartwarmingPage && !query) {
     try {
       const pickData = await fetchJson<HeartwarmingTodayThreeResponse>(
         `/v1/${country}/heartwarming/today-three?limit=3${gentle ? `&gentle=1${allowImportant ? '' : '&allow_important=0'}` : ''}`,
@@ -220,6 +223,24 @@ export default async function CategoryPage({
 
       <div style={{ height: 12 }} />
 
+      {/* カテゴリ内検索：heartwarming は「最近の心温まるお話」直下に置く（導線の重心を下げる） */}
+      {!isHeartwarmingPage ? (
+        <>
+          <CategorySearchForm country={country} category={category.code} initialQuery={query} />
+          {query ? (
+            <>
+              <div style={{ height: 10 }} />
+              <div style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
+                {locale === 'ja' ? `検索結果: 「${query}」` : `Search results: "${query}"`}
+              </div>
+            </>
+          ) : null}
+          <div style={{ height: 14 }} />
+        </>
+      ) : (
+        <div style={{ height: 2 }} />
+      )}
+
       {isHeartwarmingPage ? (
         <>
           <div
@@ -251,7 +272,7 @@ export default async function CategoryPage({
         </>
       ) : null}
 
-      {isHeartwarmingPage && todayPicks.length > 0 ? (
+      {isHeartwarmingPage && !query && todayPicks.length > 0 ? (
         <section className={styles.featuredSection}>
           <div className={styles.featuredTitleRow}>
             <h2 style={{ fontSize: '1.1rem', margin: 0 }}>{locale === 'ja' ? '今日の3つ' : "Today’s three"}</h2>
@@ -303,6 +324,16 @@ export default async function CategoryPage({
                   {start && end ? (locale === 'ja' ? `表示：${start}-${end}` : `Showing: ${start}-${end}`) : null}
                 </span>
               </div>
+              <CategorySearchForm country={country} category={category.code} initialQuery={query} />
+              {query ? (
+                <>
+                  <div style={{ height: 10 }} />
+                  <div style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
+                    {locale === 'ja' ? `検索結果: 「${query}」` : `Search results: "${query}"`}
+                  </div>
+                </>
+              ) : null}
+              <div style={{ height: 10 }} />
             </>
           ) : null}
           <div style={{ height: 8 }} />

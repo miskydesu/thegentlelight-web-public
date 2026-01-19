@@ -28,6 +28,43 @@ export async function middleware(req: NextRequest) {
       })
     }
 
+    // 英語圏（US/CA/UK）のコラム・名言は「同一コンテンツ」運用のため、/en に恒久集約（308）
+    // - /{us|ca|uk}/columns/* → /en/columns/*
+    // - /{us|ca|uk}/quotes/* → /en/quotes/*
+    // - クエリは「検索用」(q) と表示モード系（gentle/allow_important）のみ維持（他は捨てて一本化）
+    const mEn = p.match(/^\/(us|uk|ca)\/(columns|quotes)(\/.*)?\/?$/)
+    if (mEn) {
+      const kind = mEn[2]
+      const rest = mEn[3] || ''
+      const target = new URL(`/en/${kind}${rest}`, req.url)
+      const sp = req.nextUrl.searchParams
+      const keep = new URLSearchParams()
+      const q = sp.get('q')
+      const theme = sp.get('theme')
+      const gentle = sp.get('gentle')
+      const allowImportant = sp.get('allow_important')
+      if (q) keep.set('q', q)
+      if (theme) keep.set('theme', theme)
+      if (gentle) keep.set('gentle', gentle)
+      if (allowImportant) keep.set('allow_important', allowImportant)
+      const qs = keep.toString()
+      target.search = qs ? `?${qs}` : ''
+      return redirect308Absolute(target)
+    }
+
+    // 英語圏（US/CA/UK）の About も /en に恒久集約（308）
+    const mEnAbout = p.match(/^\/(us|uk|ca)\/about\/?$/)
+    if (mEnAbout) {
+      const target = new URL(`/en/about`, req.url)
+      const sp = req.nextUrl.searchParams
+      const keep = new URLSearchParams()
+      const gentle = sp.get('gentle')
+      if (gentle) keep.set('gentle', gentle)
+      const qs = keep.toString()
+      target.search = qs ? `?${qs}` : ''
+      return redirect308Absolute(target)
+    }
+
     // 旧URL → 正URL の恒久集約（308）
     // - /{country}/news?category={cat} → /{country}/category/{cat}
     // - category棚を「正URL」として固定する（SEO評価の分散を防ぐ）

@@ -32,8 +32,11 @@ export default function AboutRedirect({ searchParams }: { searchParams: { gentle
   // - Prefer last choice (cookie)
   // - Then Geo
   // - Fallback to English-first default (US)
-  const country = (validSaved ? (savedCountry as 'us' | 'ca' | 'uk' | 'jp') : detected) || 'us'
-
-  redirect(`/${country}/about${gentle ? '?gentle=1' : ''}`)
+  // About is language-based:
+  // - JP → /jp/about
+  // - EN (US/CA/UK) → /en/about
+  const picked = (validSaved ? (savedCountry as 'us' | 'ca' | 'uk' | 'jp') : detected) || 'us'
+  const target = picked === 'jp' ? '/jp/about' : '/en/about'
+  redirect(`${target}${gentle ? '?gentle=1' : ''}`)
 }
 

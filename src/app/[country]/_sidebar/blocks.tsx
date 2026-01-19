@@ -94,7 +94,8 @@ export async function SidebarGentleIntro({ country }: { country: 'us' | 'uk' | '
   // NOTE: show all "welcome" columns under the switch, oldest-first.
   const welcomeColumns = await (async () => {
     try {
-      const d = await fetchJson<ColumnsResponse>(`/v1/${country}/columns?limit=100`, { next: { revalidate: CACHE_POLICY.stable } })
+      const sourceCountry = country === 'jp' ? 'jp' : 'ca'
+      const d = await fetchJson<ColumnsResponse>(`/v1/${sourceCountry}/columns?limit=100`, { next: { revalidate: CACHE_POLICY.stable } })
       const cols = (d.columns || []).filter(isWelcomeColumn)
       cols.sort((a, b) => {
         const ax = a.published_at || a.updated_at || ''
@@ -134,7 +135,11 @@ export async function SidebarGentleIntro({ country }: { country: 'us' | 'uk' | '
         {welcomeColumns.length ? (
           <div className={styles.sidebarList}>
             {welcomeColumns.map((c) => (
-              <Link key={c.column_id} className={styles.sidebarItemLink} href={`/${country}/columns/${c.column_id}`}>
+              <Link
+                key={c.column_id}
+                className={styles.sidebarItemLink}
+                href={country === 'jp' ? `/${country}/columns/${c.column_id}` : `/en/columns/${c.column_id}`}
+              >
                 <div className={styles.sidebarItemRow}>
                   {imageBase && c.cover_image_key ? (
                     <img
@@ -181,7 +186,8 @@ export function SidebarQuickShortcuts({ country }: { country: 'us' | 'uk' | 'ca'
 
 export async function SidebarLatestColumns({ country }: { country: 'us' | 'uk' | 'ca' | 'jp' }) {
   const WELCOME_COLUMN_NAME_ID = 'mkcfunk9k7yk9nymsug0000000'
-  const data = await fetchJson<ColumnsResponse>(`/v1/${country}/columns?limit=12`, { next: { revalidate: CACHE_POLICY.stable } })
+  const sourceCountry = country === 'jp' ? 'jp' : 'ca'
+  const data = await fetchJson<ColumnsResponse>(`/v1/${sourceCountry}/columns?limit=12`, { next: { revalidate: CACHE_POLICY.stable } })
   const heading = country === 'jp' ? '最新コラム' : 'Latest columns'
   const more = country === 'jp' ? '一覧へ' : 'See all'
   const imageBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || process.env.IMAGE_BASE_URL || ''
@@ -196,7 +202,7 @@ export async function SidebarLatestColumns({ country }: { country: 'us' | 'uk' |
     <div className={styles.sidebarCard} data-sidebar-block="latest-columns">
       <div className={styles.sidebarTitleRow}>
         <div className={styles.sidebarTitle}>{heading}</div>
-        <Link className={styles.sidebarTitleSmallLink} href={`/${country}/columns`}>
+        <Link className={styles.sidebarTitleSmallLink} href={country === 'jp' ? `/${country}/columns` : `/en/columns`}>
           {more} →
         </Link>
       </div>
@@ -204,7 +210,11 @@ export async function SidebarLatestColumns({ country }: { country: 'us' | 'uk' |
       {latest.length ? (
         <div className={styles.sidebarList}>
           {latest.map((c) => (
-            <Link key={c.column_id} className={styles.sidebarItemLink} href={`/${country}/columns/${c.column_id}`}>
+            <Link
+              key={c.column_id}
+              className={styles.sidebarItemLink}
+              href={country === 'jp' ? `/${country}/columns/${c.column_id}` : `/en/columns/${c.column_id}`}
+            >
               <div className={styles.sidebarItemRow}>
                 {imageBase && c.cover_image_key ? (
                   <img
@@ -235,7 +245,8 @@ export async function SidebarLatestColumns({ country }: { country: 'us' | 'uk' |
 
 export async function SidebarQuoteOfDay({ country }: { country: 'us' | 'uk' | 'ca' | 'jp' }) {
   // ある程度の件数を取得して、その中から日替わりで1つ選ぶ（APIにランダム取得が無い想定）
-  const data = await fetchJson<QuotesResponse>(`/v1/${country}/quotes?limit=50`, { next: { revalidate: CACHE_POLICY.stable } })
+  const sourceCountry = country === 'jp' ? 'jp' : 'ca'
+  const data = await fetchJson<QuotesResponse>(`/v1/${sourceCountry}/quotes?limit=50`, { next: { revalidate: CACHE_POLICY.stable } })
   const heading = country === 'jp' ? '今日の名言' : 'Quote of the day'
   const more = country === 'jp' ? '検索へ' : 'Search'
 
@@ -248,13 +259,13 @@ export async function SidebarQuoteOfDay({ country }: { country: 'us' | 'uk' | 'c
     <div className={styles.sidebarCard}>
       <div className={styles.sidebarTitleRow}>
         <div className={styles.sidebarTitle}>{heading}</div>
-        <Link className={styles.sidebarTitleSmallLink} href={`/${country}/quotes`}>
+        <Link className={styles.sidebarTitleSmallLink} href={country === 'jp' ? `/${country}/quotes` : `/en/quotes`}>
           {more} →
         </Link>
       </div>
 
       {q?.quote_id ? (
-        <Link className={styles.quoteLink} href={`/${country}/quotes/${q.quote_id}`}>
+        <Link className={styles.quoteLink} href={country === 'jp' ? `/${country}/quotes/${q.quote_id}` : `/en/quotes/${q.quote_id}`}>
           <p className={styles.quoteText}>{q.quote_text || '—'}</p>
           <div className={styles.quoteAuthor}>
             {q.author_name ? q.author_name : '—'}

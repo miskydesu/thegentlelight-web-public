@@ -48,6 +48,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
   const base = getSiteBaseUrl()
   const now = new Date()
   const isJp = country === 'jp'
+  const isEnEdition = country === 'ca' || country === 'us' || country === 'uk'
 
   // lastmod をできる範囲で正しく
   const homeLastMod = await (async () => {
@@ -96,13 +97,16 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
   })
 
   // 主要固定ページ（国配下、末尾スラッシュを削除）
-  fixed.push(
-    {
+  // NOTE: 英語圏（US/CA/UK）の /about は /en/about に集約するため、国別sitemapからは除外
+  if (!isEnEdition) {
+    fixed.push({
       url: `${base}/${country}/about`.replace(/\/$/, ''),
       lastModified: now,
       changeFrequency: 'yearly',
       priority: 0.5,
-    },
+    })
+  }
+  fixed.push(
     {
       url: `${base}/${country}/news`.replace(/\/$/, ''),
       lastModified: latestMeta || homeLastMod || now,
@@ -123,30 +127,34 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
       changeFrequency: 'daily',
       // 朝刊（入口）
       priority: 0.95,
-    },
-    {
-      url: `${base}/${country}/columns`.replace(/\/$/, ''),
-      lastModified: now,
-      changeFrequency: 'weekly',
-      // コラム一覧（少数だが思想の核）
-      // 優先国: CA/US=0.85、UK=0.8、JP=0.7
-      priority: country === 'ca' || country === 'us' ? 0.85 : country === 'uk' ? 0.8 : 0.7,
-    },
-    {
-      url: `${base}/${country}/quotes`.replace(/\/$/, ''),
-      lastModified: now,
-      changeFrequency: 'weekly',
-      // 名言一覧（検索入口として強化）
-      priority: 0.8,
-    },
-    {
-      url: `${base}/${country}/quotes/authors`.replace(/\/$/, ''),
-      lastModified: now,
-      changeFrequency: 'weekly',
-      // 名言著者一覧（人物名検索のハブ）
-      priority: 0.7,
     }
   )
+  // NOTE: 英語圏のコラム/名言は /en に恒久集約しているため、国別sitemapから除外（リダイレクトURLを載せない）
+  if (!isEnEdition) {
+    fixed.push(
+      {
+        url: `${base}/${country}/columns`.replace(/\/$/, ''),
+        lastModified: now,
+        changeFrequency: 'weekly',
+        // コラム一覧（少数だが思想の核）
+        priority: 0.7,
+      },
+      {
+        url: `${base}/${country}/quotes`.replace(/\/$/, ''),
+        lastModified: now,
+        changeFrequency: 'weekly',
+        // 名言一覧（検索入口として強化）
+        priority: 0.8,
+      },
+      {
+        url: `${base}/${country}/quotes/authors`.replace(/\/$/, ''),
+        lastModified: now,
+        changeFrequency: 'weekly',
+        // 名言著者一覧（人物名検索のハブ）
+        priority: 0.7,
+      }
+    )
+  }
 
   // 利用規約・プライバシー（国別、末尾スラッシュを削除）
   fixed.push({
@@ -172,6 +180,10 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
   // 名言テーマ棚（上位9テーマ）
   const themeEntries: MetadataRoute.Sitemap = []
   try {
+    if (isEnEdition) {
+      // /en に集約しているため country別では作らない
+      // (no-op)
+    } else {
     const themesResponse = await fetchJson<{ themes: QuoteThemeItem[] }>(`/v1/${country}/quotes/themes`, {
       next: { revalidate: CACHE_POLICY.meta },
     })
@@ -193,6 +205,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
         changeFrequency: 'weekly',
         priority: 0.4,
       })
+    }
     }
   } catch (e) {
     console.error(`Failed to fetch quote themes for sitemap (${country}):`, e)
@@ -234,6 +247,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
   // コラム詳細（公開分、上限1000）
   const columnEntries: MetadataRoute.Sitemap = []
   try {
+    if (!isEnEdition) {
     const columnsResponse = await fetchJson<{ columns: ColumnItem[]; meta: any }>(`/v1/${country}/columns?limit=1000`, {
       next: { revalidate: CACHE_POLICY.meta },
     })
@@ -247,6 +261,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
         priority: isJp ? 0.75 : 0.9,
       })
     }
+    }
   } catch (e) {
     console.error(`Failed to fetch columns for sitemap (${country}):`, e)
   }
@@ -254,6 +269,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
   // 名言詳細（上限1000）
   const quoteEntries: MetadataRoute.Sitemap = []
   try {
+    if (!isEnEdition) {
     const quotesResponse = await fetchJson<{ quotes: QuoteItem[]; meta: any }>(`/v1/${country}/quotes?limit=1000`, {
       next: { revalidate: CACHE_POLICY.meta },
     })
@@ -284,6 +300,7 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
         priority: 0.6,
       })
       }
+    }
     }
   } catch (e) {
     console.error(`Failed to fetch quotes for sitemap (${country}):`, e)

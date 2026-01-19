@@ -3,6 +3,7 @@ import { isCountry } from '../../lib/tglApi'
 import type { Metadata } from 'next'
 import { getCountrySeoMeta } from '../../lib/seo'
 import { Header } from '../../components/layout/Header'
+import { EnsureCountryPreference } from '../../components/layout/EnsureCountryPreference'
 import { SidebarDailyCalendar, SidebarGentleIntro, SidebarLatestColumns, SidebarQuoteOfDay, SidebarQuickShortcuts } from './_sidebar/blocks'
 import styles from './layout.module.css'
 
@@ -43,6 +44,8 @@ export default async function CountryLayout({
   return (
     <>
       <Header country={country} />
+      {/* 国別ページに直接着地した場合、国選択を“静かに”保存（SPA遷移でも確実に動く） */}
+      {country ? <EnsureCountryPreference country={country} /> : null}
       <div className={styles.container}>
         <div className={styles.grid}>
           <div className={styles.main}>{children}</div>

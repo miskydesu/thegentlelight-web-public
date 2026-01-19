@@ -8,12 +8,13 @@ import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/l
 import { CATEGORIES, getCategoryLabel } from '@/lib/categories'
 import { addGentleToUrl, getGentleFromUrl, getPreferredGentle, hasEverEnabledGentle } from '@/lib/view-switch'
 import { getCountrySwitchUrl } from '@/lib/country-switch'
-import { getUserToken } from '@/lib/userAuth'
+import { getUserToken, updateDefaultCountry } from '@/lib/userAuth'
 import { RegionLangSwitch } from './RegionLangSwitch'
 import { ViewSwitch } from './ViewSwitch'
 import { UserStatus } from './UserStatus'
 import * as Dialog from '@radix-ui/react-dialog'
 import styles from './Header.module.css'
+import { setCountryPreference } from '@/lib/client/set-country-preference'
 
 export interface HeaderProps {
   country?: Country | null
@@ -184,8 +185,10 @@ export function Header({ country, className }: HeaderProps) {
     if (!country) return null
     const clean = String(href || '').split('?')[0] || ''
     if (clean === `/${country}/category/heartwarming`) return '#c84b73' // heartwarming (subtle accent)
-    if (clean === `/${country}/columns`) return '#d63384' // pink
-    if (clean === `/${country}/quotes`) return '#1f8a5b' // green
+    // 英語圏はコラム/名言を /en に集約（SEO & 重複回避）
+    const isEnEdition = country === 'us' || country === 'ca' || country === 'uk'
+    if (clean === (isEnEdition ? `/en/columns` : `/${country}/columns`)) return '#d63384' // pink
+    if (clean === (isEnEdition ? `/en/quotes` : `/${country}/quotes`)) return '#1f8a5b' // green
     return null
   }
 
@@ -208,6 +211,7 @@ export function Header({ country, className }: HeaderProps) {
     if (!country) return []
     const labelTop = t?.nav.top ?? (isJa ? 'トップ' : 'Home')
     const labelDailyToday = isJa ? '今日の朝刊' : "Today's Briefing"
+    const isEnEdition = country === 'us' || country === 'ca' || country === 'uk'
     return [
       { kind: 'link' as const, label: labelTop, href: `/${country}` },
       // メニューは「今日」を主役に（実体は日付URL、/daily/today は恒久リダイレクト専用）
@@ -222,11 +226,11 @@ export function Header({ country, className }: HeaderProps) {
       { kind: 'link' as const, label: getCategoryLabel('business', locale), href: `/${country}/category/business` },
       { kind: 'link' as const, label: getCategoryLabel('sports', locale), href: `/${country}/category/sports` },
       { kind: 'sep' as const },
-      { kind: 'link' as const, label: isJa ? 'コラム' : 'Columns', href: `/${country}/columns` },
+      { kind: 'link' as const, label: isJa ? 'コラム' : 'Columns', href: isEnEdition ? `/en/columns` : `/${country}/columns` },
       { kind: 'sep' as const },
-      { kind: 'link' as const, label: isJa ? '名言' : 'Quotes', href: `/${country}/quotes` },
+      { kind: 'link' as const, label: isJa ? '名言' : 'Quotes', href: isEnEdition ? `/en/quotes` : `/${country}/quotes` },
       { kind: 'sep' as const },
-      { kind: 'link' as const, label: isJa ? 'サイトの説明' : 'About', href: `/${country}/about` },
+      { kind: 'link' as const, label: isJa ? 'サイトの説明' : 'About', href: isEnEdition ? `/en/about` : `/${country}/about` },
     ]
   }, [country, isJa, locale, t])
 
@@ -239,14 +243,15 @@ export function Header({ country, className }: HeaderProps) {
     const labelQuotes = isJa ? '名言' : 'Quotes'
     const labelAbout = isJa ? 'サイトの説明' : 'About'
     const labelHeartwarming = getCategoryLabel('heartwarming', locale)
+    const isEnEdition = country === 'us' || country === 'ca' || country === 'uk'
     return [
       { label: labelTop, href: `/${country}` },
       { label: labelDailyToday, href: `/${country}/daily/today` },
       { label: labelNews, href: `/${country}/news` },
       { label: labelHeartwarming, href: `/${country}/category/heartwarming` },
-      { label: labelColumns, href: `/${country}/columns` },
-      { label: labelQuotes, href: `/${country}/quotes` },
-      { label: labelAbout, href: `/${country}/about` },
+      { label: labelColumns, href: isEnEdition ? `/en/columns` : `/${country}/columns` },
+      { label: labelQuotes, href: isEnEdition ? `/en/quotes` : `/${country}/quotes` },
+      { label: labelAbout, href: isEnEdition ? `/en/about` : `/${country}/about` },
     ]
   }, [country, isJa, locale, t])
 
@@ -260,16 +265,17 @@ export function Header({ country, className }: HeaderProps) {
     const labelQuotes = isJa ? '名言' : 'Quotes'
     const labelAbout = isJa ? 'サイトの説明' : 'About'
     const labelHeartwarming = getCategoryLabel('heartwarming', locale)
+    const isEnEdition = country === 'us' || country === 'ca' || country === 'uk'
 
     const left = [
       { label: labelTop, href: `/${country}` },
       { label: labelDailyToday, href: `/${country}/daily/today` },
       { label: labelNews, href: `/${country}/news` },
       { label: labelHeartwarming, href: `/${country}/category/heartwarming` },
-      { label: labelColumns, href: `/${country}/columns` },
-      { label: labelQuotes, href: `/${country}/quotes` },
+      { label: labelColumns, href: isEnEdition ? `/en/columns` : `/${country}/columns` },
+      { label: labelQuotes, href: isEnEdition ? `/en/quotes` : `/${country}/quotes` },
     ]
-    const right = { label: labelAbout, href: `/${country}/about` }
+    const right = { label: labelAbout, href: isEnEdition ? `/en/about` : `/${country}/about` }
     return { left, right }
   }, [country, isJa, locale, t])
 
@@ -479,6 +485,14 @@ export function Header({ country, className }: HeaderProps) {
                           <Dialog.Close asChild key={x.code}>
                             <Link
                               href={x.href}
+                              onClick={() => {
+                                setCountryPreference(x.code)
+                                if (getUserToken()) {
+                                  void updateDefaultCountry(x.code).catch(() => {
+                                    // ignore
+                                  })
+                                }
+                              }}
                               className={styles.mobileMenuLink}
                               aria-current={x.active ? 'page' : undefined}
                             >

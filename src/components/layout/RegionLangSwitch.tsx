@@ -7,6 +7,8 @@ import { COUNTRIES, type Country } from '@/lib/tglApi'
 import { getCountrySwitchUrl } from '@/lib/country-switch'
 import { addGentleToUrl } from '@/lib/view-switch'
 import * as Dialog from '@radix-ui/react-dialog'
+import { setCountryPreference } from '@/lib/client/set-country-preference'
+import { getUserToken, updateDefaultCountry } from '@/lib/userAuth'
 
 export function RegionLangSwitch({
   currentCountry,
@@ -145,6 +147,15 @@ export function RegionLangSwitch({
                 <Dialog.Close asChild key={x.code}>
                   <Link
                     href={x.href}
+                    onClick={() => {
+                      setCountryPreference(x.code)
+                      // ログイン中はサーバ設定にも保存（他端末にも反映）
+                      if (getUserToken()) {
+                        void updateDefaultCountry(x.code).catch(() => {
+                          // ignore
+                        })
+                      }
+                    }}
                     style={{
                       borderRadius: 10,
                       border: '1px solid var(--border)',

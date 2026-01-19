@@ -109,6 +109,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 3. Columns（公開分、上限1000件/国）
   for (const c of COUNTRIES) {
     try {
+      // 英語圏（US/CA/UK）のコラムは同一コンテンツ運用のため /en に集約する。
+      // - /ca のデータを「代表」として /en/columns/* を生成
+      // - /us, /uk は sitemap から除外（リダイレクトURLを載せない）
+      if (c.code === 'us' || c.code === 'uk') continue
+      const urlPrefix = c.code === 'ca' ? `${base}/en/columns` : `${base}/${c.code}/columns`
       const columnsResponse = await fetchJson<{ columns: ColumnItem[]; meta: any }>(
         `/v1/${c.code}/columns?limit=1000`,
         { next: { revalidate: CACHE_POLICY.meta } } // キャッシュ（メタ系）
@@ -118,7 +123,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         const lastModified = column.published_at ? new Date(column.published_at) : new Date(column.updated_at)
         // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
         entries.push({
-          url: `${base}/${c.code}/columns/${column.column_id}`.replace(/\/$/, ''),
+          url: `${urlPrefix}/${column.column_id}`.replace(/\/$/, ''),
           lastModified,
           changeFrequency: 'weekly' as const,
           // コラム詳細（少数精鋭）
@@ -135,6 +140,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // - 名言著者ページ（quotes/author/{name}）: 0.6（まとめ役）
   for (const c of COUNTRIES) {
     try {
+      // 英語圏（US/CA/UK）の名言は同一コンテンツ運用のため /en に集約する。
+      // - /ca のデータを「代表」として /en/quotes/* を生成
+      // - /us, /uk は sitemap から除外（リダイレクトURLを載せない）
+      if (c.code === 'us' || c.code === 'uk') continue
       const quotesResponse = await fetchJson<{ quotes: QuoteItem[]; meta: any }>(
         `/v1/${c.code}/quotes?limit=1000`,
         { next: { revalidate: CACHE_POLICY.meta } } // キャッシュ（メタ系）
@@ -146,9 +155,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         if (author) authors.add(author)
         // JPは試験運用：名言詳細は noindex 対象なので sitemap から外す
         if (c.code !== 'jp') {
+          const urlPrefix = c.code === 'ca' ? `${base}/en/quotes` : `${base}/${c.code}/quotes`
           // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
           entries.push({
-            url: `${base}/${c.code}/quotes/${quote.quote_id}`.replace(/\/$/, ''),
+            url: `${urlPrefix}/${quote.quote_id}`.replace(/\/$/, ''),
             lastModified: new Date(quote.updated_at),
             changeFrequency: 'monthly' as const,
             priority: 0.4,
@@ -159,14 +169,46 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // 著者別名言一覧（人物名検索のハブ → その先のまとめ役）
       // JPは最低限の狙いのため除外（CA/US/UKを優先）
       if (c.code !== 'jp') {
+      const urlPrefix = c.code === 'ca' ? `${base}/en/quotes/author` : `${base}/${c.code}/quotes/author`
       for (const author of Array.from(authors)) {
           // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
         entries.push({
-            url: `${base}/${c.code}/quotes/author/${encodeURIComponent(author)}`.replace(/\/$/, ''),
+            url: `${urlPrefix}/${encodeURIComponent(author)}`.replace(/\/$/, ''),
           lastModified: now,
           changeFrequency: 'weekly' as const,
           priority: 0.6,
         })
+        }
+      }
+
+      // 名言テーマ棚（上位9テーマ）：/en での index を狙う
+      if (c.code === 'ca') {
+        try {
+          const themesResponse = await fetchJson<{ themes: Array<{ theme: string; count?: number | null; display_order?: number | null }> }>(
+            `/v1/ca/quotes/themes`,
+            { next: { revalidate: CACHE_POLICY.meta } }
+          )
+          const themes = (themesResponse.themes || [])
+            .filter((x) => (x.count || 0) > 0)
+            .sort((a, b) => {
+              const ao = a.display_order ?? 9999
+              const bo = b.display_order ?? 9999
+              if (ao !== bo) return ao - bo
+              return (b.count || 0) - (a.count || 0)
+            })
+            .slice(0, 9)
+          for (const th of themes) {
+            const key = String(th.theme || '').trim()
+            if (!key) continue
+            entries.push({
+              url: `${base}/en/quotes/theme/${encodeURIComponent(key)}`.replace(/\/$/, ''),
+              lastModified: now,
+              changeFrequency: 'weekly' as const,
+              priority: 0.4,
+            })
+          }
+        } catch (e) {
+          console.error('Failed to fetch quote themes for en sitemap:', e)
         }
       }
     } catch (error) {
@@ -222,16 +264,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // NOTE: /saved はユーザー個人の保存リスト（クローラ非対象）なので sitemap から除外する
   // NOTE: /legal は /jp/legal へリダイレクト（互換）なので、sitemap には国別URLを載せる
   // NOTE: `/` は noindex 方針のため sitemap には載せない（国別トップへ評価を寄せる）
-  const fixedRoutes: string[] = ['/about']
+  const fixedRoutes: string[] = ['/about', '/en/about']
   for (const c of COUNTRIES) {
     fixedRoutes.push(`/${c.code}`)
     fixedRoutes.push(`/${c.code}/news`)
     fixedRoutes.push(`/${c.code}/latest`)
     fixedRoutes.push(`/${c.code}/daily`)
-    fixedRoutes.push(`/${c.code}/about`)
-    fixedRoutes.push(`/${c.code}/columns`)
-    fixedRoutes.push(`/${c.code}/quotes`)
-    fixedRoutes.push(`/${c.code}/quotes/authors`)
+    // NOTE: 英語圏（US/CA/UK）の /about は /en/about に集約（リダイレクトURLを載せない）
+    if (c.code === 'jp') fixedRoutes.push(`/${c.code}/about`)
+    // NOTE: 英語圏（US/CA/UK）の columns/quotes/about は /en に集約（リダイレクトURLを載せない）
+    if (c.code === 'jp') {
+      fixedRoutes.push(`/${c.code}/columns`)
+      fixedRoutes.push(`/${c.code}/quotes`)
+      fixedRoutes.push(`/${c.code}/quotes/authors`)
+    } else {
+      // English editions: exclude /{country}/about from sitemap (redirects to /en/about)
+      // keep other core pages under country
+    }
     fixedRoutes.push(`/${c.code}/legal`)
     // カテゴリページ（Event Registry news/* に揃えたサイト内部カテゴリ）
     const categories = ['heartwarming', 'science_earth', 'politics', 'health', 'technology', 'arts', 'business', 'sports']
@@ -241,6 +290,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       fixedRoutes.push(`/${c.code}/category/${cat}`)
     }
   }
+
+  // /en（英語のコラム・名言の正URL）
+  fixedRoutes.push('/en/columns')
+  fixedRoutes.push('/en/quotes')
+  fixedRoutes.push('/en/quotes/authors')
 
   const fixedEntries = fixedRoutes.map((path) => {
     // デフォルトは now（固定ページは更新頻度が低いが、運用上は雑でもOK）
@@ -252,6 +306,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified = now
       changeFrequency = 'yearly'
       priority = 0.3
+    } else if (path === '/en/about') {
+      lastModified = now
+      changeFrequency = 'yearly'
+      priority = 0.5
     } else {
       const m = path.match(/^\/(us|uk|ca|jp)(\/.*)?$/)
       const cc = m?.[1] || null
@@ -263,9 +321,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           // 優先国: CA/US=1.0（最優先）、UK=0.95、JP=0.9（最低限）
           priority = cc === 'ca' || cc === 'us' ? 1.0 : cc === 'uk' ? 0.95 : 0.9
         } else if (rest === '/about') {
-          lastModified = now
-          changeFrequency = 'yearly'
-          priority = 0.5
+          // NOTE: 英語圏（US/CA/UK）の /about は /en/about に集約
+          if (cc === 'jp') {
+            lastModified = now
+            changeFrequency = 'yearly'
+            priority = 0.5
+          }
         } else if (rest === '/news') {
           lastModified = latestLastModByCountry.get(cc) || homeLastModByCountry.get(cc) || now
           changeFrequency = 'hourly'

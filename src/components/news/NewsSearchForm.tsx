@@ -30,7 +30,7 @@ export function NewsSearchForm({
     const qFromUrl = String(params.get('q') || '').trim()
 
     // カテゴリ棚は「正URL = /category/{category}」へ誘導する。
-    // ただし検索語（q）がある場合は検索結果（noindex）として /news?q=...&category=... を維持する。
+    // 検索語（q）がある場合も、カテゴリ内検索として /category/{category}?q=... に寄せる（q付きは noindex 運用）
     if (!qFromUrl) {
       // keep view params if present
       const keep = new URLSearchParams()
@@ -43,12 +43,18 @@ export function NewsSearchForm({
       return `/${country}/category/${encodeURIComponent(nextCategory)}${qs ? `?${qs}` : ''}`
     }
 
-    // search mode: stay on /news, and apply category filter there
-    if (nextCategory) params.set('category', nextCategory)
-    else params.delete('category')
-    params.delete('cursor')
-    const qs = params.toString()
-    return `/${country}/news${qs ? `?${qs}` : ''}`
+    // search mode: /news は検索ハブ。カテゴリを選んだら「読む棚」へ移動（カテゴリ内検索）。
+    // - All（カテゴリ無し）は /news?q=... に戻す
+    // - view系は維持
+    const keep = new URLSearchParams()
+    const gentle = params.get('gentle')
+    const allowImportant = params.get('allow_important')
+    if (gentle) keep.set('gentle', gentle)
+    if (allowImportant) keep.set('allow_important', allowImportant)
+    keep.set('q', qFromUrl)
+    const qs = keep.toString()
+    if (!nextCategory) return `/${country}/news?${qs}`
+    return `/${country}/category/${encodeURIComponent(nextCategory)}?${qs}`
   }
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -74,11 +80,22 @@ export function NewsSearchForm({
       return
     }
 
-    // search mode（qあり）: categoryは任意で /news に保持（noindex運用）
-    if (category) params.set('category', category)
-    else params.delete('category')
-    const qs = params.toString()
-    router.push(`/${country}/news${qs ? `?${qs}` : ''}`)
+    // search mode（qあり）:
+    // - カテゴリ指定あり: /category/{category}?q=...（カテゴリ内検索 / noindex運用）
+    // - カテゴリ指定なし: /news?q=...（検索ハブ / noindex運用）
+    const q = query.trim()
+    const keep = new URLSearchParams()
+    const gentle = params.get('gentle')
+    const allowImportant = params.get('allow_important')
+    if (gentle) keep.set('gentle', gentle)
+    if (allowImportant) keep.set('allow_important', allowImportant)
+    keep.set('q', q)
+    const qs = keep.toString()
+    if (category) {
+      router.push(`/${country}/category/${encodeURIComponent(category)}?${qs}`)
+    } else {
+      router.push(`/${country}/news?${qs}`)
+    }
   }
 
   return (
