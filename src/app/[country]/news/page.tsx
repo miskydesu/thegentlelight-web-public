@@ -397,7 +397,7 @@ export default async function NewsPage({
                   </div>
                 </div>
               </Link>
-              <Link href={`/${country}/daily/today${gentle ? '?gentle=1' : ''}`}>
+              <Link href={`/${country}/daily`}>
                 <div
                   style={{
                     border: '1px solid rgba(0,0,0,0.08)',

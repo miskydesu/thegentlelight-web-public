@@ -241,7 +241,7 @@ export default async function DailyIndex({
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <Link
-            href={latestDailyDate ? `/${country}/daily/${latestDailyDate}` : `/${country}/daily/today`}
+            href={latestDailyDate ? `/${country}/daily/${latestDailyDate}` : `/${country}/daily`}
             style={{
               display: 'inline-flex',
               alignItems: 'center',

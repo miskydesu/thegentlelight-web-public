@@ -391,7 +391,7 @@ export default async function CategoryPage({
                     </div>
                   </div>
                 )}
-                <Link href={`/${country}/daily/today${gentle ? '?gentle=1' : ''}`}>
+                <Link href={`/${country}/daily`}>
                   <div
                     style={{
                       border: '1px solid rgba(0,0,0,0.08)',
@@ -446,7 +446,7 @@ export default async function CategoryPage({
               )}
               <div style={{ height: 8 }} />
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <Link className="tglButton" href={`/${country}/daily/today${gentle ? '?gentle=1' : ''}`}>
+                <Link className="tglButton" href={`/${country}/daily`}>
                   {locale === 'ja' ? 'Daily に戻る' : "Back to Daily"}
                 </Link>
                 <span className="tglButton" style={{ opacity: 0.7, pointerEvents: 'none' }}>
@@ -462,7 +462,7 @@ export default async function CategoryPage({
         <EmptyState
           title={t.empty.noCategoryResults}
           description={t.empty.noCategoryResultsDescription}
-          action={{ label: country === 'jp' ? '本日の朝刊へ' : "Go to today's briefing", href: `/${country}/daily/today` }}
+          action={{ label: country === 'jp' ? '朝刊一覧へ' : 'Back to Briefings', href: `/${country}/daily` }}
         />
       )}
       </main>

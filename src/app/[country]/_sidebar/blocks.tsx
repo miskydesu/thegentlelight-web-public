@@ -165,8 +165,8 @@ export function SidebarQuickShortcuts({ country }: { country: 'us' | 'uk' | 'ca'
     <div className={`${styles.sidebarCard} ${styles.sidebarShortcutsCard}`}>
       <div className={styles.sidebarTitle}>{isJa ? 'おすすめの行き先' : 'Quick shortcuts'}</div>
       <div className={styles.sidebarShortcuts}>
-        <Link className={styles.sidebarShortcutChip} href={`/${country}/daily/today`}>
-          {isJa ? '🗞 今日の朝刊' : "🗞 Today's briefing"}
+        <Link className={styles.sidebarShortcutChip} href={`/${country}/daily`}>
+          {isJa ? '🗞 朝刊' : '🗞 Briefings'}
         </Link>
         <Link className={styles.sidebarShortcutChip} href={`#heartwarming`}>
           {isJa ? '🤍 心温まる話' : '🤍 Heartwarming'}

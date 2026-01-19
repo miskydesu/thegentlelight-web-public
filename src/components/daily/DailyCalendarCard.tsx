@@ -39,7 +39,7 @@ export function DailyCalendarCard({
 }: DailyCalendarCardProps) {
   const isJa = country === 'jp'
   const [open, setOpen] = useState(false)
-  const openLatestHref = latestDailyDate ? `/${country}/daily/${latestDailyDate}` : `/${country}/daily/today`
+  const openLatestHref = latestDailyDate ? `/${country}/daily/${latestDailyDate}` : `/${country}/daily`
 
   return (
     <Card>

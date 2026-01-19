@@ -103,8 +103,8 @@ export function Footer() {
           <div className={styles.col}>
             <div className={styles.colTitle}>{isJa ? '迷ったら' : 'Start here'}</div>
             <div className={styles.links}>
-              <Link className={styles.pill} href={withGentle(`/${country}/daily/today`)}>
-                {isJa ? 'きょうの朝刊を見る' : "Today's briefing"}
+              <Link className={styles.pill} href={withGentle(`/${country}/daily`)}>
+                {isJa ? '朝刊を見る' : 'Briefings'}
               </Link>
             </div>
           </div>

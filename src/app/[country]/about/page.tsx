@@ -1,11 +1,12 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { isCountry } from '@/lib/tglApi'
+import { fetchJson, isCountry, type HomeResponse } from '@/lib/tglApi'
 import { Card, CardContent, CardTitle } from '@/components/ui/Card'
 import { ResponsiveDetails } from '@/components/ui/ResponsiveDetails'
 import styles from './about.module.css'
 import { canonicalUrl, getCountrySeoMeta, getSiteBaseUrl } from '@/lib/seo'
 import { generateHreflang, generateBreadcrumbListJSONLD } from '@/lib/seo-helpers'
+import { CACHE_POLICY } from '@/lib/cache-policy'
 
 export function generateMetadata({ params }: { params: { country: string } }) {
   const country = params.country
@@ -43,7 +44,7 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   }
 }
 
-export default function AboutPage({
+export default async function AboutPage({
   params,
   searchParams,
 }: {
@@ -55,6 +56,19 @@ export default function AboutPage({
   const isJa = country === 'jp'
   const gentle = searchParams?.gentle === '1' || searchParams?.gentle === 'true'
   const base = getSiteBaseUrl()
+  const normalizeDailyDate = (dateValue: string): string => {
+    if (!dateValue) return ''
+    return dateValue.includes('T') ? dateValue.slice(0, 10) : dateValue
+  }
+  const dailyHref = await (async () => {
+    try {
+      const home = await fetchJson<HomeResponse>(`/v1/${country}/home?limit=1`, { next: { revalidate: CACHE_POLICY.meta } })
+      const latestDailyDate = normalizeDailyDate(home?.daily_latest?.date_local ?? '')
+      return latestDailyDate ? `/${country}/daily/${latestDailyDate}` : `/${country}/daily`
+    } catch {
+      return `/${country}/daily`
+    }
+  })()
 
   const breadcrumbJSONLD = generateBreadcrumbListJSONLD({
     items: [
@@ -218,7 +232,7 @@ export default function AboutPage({
           </ResponsiveDetails>
 
           <div style={{ marginTop: 12 }}>
-            <Link className={styles.textLink} href={`/${country}/daily/today`}>
+            <Link className={styles.textLink} href={dailyHref}>
               {isJa ? '📰 今日の朝刊を見る →' : '📰 Read today’s Morning Briefing →'}
             </Link>
           </div>
@@ -537,7 +551,7 @@ export default function AboutPage({
           {isJa ? '次に読むなら、こちら' : 'Where to go next'}
         </div>
         <div className={styles.nextChoicesGrid}>
-          <Link className={styles.nextChoiceLink} href={`/${country}/daily/today${gentle ? '?gentle=1' : ''}`}>
+          <Link className={styles.nextChoiceLink} href={dailyHref}>
             <div className={`${styles.nextChoiceCard} ${styles.nextChoiceCardPrimary}`}>
               <div className={styles.nextChoiceTitle}>
                 {isJa ? '📰 今日の朝刊を見る' : "📰 Morning Briefing (5 min)"}

@@ -107,6 +107,12 @@ export default async function CountryHome({
   const locale = lang === 'ja' ? 'ja' : 'en'
 
   const gentleTopics = (data.gentle_topics || []).slice(0, 4)
+  const normalizeDailyDate = (dateValue: string): string => {
+    if (!dateValue) return ''
+    return dateValue.includes('T') ? dateValue.slice(0, 10) : dateValue
+  }
+  const latestDailyDate = normalizeDailyDate((data as any)?.daily_latest?.date_local ?? '')
+  const dailyHref = latestDailyDate ? `/${country}/daily/${latestDailyDate}` : `/${country}/daily`
   const heartwarmingTopics = (data.heartwarming_topics || []).slice(0, 2)
   const importantTopics = (data.important_topics || []).slice(0, 6)
 
@@ -407,7 +413,7 @@ export default async function CountryHome({
           {locale === 'ja' ? 'おすすめの行き先' : 'Quick shortcuts'}
         </div>
         <div className={styles.shortcutRow}>
-          <Link className={styles.shortcutChip} href={`/${country}/daily/today${gentle ? '?gentle=1' : ''}`}>
+          <Link className={styles.shortcutChip} href={dailyHref}>
             {locale === 'ja' ? '🗞 今日の朝刊' : "🗞 Today's briefing"}
           </Link>
           <Link className={styles.shortcutChip} href={`#heartwarming`}>
@@ -481,7 +487,7 @@ export default async function CountryHome({
               </div>
             </div>
           </Link>
-          <Link href={`/${country}/daily/today${gentle ? '?gentle=1' : ''}`} className={styles.guideCardLink}>
+          <Link href={dailyHref} className={styles.guideCardLink}>
             <div className={styles.guideCard}>
               <div style={{ fontWeight: 700, marginBottom: 6 }}>
                 {locale === 'ja' ? '🗞 今日の朝刊を見る' : "🗞 Today's briefing"}

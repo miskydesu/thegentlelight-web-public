@@ -228,7 +228,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     fixedRoutes.push(`/${c.code}/news`)
     fixedRoutes.push(`/${c.code}/latest`)
     fixedRoutes.push(`/${c.code}/daily`)
-    fixedRoutes.push(`/${c.code}/daily/today`)
     fixedRoutes.push(`/${c.code}/about`)
     fixedRoutes.push(`/${c.code}/columns`)
     fixedRoutes.push(`/${c.code}/quotes`)
@@ -281,11 +280,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           lastModified = dailyIndexLastModByCountry.get(cc) || now
           changeFrequency = 'daily'
           // 朝刊（入口）
-          priority = 0.95
-        } else if (rest === '/daily/today') {
-          lastModified = dailyIndexLastModByCountry.get(cc) || now
-          changeFrequency = 'daily'
-          // 朝刊（今日・入口）
           priority = 0.95
         } else if (rest === '/columns') {
           lastModified = now

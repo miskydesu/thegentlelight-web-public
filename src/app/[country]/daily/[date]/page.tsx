@@ -180,12 +180,12 @@ export default async function DailyDetailPage({
     return (
       <main>
         <div className="tglMuted" style={{ marginBottom: 10 }}>
-          <Link href={`/${country}/daily/today`}>← {country === 'jp' ? '本日の朝刊へ' : "Go to today's briefing"}</Link>
+          <Link href={`/${country}/daily/${todayYmd}`}>← {country === 'jp' ? '本日の朝刊へ' : "Go to today's briefing"}</Link>
         </div>
         <EmptyState
           title={country === 'jp' ? '未来日付の朝刊は閲覧できません。' : 'Future briefings are not available.'}
           description={country === 'jp' ? '当日の朝刊へ移動します。' : "Redirect to today's briefing."}
-          action={{ label: country === 'jp' ? '本日の朝刊へ' : "Go to today's briefing", href: `/${country}/daily/today` }}
+          action={{ label: country === 'jp' ? '本日の朝刊へ' : "Go to today's briefing", href: `/${country}/daily/${todayYmd}` }}
         />
       </main>
     )

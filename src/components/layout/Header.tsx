@@ -207,11 +207,11 @@ export function Header({ country, className }: HeaderProps) {
   const menuItems = useMemo(() => {
     if (!country) return []
     const labelTop = t?.nav.top ?? (isJa ? 'トップ' : 'Home')
-    const labelDaily = t?.nav.daily ?? (isJa ? '日報' : 'Daily')
+    const labelDailyToday = isJa ? '今日の朝刊' : "Today's Briefing"
     return [
       { kind: 'link' as const, label: labelTop, href: `/${country}` },
-      // 朝刊は「当日ページ」へ（未生成なら /daily/today が案内を表示）
-      { kind: 'link' as const, label: labelDaily, href: `/${country}/daily/today` },
+      // メニューは「今日」を主役に（実体は日付URL、/daily/today は恒久リダイレクト専用）
+      { kind: 'link' as const, label: labelDailyToday, href: `/${country}/daily/today` },
       { kind: 'sep' as const },
       { kind: 'link' as const, label: getCategoryLabel('heartwarming', locale), href: `/${country}/category/heartwarming` },
       { kind: 'link' as const, label: getCategoryLabel('science_earth', locale), href: `/${country}/category/science_earth` },
