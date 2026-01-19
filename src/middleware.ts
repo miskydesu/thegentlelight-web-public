@@ -16,26 +16,28 @@ export async function middleware(req: NextRequest) {
   // ルート以外は自動振り分けしない（既存の /jp や /us などを壊さない）
   if (p !== '/') {
     const redirect308Absolute = (target: URL) => {
-      // NextResponse.redirect() は環境により Location を相対化することがあるため、
-      // SEO事故を避ける目的で Location を絶対URLに固定して返す。
-      return new NextResponse(null, {
+      // NextResponse は環境により Location を相対化することがあるため、
+      // SEO事故を避ける目的で、標準 Response で絶対URLの Location を固定して返す。
+      return new Response(null, {
         status: 308,
         headers: {
           Location: target.toString(),
+          // Optional: some clients still look at Refresh; keep it consistent.
+          Refresh: `0;url=${target.toString()}`,
         },
       })
     }
 
     // 旧URL → 正URL の恒久集約（308）
     // - /{country}/news?category={cat} → /{country}/category/{cat}
-    // - Googleが旧URLに触れた瞬間に正URLへ寄せて、重複を掃除する
+    // - category棚を「正URL」として固定する（SEO評価の分散を防ぐ）
+    // - q（検索語）がある場合は「検索結果」扱いとして /news に残す（noindex運用）
     const mNews = p.match(/^\/(us|uk|ca|jp)\/news\/?$/)
     if (mNews) {
-      const keys = Array.from(req.nextUrl.searchParams.keys())
-      // safety: category だけが付いている場合のみ寄せる（q/cursor等が混ざる検索はそのまま）
-      if (keys.length === 1 && keys[0] === 'category') {
+      const sp = req.nextUrl.searchParams
+      if (!sp.has('q') && sp.has('category')) {
         const country = mNews[1] as 'us' | 'uk' | 'ca' | 'jp'
-        const cat = String(req.nextUrl.searchParams.get('category') || '').trim()
+        const cat = String(sp.get('category') || '').trim()
         const allowed = new Set([
           'heartwarming',
           'science_earth',
@@ -48,7 +50,12 @@ export async function middleware(req: NextRequest) {
         ])
         if (allowed.has(cat)) {
           const target = new URL(`/${country}/category/${cat}`, req.url)
+          // view系パラメータのみは維持（ユーザー意図）。それ以外は捨てて一本化。
+          const gentle = sp.get('gentle')
+          const allowImportant = sp.get('allow_important')
           target.search = ''
+          if (gentle) target.searchParams.set('gentle', gentle)
+          if (allowImportant) target.searchParams.set('allow_important', allowImportant)
           // Location を絶対URLで統一（環境差の事故を減らす）
           return redirect308Absolute(target)
         }

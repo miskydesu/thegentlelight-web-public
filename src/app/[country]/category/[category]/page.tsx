@@ -53,12 +53,16 @@ type TopicItem = TopicsResponse['topics'][number]
 
 export function generateMetadata({
   params,
+  searchParams,
 }: {
   params: { country: string; category: string }
+  searchParams?: { q?: string; gentle?: string; allow_important?: string; cursor?: string; limit?: string }
 }) {
   const category = CATEGORIES.find((c) => c.code === params.category)
   const canonical = canonicalUrl(`/${params.country}/category/${encodeURIComponent(params.category)}`)
-  const hreflang = generateHreflang(`/category/${params.category}`)
+  // フィルタ付きは hreflang を付けない（意図の同一性が担保しにくい）
+  const hasFilter = Boolean(searchParams?.q || searchParams?.gentle || searchParams?.allow_important || searchParams?.cursor || searchParams?.limit)
+  const hreflang = hasFilter ? [] : generateHreflang(`/category/${params.category}`)
   const isJa = params.country === 'jp'
   const isHeartwarming = params.category === 'heartwarming'
   const countryMeta = isCountry(params.country) ? getCountrySeoMeta(params.country) : null
@@ -66,19 +70,25 @@ export function generateMetadata({
   const baseDescription = isJa
     ? `不安のない${catLabel}ニュース。穏やかで、煽られない言葉で整理。`
     : `Calm ${catLabel} news without anxiety. Fact-based reporting that protects your mental health.`
+  // indexableな棚（=カテゴリページ）は国別のdescription差分も付けて重複を避ける（JPはnoindex運用が多いので控えめ）
+  const descriptionWithCountry = countryMeta
+    ? (isJa ? `${baseDescription}${countryMeta.descriptionSuffixJa}` : `${baseDescription}${countryMeta.descriptionSuffixEn}`)
+    : baseDescription
   const meta: any = {
     title: isJa ? `${catLabel}ニュース` : `${catLabel} News`,
-    // 重要カテゴリ（heartwarming）のみ、国別差分をささやかに付与
-    description: isHeartwarming && countryMeta
-      ? (isJa ? `${baseDescription}${countryMeta.descriptionSuffixJa}` : `${baseDescription}${countryMeta.descriptionSuffixEn}`)
-      : baseDescription,
+    // カテゴリ棚は正URLとして運用するため、descriptionは国別差分込みで統一
+    description: descriptionWithCountry,
     keywords: isJa
       ? [`${catLabel}ニュース`, `穏やかな${catLabel}`, 'やさしいニュース', '不安のないニュース', '煽られないニュース']
       : [`${catLabel} news`, `calm ${catLabel}`, 'gentle news', 'news without anxiety'],
     alternates: {
       canonical,
-      languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
+      ...(hreflang.length ? { languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])) } : {}),
     },
+  }
+  // クエリ/表示モード/ページング付きは noindex,follow（重複・無限URLを避ける）
+  if (hasFilter) {
+    meta.robots = { index: false, follow: true, googleBot: { index: false, follow: true } }
   }
   // JPは試験運用：Heartwarming以外のカテゴリトップは noindex,follow
   if (params.country === 'jp' && params.category !== 'heartwarming') {

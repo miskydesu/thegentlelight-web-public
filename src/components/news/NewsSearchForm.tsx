@@ -27,11 +27,25 @@ export function NewsSearchForm({
 
   const buildHrefWithCategory = (nextCategory: string) => {
     const params = new URLSearchParams(searchParams?.toString() || '')
-    // category
+    const qFromUrl = String(params.get('q') || '').trim()
+
+    // カテゴリ棚は「正URL = /category/{category}」へ誘導する。
+    // ただし検索語（q）がある場合は検索結果（noindex）として /news?q=...&category=... を維持する。
+    if (!qFromUrl) {
+      // keep view params if present
+      const keep = new URLSearchParams()
+      const gentle = params.get('gentle')
+      const allowImportant = params.get('allow_important')
+      if (gentle) keep.set('gentle', gentle)
+      if (allowImportant) keep.set('allow_important', allowImportant)
+      const qs = keep.toString()
+      if (!nextCategory) return `/${country}/news${qs ? `?${qs}` : ''}`
+      return `/${country}/category/${encodeURIComponent(nextCategory)}${qs ? `?${qs}` : ''}`
+    }
+
+    // search mode: stay on /news, and apply category filter there
     if (nextCategory) params.set('category', nextCategory)
     else params.delete('category')
-    // keep q as-is from URL (avoid applying unsaved input)
-    // paging reset
     params.delete('cursor')
     const qs = params.toString()
     return `/${country}/news${qs ? `?${qs}` : ''}`
@@ -45,14 +59,26 @@ export function NewsSearchForm({
     } else {
       params.delete('q')
     }
-    if (category) {
-      params.set('category', category)
-    } else {
-      params.delete('category')
-    }
     // 検索条件が変わったらページングをリセット
     params.delete('cursor')
-    router.push(`/${country}/news?${params.toString()}`)
+
+    // カテゴリのみ（qなし）の場合はカテゴリページへ（正URL）
+    if (!query.trim() && category) {
+      const keep = new URLSearchParams()
+      const gentle = params.get('gentle')
+      const allowImportant = params.get('allow_important')
+      if (gentle) keep.set('gentle', gentle)
+      if (allowImportant) keep.set('allow_important', allowImportant)
+      const qs = keep.toString()
+      router.push(`/${country}/category/${encodeURIComponent(category)}${qs ? `?${qs}` : ''}`)
+      return
+    }
+
+    // search mode（qあり）: categoryは任意で /news に保持（noindex運用）
+    if (category) params.set('category', category)
+    else params.delete('category')
+    const qs = params.toString()
+    router.push(`/${country}/news${qs ? `?${qs}` : ''}`)
   }
 
   return (
