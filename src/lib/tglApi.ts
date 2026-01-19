@@ -102,6 +102,7 @@ export type HeartwarmingTodayThreeResponse = {
 
 export type TopicDetailResponse = {
   topic: TopicSummary & {
+    keywords?: string[]
     summaries?: { soft: string | null }
     entities?: any
     content?: string | null

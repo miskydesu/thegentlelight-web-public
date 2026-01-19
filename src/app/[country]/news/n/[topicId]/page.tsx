@@ -32,7 +32,8 @@ export async function generateMetadata({
   const lang: Locale = getLocaleForCountry(country)
   const isJa = lang === 'ja'
   const brandSuffix = isJa ? 'やさしいニュース The Gentle Light' : 'Calm News — The Gentle Light'
-  const sep = isJa ? '｜' : ' | '
+  const sep = ' | '
+  const locale: 'ja' | 'en' = isJa ? 'ja' : 'en'
 
   try {
     // トピックデータを取得（metadata生成用）
@@ -44,10 +45,31 @@ export async function generateMetadata({
     const base = getSiteBaseUrl()
     const path = `/news/n/${topicId}`
     const canonicalPath = `/${country}${path}`
+    const categoryLabel = getCategoryLabel(t.category, locale)
+
+    const uniq = (xs: string[]) => {
+      const out: string[] = []
+      const seen = new Set<string>()
+      for (const x of xs) {
+        const s = String(x || '').trim()
+        if (!s) continue
+        const key = s.toLowerCase()
+        if (seen.has(key)) continue
+        seen.add(key)
+        out.push(s)
+      }
+      return out
+    }
+
+    // keywords: トピックの抽出キーワード（最大3）→ カテゴリ名 → 共通（ニュース）
+    const topicKeywords = Array.isArray((t as any).keywords) ? ((t as any).keywords as string[]) : []
+    const commonKeyword = isJa ? 'ニュース' : 'news'
+    const keywords = uniq([...topicKeywords, categoryLabel, commonKeyword].filter(Boolean) as string[])
 
     const meta = generateSEOMetadata({
-      title: `${t.title || `${country.toUpperCase()} News`}${sep}${brandSuffix}`,
+      title: `${t.title || `${country.toUpperCase()} News`}${sep}${categoryLabel}${sep}${brandSuffix}`,
       description: t.summary || undefined,
+      keywords: keywords.length ? keywords : undefined,
       type: 'article',
       publishedTime: t.last_source_published_at || undefined,
       canonical: `${base}${canonicalPath}`,
