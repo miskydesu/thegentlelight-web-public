@@ -270,23 +270,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         } else if (rest === '/news') {
           lastModified = latestLastModByCountry.get(cc) || homeLastModByCountry.get(cc) || now
           changeFrequency = 'hourly'
-          // ニュースカテゴリ（評価の受け皿）
-          priority = 0.85
+          // ニュース一覧（評価の受け皿・重要ページ）
+          priority = 0.9
         } else if (rest === '/latest') {
           lastModified = latestLastModByCountry.get(cc) || homeLastModByCountry.get(cc) || now
-          changeFrequency = 'hourly'
-          // 最新一覧は補助的（news/category のほうを集約点にする）
-          priority = 0.6
+          // latest は補助（優先度を下げる）
+          changeFrequency = 'daily'
+          priority = 0.4
         } else if (rest === '/daily') {
           lastModified = dailyIndexLastModByCountry.get(cc) || now
           changeFrequency = 'daily'
           // 朝刊（入口）
-          priority = 0.9
+          priority = 0.95
         } else if (rest === '/daily/today') {
           lastModified = dailyIndexLastModByCountry.get(cc) || now
           changeFrequency = 'daily'
           // 朝刊（今日・入口）
-          priority = 0.9
+          priority = 0.95
         } else if (rest === '/columns') {
           lastModified = now
           changeFrequency = 'weekly'
@@ -309,9 +309,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           priority = 0.3
         } else if (rest.startsWith('/category/')) {
           lastModified = latestLastModByCountry.get(cc) || homeLastModByCountry.get(cc) || now
-          changeFrequency = 'daily'
-          // ニュースカテゴリ（評価の受け皿）
-          priority = 0.85
+          const cat = rest.slice('/category/'.length)
+          const isHeartwarming = cat === 'heartwarming'
+          // カテゴリ棚は補助（ただし heartwarming は重要ページ）
+          changeFrequency = isHeartwarming ? 'daily' : 'weekly'
+          priority = isHeartwarming ? 0.9 : 0.55
         }
       }
     }

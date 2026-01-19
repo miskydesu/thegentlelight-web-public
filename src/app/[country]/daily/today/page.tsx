@@ -1,6 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import { fetchJson, isCountry, type TodayResponse, type HomeResponse } from '@/lib/tglApi'
-import { canonicalUrl } from '@/lib/seo'
+import { canonicalUrl, getCountrySeoMeta } from '@/lib/seo'
 import { generateHreflang } from '@/lib/seo-helpers'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 
@@ -13,12 +13,14 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   const country = params.country
   if (!isCountry(country)) return {}
   const isJa = country === 'jp'
+  const { descriptionPrefixEn, descriptionPrefixJa } = getCountrySeoMeta(country)
   const hreflang = generateHreflang('/daily/today')
+  const baseDescription = isJa
+    ? '今日の穏やかな朝刊。不安やニュース疲れに疲れず、必要なことを静かに把握する。'
+    : "Today's calm news briefing. Stay informed without anxiety, doomscrolling, or news fatigue."
   return {
     title: isJa ? '今日の朝刊' : "Today's Daily Briefing",
-    description: isJa
-      ? '今日の穏やかな朝刊。不安やニュース疲れに疲れず、必要なことを静かに把握する。'
-      : "Today's calm news briefing. Stay informed without anxiety, doomscrolling, or news fatigue.",
+    description: isJa ? `${descriptionPrefixJa}${baseDescription}` : `${descriptionPrefixEn}${baseDescription}`,
     keywords: isJa
       ? ['今日のニュース', '朝刊', 'デイリーブリーフィング', '穏やかなニュース', '不安のないニュース']
       : ["today's news", 'daily briefing', 'morning briefing', 'calm news today', 'news without anxiety'],

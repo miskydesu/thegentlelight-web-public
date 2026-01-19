@@ -6,7 +6,7 @@ import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import styles from './quotes.module.css'
 import { CACHE_POLICY } from '@/lib/cache-policy'
-import { canonicalUrl } from '@/lib/seo'
+import { canonicalUrl, getCountrySeoMeta } from '@/lib/seo'
 import { generateHreflang } from '@/lib/seo-helpers'
 
 type QuotesResponse = {
@@ -44,6 +44,7 @@ export function generateMetadata({
   const country = params.country
   if (!isCountry(country)) return {}
   const isJa = country === 'jp'
+  const { descriptionPrefixEn, descriptionPrefixJa } = getCountrySeoMeta(country)
   const q = typeof searchParams.q === 'string' ? searchParams.q.trim() : ''
   const theme = typeof searchParams.theme === 'string' ? searchParams.theme.trim() : ''
 
@@ -69,7 +70,9 @@ export function generateMetadata({
 
   return {
     title: isJa ? '癒しの名言・言葉' : 'Calming Quotes & Inspiration',
-    description: isJa ? 'ニュースと共に心を落ち着かせる名言と癒しの言葉。' : 'Calming quotes and inspirational words to help you reflect and find peace alongside the news.',
+    description: isJa
+      ? `${descriptionPrefixJa}ニュースと共に心を落ち着かせる名言と癒しの言葉。`
+      : `${descriptionPrefixEn}Calming quotes and inspirational words to help you reflect and find peace alongside the news.`,
     keywords: isJa
       ? ['癒しの名言', '心に響く言葉', '穏やかな言葉', 'メンタルウェルネス', 'マインドフルネス']
       : ['calming quotes', 'inspirational quotes', 'peaceful words', 'mental wellness', 'mindfulness'],

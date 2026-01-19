@@ -4,21 +4,23 @@ import { isCountry } from '@/lib/tglApi'
 import { Card, CardContent, CardTitle } from '@/components/ui/Card'
 import { ResponsiveDetails } from '@/components/ui/ResponsiveDetails'
 import styles from './about.module.css'
-import { canonicalUrl, getSiteBaseUrl } from '@/lib/seo'
+import { canonicalUrl, getCountrySeoMeta, getSiteBaseUrl } from '@/lib/seo'
 import { generateHreflang, generateBreadcrumbListJSONLD } from '@/lib/seo-helpers'
 
 export function generateMetadata({ params }: { params: { country: string } }) {
   const country = params.country
   if (!isCountry(country)) return {}
   const isJa = country === 'jp'
+  const { descriptionPrefixEn, descriptionPrefixJa } = getCountrySeoMeta(country)
   const canonical = canonicalUrl(`/${country}/about`)
   const hreflang = generateHreflang('/about')
+  const baseDescription = isJa
+    ? 'やさしいニュースの方針。穏やかで、煽られない・不安にならない。心が落ち着く、静かなニュース体験を目指します（メンタルヘルスにも配慮）。'
+    : 'Learn how The Gentle Light delivers calm, fact-based news for mental health. Our approach to fighting news anxiety, doomscrolling, and news fatigue.'
   return {
     // /[country]/layout.tsx の title.template で末尾を出し分けるため、ここでは短い title を返す
     title: isJa ? 'やさしいニュースについて' : 'About Us',
-    description: isJa
-      ? 'やさしいニュースの方針。穏やかで、煽られない・不安にならない。心が落ち着く、静かなニュース体験を目指します（メンタルヘルスにも配慮）。'
-      : 'Learn how The Gentle Light delivers calm, fact-based news for mental health. Our approach to fighting news anxiety, doomscrolling, and news fatigue.',
+    description: isJa ? `${descriptionPrefixJa}${baseDescription}` : `${descriptionPrefixEn}${baseDescription}`,
     keywords: isJa
       ? [
           'やさしいニュース',

@@ -10,7 +10,7 @@ import { getGentleFromSearchParams, getAllowImportantFromSearchParams } from '@/
 import { formatTopicListDate } from '@/lib/topicDate'
 import { getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import styles from './news.module.css'
-import { canonicalUrl } from '@/lib/seo'
+import { canonicalUrl, getCountrySeoMeta } from '@/lib/seo'
 import { generateHreflang } from '@/lib/seo-helpers'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 // 表示はsoft一本（UX方針）
@@ -39,6 +39,10 @@ export function generateMetadata({
   const country = params.country
   const query = searchParams.q || ''
   const isJa = country === 'jp'
+  const isValidCountry = isCountry(country)
+  const { descriptionPrefixEn, descriptionPrefixJa } = isValidCountry
+    ? getCountrySeoMeta(country)
+    : { descriptionPrefixEn: '', descriptionPrefixJa: '' }
   const canonical = canonicalUrl(`/${country}/news`)
 
   // フィルタ付き（検索語や絞り込み等）は hreflang を付けない（意図の同一性が担保しにくい）
@@ -56,8 +60,8 @@ export function generateMetadata({
   return {
     title: isJa ? 'ニュース一覧' : 'Browse Calm News by Topic',
     description: isJa
-      ? 'やさしいニュース一覧。穏やかで、煽られない・不安にならない。心が落ち着く、静かなニュースをカテゴリ別に。'
-      : 'Browse gentle news organized by category. World news without anxiety, stress, or doomscrolling.',
+      ? `${descriptionPrefixJa}やさしいニュース一覧。穏やかで、煽られない・不安にならない。心が落ち着く、静かなニュースをカテゴリ別に。`
+      : `${descriptionPrefixEn}Browse gentle news organized by category. World news without anxiety, stress, or doomscrolling.`,
     keywords: isJa
       ? [
           'やさしいニュース',

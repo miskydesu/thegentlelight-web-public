@@ -6,7 +6,7 @@ import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import styles from './columns.module.css'
 import { CACHE_POLICY } from '@/lib/cache-policy'
-import { canonicalUrl } from '@/lib/seo'
+import { canonicalUrl, getCountrySeoMeta } from '@/lib/seo'
 import { generateHreflang } from '@/lib/seo-helpers'
 
 function joinUrl(base: string, key: string): string {
@@ -41,12 +41,14 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   const country = params.country
   if (!isCountry(country)) return {}
   const isJa = country === 'jp'
+  const { descriptionPrefixEn, descriptionPrefixJa } = getCountrySeoMeta(country)
   const hreflang = generateHreflang('/columns')
+  const baseDescription = isJa
+    ? 'ニュースと付き合うためのコラム。不安にならない、煽られない、心が落ち着く“静かさ”の考察（メンタルヘルスにも配慮）。'
+    : 'Thoughtful columns on news, mental health, and how to stay informed without anxiety or doomscrolling.'
   return {
     title: isJa ? 'コラム・考察' : 'Thoughtful Columns',
-    description: isJa
-      ? 'ニュースと付き合うためのコラム。不安にならない、煽られない、心が落ち着く“静かさ”の考察（メンタルヘルスにも配慮）。'
-      : 'Thoughtful columns on news, mental health, and how to stay informed without anxiety or doomscrolling.',
+    description: isJa ? `${descriptionPrefixJa}${baseDescription}` : `${descriptionPrefixEn}${baseDescription}`,
     keywords: isJa
       ? [
           'ニュース疲れ',

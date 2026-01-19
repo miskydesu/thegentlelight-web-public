@@ -9,7 +9,7 @@ import { getGentleFromSearchParams, getAllowImportantFromSearchParams } from '@/
 import { CATEGORIES, getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import styles from './category.module.css'
 import { formatTopicListDate } from '@/lib/topicDate'
-import { canonicalUrl, getSiteBaseUrl } from '@/lib/seo'
+import { canonicalUrl, getCountrySeoMeta, getSiteBaseUrl } from '@/lib/seo'
 import { generateHreflang, generateBreadcrumbListJSONLD } from '@/lib/seo-helpers'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 // 表示はsoft一本（UX方針）
@@ -60,12 +60,18 @@ export function generateMetadata({
   const canonical = canonicalUrl(`/${params.country}/category/${encodeURIComponent(params.category)}`)
   const hreflang = generateHreflang(`/category/${params.category}`)
   const isJa = params.country === 'jp'
+  const isHeartwarming = params.category === 'heartwarming'
+  const countryMeta = isCountry(params.country) ? getCountrySeoMeta(params.country) : null
   const catLabel = isJa ? (category?.labelJa || category?.label || params.category) : (category?.label || category?.labelJa || params.category)
+  const baseDescription = isJa
+    ? `不安のない${catLabel}ニュース。穏やかで、煽られない言葉で整理。`
+    : `Calm ${catLabel} news without anxiety. Fact-based reporting that protects your mental health.`
   const meta: any = {
     title: isJa ? `${catLabel}ニュース` : `${catLabel} News`,
-    description: isJa
-      ? `不安のない${catLabel}ニュース。穏やかで、煽られない言葉で整理。`
-      : `Calm ${catLabel} news without anxiety. Fact-based reporting that protects your mental health.`,
+    // 重要カテゴリ（heartwarming）のみ、国別差分をささやかに付与
+    description: isHeartwarming && countryMeta
+      ? (isJa ? `${countryMeta.descriptionPrefixJa}${baseDescription}` : `${countryMeta.descriptionPrefixEn}${baseDescription}`)
+      : baseDescription,
     keywords: isJa
       ? [`${catLabel}ニュース`, `穏やかな${catLabel}`, 'やさしいニュース', '不安のないニュース', '煽られないニュース']
       : [`${catLabel} news`, `calm ${catLabel}`, 'gentle news', 'news without anxiety'],

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { fetchJson, isCountry, type HomeResponse } from '../../lib/tglApi'
-import { canonicalUrl, getSiteBaseUrl } from '../../lib/seo'
+import { canonicalUrl, getCountrySeoMeta, getSiteBaseUrl } from '../../lib/seo'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '../../lib/i18n'
 import { generateSEOMetadata, generateHreflang, generateBreadcrumbListJSONLD } from '../../lib/seo-helpers'
 import { getGentleFromSearchParams, getAllowImportantFromSearchParams } from '../../lib/view-switch'
@@ -28,15 +28,17 @@ export async function generateMetadata({
   const hreflang = generateHreflang('')
 
   const isJa = country === 'jp'
+  const { titleSuffix, descriptionPrefixEn, descriptionPrefixJa } = getCountrySeoMeta(country)
   // IMPORTANT:
   // 国別トップ（/[country]）だけは title の順序を固定したい。
   // layout.tsx の title.template（`%s | ${suffix}`）を適用させず、absolute を使う。
   const title = isJa
-    ? 'やさしいニュース The Gentle Light | やさしく、静かに世界を知るためのニュースサイト'
-    : 'Calm News The Gentle Light | Calm News Without Anxiety'
-  const description = isJa
+    ? `やさしいニュース The Gentle Light | やさしく、静かに世界を知るためのニュースサイト${titleSuffix}`
+    : `Calm News The Gentle Light | Calm News Without Anxiety${titleSuffix}`
+  const descriptionBase = isJa
     ? 'やさしいニュース。煽りがない穏やかな言葉に編集したニュースをお届けする、やさしいニュースサイト。'
     : "Gentle news for your mental health. World news without doomscrolling, anxiety, or sensationalism. Calm daily briefings that keep you informed."
+  const description = isJa ? `${descriptionPrefixJa}${descriptionBase}` : `${descriptionPrefixEn}${descriptionBase}`
   const keywords = isJa
     ? [
         'やさしいニュース',

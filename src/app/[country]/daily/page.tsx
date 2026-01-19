@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type DailyDetailResponse, type DailyListResponse, type HomeResponse } from '../../../lib/tglApi'
-import { canonicalUrl, getSiteBaseUrl } from '../../../lib/seo'
+import { canonicalUrl, getCountrySeoMeta, getSiteBaseUrl } from '../../../lib/seo'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '../../../lib/i18n'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
@@ -65,6 +65,24 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   const country = params.country
   const hreflang = generateHreflang('/daily')
   const isJa = country === 'jp'
+  if (isCountry(country)) {
+    const { descriptionPrefixEn, descriptionPrefixJa } = getCountrySeoMeta(country)
+    const base = isJa
+      ? '朝刊（デイリー）を日付ごとに一覧で。気になる日だけ落ち着いて振り返れます。'
+      : 'Browse daily briefings by date. Catch up calmly, one day at a time.'
+    const description = isJa ? `${descriptionPrefixJa}${base}` : `${descriptionPrefixEn}${base}`
+    return {
+      title: isJa ? '朝刊一覧' : 'Daily Briefings',
+      description,
+      keywords: isJa
+        ? ['朝刊', 'デイリーニュース', '穏やかなニュース', '不安のないニュース']
+        : ['daily briefing', 'morning news', 'calm news', 'news without anxiety'],
+      alternates: {
+        canonical: canonicalUrl(`/${country}/daily`),
+        languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
+      },
+    }
+  }
   return {
     title: isJa ? '朝刊一覧' : 'Daily Briefings',
     description: isJa

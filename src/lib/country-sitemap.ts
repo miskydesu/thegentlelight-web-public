@@ -107,22 +107,22 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
       url: `${base}/${country}/news`.replace(/\/$/, ''),
       lastModified: latestMeta || homeLastMod || now,
       changeFrequency: 'hourly',
-      // ニュースカテゴリ（評価の受け皿）
-      priority: 0.85,
+      // ニュース一覧（評価の受け皿・重要ページ）
+      priority: 0.9,
     },
     {
       url: `${base}/${country}/latest`.replace(/\/$/, ''),
       lastModified: latestMeta || homeLastMod || now,
-      changeFrequency: 'hourly',
-      // 最新一覧は補助的（news/categoryのほうを集約点にする）
-      priority: 0.6,
+      // latest は補助（優先度を下げる）
+      changeFrequency: 'daily',
+      priority: 0.4,
     },
     {
       url: `${base}/${country}/daily`.replace(/\/$/, ''),
       lastModified: dailyIndexLastMod || now,
       changeFrequency: 'daily',
       // 朝刊（入口）
-      priority: 0.9,
+      priority: 0.95,
     },
     {
       url: `${base}/${country}/columns`.replace(/\/$/, ''),
@@ -159,12 +159,13 @@ export async function generateCountrySitemap(country: Country): Promise<Metadata
   for (const cat of CATEGORIES) {
     // JPは試験運用：Heartwarming以外のカテゴリトップは noindex 対象なので sitemap から外す
     if (isJp && cat !== 'heartwarming') continue
+    const isHeartwarming = cat === 'heartwarming'
     fixed.push({
       url: `${base}/${country}/category/${cat}`.replace(/\/$/, ''),
       lastModified: latestMeta || homeLastMod || now,
-      changeFrequency: 'daily',
-      // ニュースカテゴリ（評価の受け皿）
-      priority: 0.85,
+      // カテゴリ棚は補助（ただし heartwarming は重要ページ）
+      changeFrequency: isHeartwarming ? 'daily' : 'weekly',
+      priority: isHeartwarming ? 0.9 : 0.55,
     })
   }
 

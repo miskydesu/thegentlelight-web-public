@@ -36,6 +36,34 @@ export function canonicalUrl(path: string): string {
   return `${base}${cleanPath}`
 }
 
+export function getCountrySeoMeta(country: 'us' | 'ca' | 'uk' | 'jp'): {
+  /**
+   * SERP/タブでの最小差分（略称OK）
+   * 例: " — US"
+   */
+  titleSuffix: string
+  /**
+   * meta description 冒頭差分（正式名称）
+   * 例: "United States edition: "
+   */
+  descriptionPrefixEn: string
+  /**
+   * meta description 冒頭差分（日本語）
+   * 例: "アメリカ版："
+   */
+  descriptionPrefixJa: string
+} {
+  const titleLabel = country === 'us' ? 'US' : country === 'ca' ? 'Canada' : country === 'uk' ? 'UK' : 'Japan'
+  const nameEn =
+    country === 'us' ? 'United States' : country === 'ca' ? 'Canada' : country === 'uk' ? 'United Kingdom' : 'Japan'
+  const nameJa = country === 'us' ? 'アメリカ' : country === 'ca' ? 'カナダ' : country === 'uk' ? 'イギリス' : '日本'
+  return {
+    titleSuffix: ` — ${titleLabel}`,
+    descriptionPrefixEn: `${nameEn} edition: `,
+    descriptionPrefixJa: `${nameJa}版：`,
+  }
+}
+
 export type IndexableTopicInput = {
   summary: string | null | undefined
   importance_score: number | null | undefined
