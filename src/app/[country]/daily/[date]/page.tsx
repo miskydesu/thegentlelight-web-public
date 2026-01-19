@@ -23,21 +23,44 @@ export async function generateMetadata({ params }: { params: { country: string; 
     return { title: { absolute: 'The Gentle Light' }, alternates: { canonical } }
   }
 
+  const baseTitle = isJa ? `${date}の朝刊｜やさしいニュース The Gentle Light` : `Daily Briefing - ${date} | Calm News — The Gentle Light`
+  const baseDesc = isJa
+    ? `${date}の主要ニュースを静かな言葉でまとめた朝刊。不安を感じずに世界を知る。`
+    : `Daily news briefing for ${date}. Calm, fact-based summary of world events without sensationalism or anxiety.`
+
+  const truncate = (s: string, max: number) => {
+    const v = String(s || '').replace(/\s+/g, ' ').trim()
+    if (!v) return ''
+    if (v.length <= max) return v
+    return `${v.slice(0, Math.max(0, max - 1)).trim()}…`
+  }
+
+  // daily_digests.messages（3件）を description の末尾へ付与（SEO/クリック時の期待値を上げる）
+  const desc = await (async () => {
+    try {
+      const data = await fetchJson<DailyDetailResponse>(`/v1/${country}/daily/${encodeURIComponent(date)}`, {
+        next: { revalidate: CACHE_POLICY.stable },
+      })
+      const messages = (data.messages || [])
+        .slice(0, 3)
+        .map((m: any) => String(m?.message || '').trim())
+        .filter(Boolean)
+      if (!messages.length) return baseDesc
+      // 区切り記号は入れず、文同士を自然に繋ぐ（各message側に句読点が入る想定）
+      const suffix = messages.join(' ')
+      return truncate(`${baseDesc} ${suffix}`, isJa ? 220 : 220)
+    } catch {
+      return baseDesc
+    }
+  })()
+
   return {
     // NOTE:
     // 国別layout側の title template（"... | やさしいニュース The Gentle Light" 等）と二重化しないよう、
     // このページは absolute で固定する。
-    title: {
-      absolute: isJa
-        ? `${date}の朝刊｜やさしいニュース The Gentle Light`
-        : `Daily Briefing - ${date} | Calm News — The Gentle Light`,
-    },
-    description: isJa
-      ? `${date}の主要ニュースを静かな言葉でまとめた朝刊。不安を感じずに世界を知る。`
-      : `Daily news briefing for ${date}. Calm, fact-based summary of world events without sensationalism or anxiety.`,
-    keywords: isJa
-      ? ['朝刊', 'デイリーニュース', '穏やかなニュース', '不安のないニュース']
-      : ['daily briefing', 'morning news', 'calm news', 'news without anxiety'],
+    title: { absolute: baseTitle },
+    description: desc,
+    keywords: isJa ? ['朝刊', 'デイリーニュース', '穏やかなニュース', '不安のないニュース'] : ['daily briefing', 'morning news', 'calm news', 'news without anxiety'],
     alternates: { canonical },
   }
 }
