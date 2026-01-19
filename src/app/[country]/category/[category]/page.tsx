@@ -67,20 +67,43 @@ export function generateMetadata({
   const isHeartwarming = params.category === 'heartwarming'
   const countryMeta = isCountry(params.country) ? getCountrySeoMeta(params.country) : null
   const catLabel = isJa ? (category?.labelJa || category?.label || params.category) : (category?.label || category?.labelJa || params.category)
-  const baseDescription = isJa
-    ? `不安のない${catLabel}ニュース。穏やかで、煽られない言葉で整理。`
-    : `Calm ${catLabel} news without anxiety. Fact-based reporting that protects your mental health.`
+  // JPの heartwarming は「心温まる話ニュース」だと意味が崩れるため、語尾の「ニュース」を外して独自性を強調する
+  const baseDescription = (() => {
+    if (isJa && isHeartwarming) {
+      return '心温まる話。人のやさしさ・支援・つながりが伝わる出来事を、独自の指標で確かめて選びました。忙しい日でも、心がほどける情報だけを。'
+    }
+    return isJa
+      ? `${catLabel}ニュース。穏やかで、煽られない言葉で今日の動きを短く整理します。気になる分野だけ、必要なぶんだけ、静かに追えます。`
+      : `Calm ${catLabel} news without anxiety. A gentle, non-sensational digest that helps you stay informed without doomscrolling. Follow only what matters, and step away anytime.`
+  })()
   // indexableな棚（=カテゴリページ）は国別のdescription差分も付けて重複を避ける（JPはnoindex運用が多いので控えめ）
   const descriptionWithCountry = countryMeta
     ? (isJa ? `${baseDescription}${countryMeta.descriptionSuffixJa}` : `${baseDescription}${countryMeta.descriptionSuffixEn}`)
     : baseDescription
   const meta: any = {
-    title: isJa ? `${catLabel}ニュース` : `${catLabel} News`,
+    title: (() => {
+      if (isJa && isHeartwarming) return '心温まる話（癒やしと希望）'
+      return isJa ? `${catLabel}ニュース` : `${catLabel} News`
+    })(),
     // カテゴリ棚は正URLとして運用するため、descriptionは国別差分込みで統一
     description: descriptionWithCountry,
-    keywords: isJa
-      ? [`${catLabel}ニュース`, `穏やかな${catLabel}`, 'やさしいニュース', '不安のないニュース', '煽られないニュース']
-      : [`${catLabel} news`, `calm ${catLabel}`, 'gentle news', 'news without anxiety'],
+    keywords: (() => {
+      if (isJa && isHeartwarming) {
+        return [
+          '心温まる話',
+          '癒やし',
+          '希望',
+          'やさしさ',
+          '支援',
+          'つながり',
+          'やさしいニュース',
+          'ニュース疲れ',
+        ]
+      }
+      return isJa
+        ? [`${catLabel}ニュース`, `穏やかな${catLabel}`, 'やさしいニュース', '不安のないニュース', '煽られないニュース']
+        : [`${catLabel} news`, `calm ${catLabel}`, 'gentle news', 'news without anxiety']
+    })(),
     alternates: {
       canonical,
       ...(hreflang.length ? { languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])) } : {}),
