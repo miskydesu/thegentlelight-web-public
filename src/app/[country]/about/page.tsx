@@ -12,7 +12,7 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   const country = params.country
   if (!isCountry(country)) return {}
   const isJa = country === 'jp'
-  const { descriptionPrefixEn, descriptionPrefixJa } = getCountrySeoMeta(country)
+  const { descriptionSuffixEn, descriptionSuffixJa } = getCountrySeoMeta(country)
   const canonical = canonicalUrl(`/${country}/about`)
   const hreflang = generateHreflang('/about')
   const baseDescription = isJa
@@ -21,7 +21,7 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   return {
     // /[country]/layout.tsx の title.template で末尾を出し分けるため、ここでは短い title を返す
     title: isJa ? 'やさしいニュースについて' : 'About Us',
-    description: isJa ? `${descriptionPrefixJa}${baseDescription}` : `${descriptionPrefixEn}${baseDescription}`,
+    description: isJa ? `${baseDescription}${descriptionSuffixJa}` : `${baseDescription}${descriptionSuffixEn}`,
     keywords: isJa
       ? [
           'やさしいニュース',

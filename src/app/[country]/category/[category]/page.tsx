@@ -70,7 +70,7 @@ export function generateMetadata({
     title: isJa ? `${catLabel}ニュース` : `${catLabel} News`,
     // 重要カテゴリ（heartwarming）のみ、国別差分をささやかに付与
     description: isHeartwarming && countryMeta
-      ? (isJa ? `${countryMeta.descriptionPrefixJa}${baseDescription}` : `${countryMeta.descriptionPrefixEn}${baseDescription}`)
+      ? (isJa ? `${baseDescription}${countryMeta.descriptionSuffixJa}` : `${baseDescription}${countryMeta.descriptionSuffixEn}`)
       : baseDescription,
     keywords: isJa
       ? [`${catLabel}ニュース`, `穏やかな${catLabel}`, 'やさしいニュース', '不安のないニュース', '煽られないニュース']

@@ -66,11 +66,11 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   const hreflang = generateHreflang('/daily')
   const isJa = country === 'jp'
   if (isCountry(country)) {
-    const { descriptionPrefixEn, descriptionPrefixJa } = getCountrySeoMeta(country)
+    const { descriptionSuffixEn, descriptionSuffixJa } = getCountrySeoMeta(country)
     const base = isJa
       ? '朝刊（デイリー）を日付ごとに一覧で。気になる日だけ落ち着いて振り返れます。'
       : 'Browse daily briefings by date. Catch up calmly, one day at a time.'
-    const description = isJa ? `${descriptionPrefixJa}${base}` : `${descriptionPrefixEn}${base}`
+    const description = isJa ? `${base}${descriptionSuffixJa}` : `${base}${descriptionSuffixEn}`
     return {
       title: isJa ? '朝刊一覧' : 'Daily Briefings',
       description,

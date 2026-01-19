@@ -41,14 +41,14 @@ export function generateMetadata({ params }: { params: { country: string } }) {
   const country = params.country
   if (!isCountry(country)) return {}
   const isJa = country === 'jp'
-  const { descriptionPrefixEn, descriptionPrefixJa } = getCountrySeoMeta(country)
+  const { descriptionSuffixEn, descriptionSuffixJa } = getCountrySeoMeta(country)
   const hreflang = generateHreflang('/columns')
   const baseDescription = isJa
     ? 'ニュースと付き合うためのコラム。不安にならない、煽られない、心が落ち着く“静かさ”の考察（メンタルヘルスにも配慮）。'
     : 'Thoughtful columns on news, mental health, and how to stay informed without anxiety or doomscrolling.'
   return {
     title: isJa ? 'コラム・考察' : 'Thoughtful Columns',
-    description: isJa ? `${descriptionPrefixJa}${baseDescription}` : `${descriptionPrefixEn}${baseDescription}`,
+    description: isJa ? `${baseDescription}${descriptionSuffixJa}` : `${baseDescription}${descriptionSuffixEn}`,
     keywords: isJa
       ? [
           'ニュース疲れ',

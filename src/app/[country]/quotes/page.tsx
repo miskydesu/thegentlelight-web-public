@@ -44,7 +44,7 @@ export function generateMetadata({
   const country = params.country
   if (!isCountry(country)) return {}
   const isJa = country === 'jp'
-  const { descriptionPrefixEn, descriptionPrefixJa } = getCountrySeoMeta(country)
+  const { descriptionSuffixEn, descriptionSuffixJa } = getCountrySeoMeta(country)
   const q = typeof searchParams.q === 'string' ? searchParams.q.trim() : ''
   const theme = typeof searchParams.theme === 'string' ? searchParams.theme.trim() : ''
 
@@ -71,8 +71,8 @@ export function generateMetadata({
   return {
     title: isJa ? '癒しの名言・言葉' : 'Calming Quotes & Inspiration',
     description: isJa
-      ? `${descriptionPrefixJa}ニュースと共に心を落ち着かせる名言と癒しの言葉。`
-      : `${descriptionPrefixEn}Calming quotes and inspirational words to help you reflect and find peace alongside the news.`,
+      ? `ニュースと共に心を落ち着かせる名言と癒しの言葉。${descriptionSuffixJa}`
+      : `Calming quotes and inspirational words to help you reflect and find peace alongside the news.${descriptionSuffixEn}`,
     keywords: isJa
       ? ['癒しの名言', '心に響く言葉', '穏やかな言葉', 'メンタルウェルネス', 'マインドフルネス']
       : ['calming quotes', 'inspirational quotes', 'peaceful words', 'mental wellness', 'mindfulness'],

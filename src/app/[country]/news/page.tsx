@@ -40,9 +40,9 @@ export function generateMetadata({
   const query = searchParams.q || ''
   const isJa = country === 'jp'
   const isValidCountry = isCountry(country)
-  const { descriptionPrefixEn, descriptionPrefixJa } = isValidCountry
+  const { descriptionSuffixEn, descriptionSuffixJa } = isValidCountry
     ? getCountrySeoMeta(country)
-    : { descriptionPrefixEn: '', descriptionPrefixJa: '' }
+    : { descriptionSuffixEn: '', descriptionSuffixJa: '' }
   const canonical = canonicalUrl(`/${country}/news`)
 
   // フィルタ付き（検索語や絞り込み等）は hreflang を付けない（意図の同一性が担保しにくい）
@@ -60,8 +60,8 @@ export function generateMetadata({
   return {
     title: isJa ? 'ニュース一覧' : 'Browse Calm News by Topic',
     description: isJa
-      ? `${descriptionPrefixJa}やさしいニュース一覧。穏やかで、煽られない・不安にならない。心が落ち着く、静かなニュースをカテゴリ別に。`
-      : `${descriptionPrefixEn}Browse gentle news organized by category. World news without anxiety, stress, or doomscrolling.`,
+      ? `やさしいニュース一覧。穏やかで、煽られない・不安にならない。心が落ち着く、静かなニュースをカテゴリ別に。${descriptionSuffixJa}`
+      : `Browse gentle news organized by category. World news without anxiety, stress, or doomscrolling.${descriptionSuffixEn}`,
     keywords: isJa
       ? [
           'やさしいニュース',
