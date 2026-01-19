@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { fetchJson, type ApiMeta } from '@/lib/tglApi'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Card, CardTitle } from '@/components/ui/Card'
-import styles from '../../../[country]/quotes/quotes.module.css'
+import styles from '../../../../[country]/quotes/quotes.module.css'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 import { canonicalUrl } from '@/lib/seo'
 
