@@ -18,8 +18,10 @@ type ColumnDetailResponse = {
     body_md: string | null
     seo_title: string | null
     seo_description: string | null
+    seo_keywords?: string | null
     tags: string[]
     cover_image_key: string | null
+    column_name?: { name: string } | null
     writer_name?: string | null
     writer_name_en?: string | null
     writer_name_jp?: string | null
@@ -79,25 +81,69 @@ export async function generateMetadata({ params }: { params: { country: string; 
   const canonical = canonicalUrl(`/${country}/columns/${encodeURIComponent(columnId)}`)
   const lang: Locale = getLocaleForCountry(country)
   const isJa = lang === 'ja'
-  const siteName = 'The Gentle Light'
+
+  const splitKeywords = (raw: string) =>
+    String(raw || '')
+      .split(/[,\n]/g)
+      .map((s) => s.trim())
+      .filter(Boolean)
+
+  const uniq = (xs: string[]) => {
+    const out: string[] = []
+    const seen = new Set<string>()
+    for (const x of xs) {
+      const k = x.toLowerCase()
+      if (seen.has(k)) continue
+      seen.add(k)
+      out.push(x)
+    }
+    return out
+  }
+
+  const appendColumnNameToDescription = (desc: string, columnName: string | null) => {
+    const d = String(desc || '').trim()
+    const name = String(columnName || '').trim()
+    if (!d || !name) return d
+    const suffix = isJa ? `（${name}）` : ` (${name})`
+    if (d.endsWith(suffix)) return d
+    return `${d}${suffix}`
+  }
 
   try {
     const data = await fetchJson<ColumnDetailResponse>(`/v1/${country}/columns/${encodeURIComponent(columnId)}`, {
-      next: { revalidate: CACHE_POLICY.stable },
+      // コラム詳細は管理画面からSEO項目（title/description/keywords）が編集されるため、
+      // 反映の遅れがユーザー体験/検証の妨げになりやすい。
+      // - 開発: 即時反映（no-store）
+      // - 本番: 2分程度で追従（frequent）
+      ...(process.env.NODE_ENV === 'development'
+        ? ({ cache: 'no-store' } as any)
+        : { next: { revalidate: CACHE_POLICY.frequent } }),
     })
     const c = data.column
     const titleCore = String(c?.seo_title || c?.title || '').trim()
     const desc = String(c?.seo_description || c?.excerpt || '').trim()
+    const columnName = String(c?.column_name?.name || '').trim() || null
+    const descWithColumnName = appendColumnNameToDescription(desc, columnName)
+
+    // keywords:
+    // - 管理画面で入れた seo_keywords（カンマ/改行区切り）を先頭に
+    // - 共通語（コラム性）と、コラム名（シリーズ名）を末尾に付与
+    const customKeywords = splitKeywords(String(c?.seo_keywords || ''))
+    const commonKeywords = isJa ? ['コラム'] : ['columns']
+    const columnNameKeywords = columnName ? [columnName] : []
+    const keywords = uniq([...customKeywords, ...commonKeywords, ...columnNameKeywords])
+
     return generateSEOMetadata({
-      title: titleCore ? `${titleCore}｜${siteName}` : `Columns｜${siteName}`,
-      description: desc || undefined,
-      keywords: isJa ? ['コラム', '一次コンテンツ'] : ['columns', 'original content'],
+      // タイトルに The Gentle Light を直接入れると absolute 扱いになり、country suffix が付かないため避ける
+      title: titleCore || (isJa ? 'コラム' : 'Columns'),
+      description: descWithColumnName || undefined,
+      keywords: keywords.length ? keywords : undefined,
       type: 'article',
       canonical,
     })
   } catch {
     return generateSEOMetadata({
-      title: `Columns｜${siteName}`,
+      title: isJa ? 'コラム' : 'Columns',
       canonical,
     })
   }
@@ -113,7 +159,9 @@ export default async function ColumnDetailPage({ params }: { params: { country: 
   const isJa = lang === 'ja'
 
   const data = await fetchJson<ColumnDetailResponse>(`/v1/${country}/columns/${encodeURIComponent(params.columnId)}`, {
-    next: { revalidate: CACHE_POLICY.stable },
+    ...(process.env.NODE_ENV === 'development'
+      ? ({ cache: 'no-store' } as any)
+      : { next: { revalidate: CACHE_POLICY.frequent } }),
   })
   const c = data.column
   if (!c) return notFound()

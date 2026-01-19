@@ -18,7 +18,7 @@ export function generateMetadata({
 }): Metadata {
   const isJa = params.country === 'jp'
   // JP/EN で suffix を出し分け（ルートの template に依存しない）
-  const suffix = isJa ? 'やさしいニュース The Gentle Light' : 'Calm News The Gentle Light'
+  const suffix = isJa ? 'やさしいニュース The Gentle Light' : 'Calm News — The Gentle Light'
   const country = isCountry(params.country) ? params.country : null
   const countrySuffix = country ? getCountrySeoMeta(country).titleSuffix : ''
   return {

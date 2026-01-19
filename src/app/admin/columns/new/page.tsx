@@ -14,6 +14,7 @@ type ColumnLoc = {
   body_md: string
   seo_title: string
   seo_description: string
+  seo_keywords: string
 }
 
 export default function AdminColumnNewPage() {
@@ -32,8 +33,8 @@ export default function AdminColumnNewPage() {
   const [cropSrc, setCropSrc] = useState<string | null>(null)
   const [activeLang, setActiveLang] = useState<'en' | 'ja'>('ja')
   const [loc, setLoc] = useState<{ en: ColumnLoc; ja: ColumnLoc }>({
-    en: { title: '', slug: '', excerpt: '', body_md: '', seo_title: '', seo_description: '' },
-    ja: { title: '', slug: '', excerpt: '', body_md: '', seo_title: '', seo_description: '' },
+    en: { title: '', slug: '', excerpt: '', body_md: '', seo_title: '', seo_description: '', seo_keywords: '' },
+    ja: { title: '', slug: '', excerpt: '', body_md: '', seo_title: '', seo_description: '', seo_keywords: '' },
   })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -124,6 +125,7 @@ export default function AdminColumnNewPage() {
             body_md: loc.en.body_md,
             seo_title: loc.en.seo_title || null,
             seo_description: loc.en.seo_description || null,
+            seo_keywords: loc.en.seo_keywords || null,
           },
           {
             lang: 'ja',
@@ -133,6 +135,7 @@ export default function AdminColumnNewPage() {
             body_md: loc.ja.body_md,
             seo_title: loc.ja.seo_title || null,
             seo_description: loc.ja.seo_description || null,
+            seo_keywords: loc.ja.seo_keywords || null,
           },
         ],
       })
@@ -538,6 +541,30 @@ export default function AdminColumnNewPage() {
           <div style={{ height: 12 }} />
 
           <label style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span style={{ color: '#495057', fontSize: '0.85rem', fontWeight: 500 }}>SEO説明（seo_description）</span>
+            <textarea
+              value={loc[activeLang].seo_description}
+              onChange={(e) => setLoc((p) => ({ ...p, [activeLang]: { ...p[activeLang], seo_description: e.target.value } }))}
+              rows={3}
+              style={{ padding: '8px 12px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '0.9rem' }}
+            />
+          </label>
+
+          <div style={{ height: 12 }} />
+
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span style={{ color: '#495057', fontSize: '0.85rem', fontWeight: 500 }}>SEOキーワード（seo_keywords / カンマ区切り）</span>
+            <input
+              value={loc[activeLang].seo_keywords}
+              onChange={(e) => setLoc((p) => ({ ...p, [activeLang]: { ...p[activeLang], seo_keywords: e.target.value } }))}
+              placeholder={activeLang === 'ja' ? '例: ニュース疲れ, 情報過多, マインドフルネス' : 'e.g. news anxiety, mindful news, calm reading'}
+              style={{ padding: '8px 12px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '0.9rem' }}
+            />
+          </label>
+
+          <div style={{ height: 12 }} />
+
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <span style={{ color: '#495057', fontSize: '0.85rem', fontWeight: 500 }}>本文（Markdown / body_md）*</span>
             <TiptapMarkdownEditor
               value={loc[activeLang].body_md}
@@ -553,15 +580,6 @@ export default function AdminColumnNewPage() {
 
           <div style={{ height: 12 }} />
 
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <span style={{ color: '#495057', fontSize: '0.85rem', fontWeight: 500 }}>SEO説明（seo_description）</span>
-            <textarea
-              value={loc[activeLang].seo_description}
-              onChange={(e) => setLoc((p) => ({ ...p, [activeLang]: { ...p[activeLang], seo_description: e.target.value } }))}
-              rows={3}
-              style={{ padding: '8px 12px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '0.9rem' }}
-            />
-          </label>
         </section>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

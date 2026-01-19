@@ -31,7 +31,7 @@ export async function generateMetadata({
 
   const lang: Locale = getLocaleForCountry(country)
   const isJa = lang === 'ja'
-  const brandSuffix = isJa ? 'やさしいニュース The Gentle Light' : 'Calm News The Gentle Light'
+  const brandSuffix = isJa ? 'やさしいニュース The Gentle Light' : 'Calm News — The Gentle Light'
   const sep = isJa ? '｜' : ' | '
 
   try {

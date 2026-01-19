@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: { country: string; 
     title: {
       absolute: isJa
         ? `${date}の朝刊｜やさしいニュース The Gentle Light`
-        : `Daily Briefing - ${date} | Calm News The Gentle Light`,
+        : `Daily Briefing - ${date} | Calm News — The Gentle Light`,
     },
     description: isJa
       ? `${date}の主要ニュースを静かな言葉でまとめた朝刊。不安を感じずに世界を知る。`

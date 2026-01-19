@@ -49,7 +49,14 @@ export async function generateMetadata({ params }: { params: { country: string; 
   }
 
   try {
-    const data = await fetchJson<QuoteDetailResponse>(`/v1/${country}/quotes/${encodeURIComponent(quoteId)}`, { next: { revalidate: CACHE_POLICY.stable } })
+    const [data, themesData] = await Promise.all([
+      fetchJson<QuoteDetailResponse>(`/v1/${country}/quotes/${encodeURIComponent(quoteId)}`, {
+        ...(process.env.NODE_ENV === 'development'
+          ? ({ cache: 'no-store' } as any)
+          : { next: { revalidate: CACHE_POLICY.stable } }),
+      }),
+      fetchJson<QuoteThemesResponse>(`/v1/${country}/quotes/themes`, { next: { revalidate: CACHE_POLICY.stable } }),
+    ])
     const q = data.quote
     const author = String(q?.author_name || '').trim()
     const source = String(q?.source_text || '').trim()
@@ -70,8 +77,20 @@ export async function generateMetadata({ params }: { params: { country: string; 
       ? `${author}${source ? ` / ${source}` : ''}：${descBody}`.trim()
       : descBody
 
+    // テーマ棚（theme:*）のローカライズ名を keywords に含める
+    const themeNameByTheme = new Map<string, string>()
+    for (const th of themesData.themes || []) {
+      const key = String(th.theme || '').trim()
+      if (!key) continue
+      const name = String(th.theme_name || '').trim()
+      if (name) themeNameByTheme.set(key, name)
+    }
+    const themeTag = (q.tags || []).find((x) => typeof x === 'string' && x.startsWith('theme:')) || ''
+    const themeKey = themeTag ? themeTag.slice('theme:'.length) : ''
+    const themeLabel = themeKey ? themeNameByTheme.get(themeKey) || themeKey : ''
+
     const keywordsBase = isJa ? ['名言', 'テーマ'] : ['quotes', 'theme']
-    const keywords = [author, source, ...keywordsBase].map((x) => String(x || '').trim()).filter(Boolean)
+    const keywords = [author, source, themeLabel, ...keywordsBase].map((x) => String(x || '').trim()).filter(Boolean)
     const meta = generateSEOMetadata({
       title,
       description: desc || undefined,
@@ -106,7 +125,11 @@ export default async function QuoteDetailPage({ params }: { params: { country: s
   const locale = isJa ? 'ja' : 'en'
 
   const [data, themesData] = await Promise.all([
-    fetchJson<QuoteDetailResponse>(`/v1/${country}/quotes/${encodeURIComponent(params.quoteId)}`, { next: { revalidate: CACHE_POLICY.stable } }),
+    fetchJson<QuoteDetailResponse>(`/v1/${country}/quotes/${encodeURIComponent(params.quoteId)}`, {
+      ...(process.env.NODE_ENV === 'development'
+        ? ({ cache: 'no-store' } as any)
+        : { next: { revalidate: CACHE_POLICY.stable } }),
+    }),
     fetchJson<QuoteThemesResponse>(`/v1/${country}/quotes/themes`, { next: { revalidate: CACHE_POLICY.stable } }),
   ])
   const q = data.quote
