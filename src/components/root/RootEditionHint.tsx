@@ -54,9 +54,8 @@ export function RootEditionHint() {
     }
   }, [])
 
-  if (!saved && !jpDetected) return null
-
-  if (!saved && jpDetected) {
+  if (!saved) {
+    if (!jpDetected) return null
     return (
       <div style={{ marginTop: 10, fontSize: '0.92rem', color: 'var(--muted)', lineHeight: 1.6 }}>
         <Link
