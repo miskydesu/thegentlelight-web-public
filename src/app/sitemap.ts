@@ -263,8 +263,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 3. 固定ページ（changefreq は雑でも揃える。priorityは過信しないがヒントとして記載）
   // NOTE: /saved はユーザー個人の保存リスト（クローラ非対象）なので sitemap から除外する
   // NOTE: /legal は /jp/legal へリダイレクト（互換）なので、sitemap には国別URLを載せる
-  // NOTE: `/` は noindex 方針のため sitemap には載せない（国別トップへ評価を寄せる）
-  const fixedRoutes: string[] = ['/about', '/en/about']
+  // NOTE: `/` は Global Editorial Home として indexable にする（x-default、常緑の入口）
+  const fixedRoutes: string[] = ['/', '/about', '/en/about']
   for (const c of COUNTRIES) {
     fixedRoutes.push(`/${c.code}`)
     fixedRoutes.push(`/${c.code}/news`)
@@ -302,7 +302,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     let changeFrequency: MetadataRoute.Sitemap[number]['changeFrequency'] = 'weekly'
     let priority = 0.6
 
-    if (path === '/about') {
+    if (path === '/') {
+      lastModified = now
+      changeFrequency = 'weekly'
+      priority = 0.8
+    } else if (path === '/about') {
       lastModified = now
       changeFrequency = 'yearly'
       priority = 0.3

@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useMemo, useState } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { getGentleFromUrl, getGentleSwitchedUrl, hasEverEnabledGentle, setPreferredGentle } from '@/lib/view-switch'
 import { getUserToken, updateGentleMode } from '@/lib/userAuth'
@@ -21,8 +22,16 @@ export function ViewSwitch({ className, labelJa }: ViewSwitchProps) {
   const isJa = (pathname || '').startsWith('/jp')
   
   const gentle = getGentleFromUrl(`${pathname || ''}?${searchParams?.toString() || ''}`)
-  const loggedIn = Boolean(getUserToken())
-  const show = loggedIn || gentle || hasEverEnabledGentle()
+  // Hydration mismatch対策:
+  // - getUserToken()/hasEverEnabledGentle() は localStorage/cookie に依存し、SSRと初回CSRで差が出やすい
+  // - そのため「URL由来（gentle）」だけはSSRでも確定させ、その他はmount後に判定する
+  const [clientHints, setClientHints] = useState<{ loggedIn: boolean; everEnabled: boolean } | null>(null)
+  useEffect(() => {
+    setClientHints({ loggedIn: Boolean(getUserToken()), everEnabled: hasEverEnabledGentle() })
+  }, [])
+
+  const loggedIn = clientHints?.loggedIn || false
+  const show = gentle || loggedIn || (clientHints?.everEnabled || false)
   if (!show) return null
   
   const handleToggle = (nextGentle: boolean) => {
@@ -33,7 +42,7 @@ export function ViewSwitch({ className, labelJa }: ViewSwitchProps) {
     
     setPreferredGentle(nextGentle)
     // ログイン中はユーザー設定にも保存（非ログイン時はCookie/localStorageのみ）
-    if (loggedIn) {
+    if (Boolean(getUserToken())) {
       void updateGentleMode(nextGentle).catch(() => {
         // ignore (guest / network / unauthorized)
       })
