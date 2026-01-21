@@ -39,9 +39,13 @@ export function Footer() {
     const columnsHref = isEnLangPage || isEnEdition ? '/en/columns' : `/${country}/columns`
     const quotesHref = isEnLangPage || isEnEdition ? '/en/quotes' : `/${country}/quotes`
 
+    const labelRoot = isJa ? 'ホーム' : 'Home (Global)'
+    const labelDaily = isJa ? '今朝の朝刊' : 'Morning Briefing'
+    const labelNews = isJa ? 'ニュース一覧' : 'News Index'
     return [
-      { label: isJa ? '朝刊（5分）' : 'Briefing (5 min)', href: `/${country}/daily`, isPrimary: true },
-      { label: isJa ? 'ニュース' : 'News', href: `/${country}/news` },
+      { label: labelRoot, href: '/', isPrimary: true },
+      { label: labelDaily, href: `/${country}/daily` },
+      { label: labelNews, href: `/${country}/news` },
       { label: isJa ? '心温まる話' : 'Heartwarming', href: `/${country}/category/heartwarming?gentle=1` },
       { label: isJa ? 'コラム' : 'Columns', href: columnsHref },
       { label: isJa ? '名言' : 'Quotes', href: quotesHref },

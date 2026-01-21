@@ -197,6 +197,10 @@ export function Header({ country, className }: HeaderProps) {
     if (!clean) return false
     // 国トップは prefix 判定にすると常に当たるので「完全一致」のみ
     if (country && clean === `/${country}`) return safePathname === clean
+    // 朝刊「今日」リンクは /daily 配下すべてをアクティブ扱いにする
+    if (country && clean === `/${country}/daily/today`) {
+      return safePathname === `/${country}/daily` || safePathname.startsWith(`/${country}/daily/`)
+    }
     return safePathname === clean || safePathname.startsWith(`${clean}/`)
   }
 
@@ -209,8 +213,9 @@ export function Header({ country, className }: HeaderProps) {
 
   const menuItems = useMemo(() => {
     if (!country) return []
-    const labelTop = t?.nav.top ?? (isJa ? 'トップ' : 'Home')
-    const labelDailyToday = isJa ? '今日の朝刊' : "Today's Briefing"
+    const labelRoot = isJa ? 'ホーム' : 'Home (Global)'
+    const labelTop = isJa ? '最新ニュース' : 'Latest News'
+    const labelDailyToday = isJa ? '今朝の朝刊' : 'Morning Briefing'
     const isEnEdition = country === 'us' || country === 'ca' || country === 'uk'
     return [
       { kind: 'link' as const, label: labelTop, href: `/${country}` },
@@ -231,14 +236,16 @@ export function Header({ country, className }: HeaderProps) {
       { kind: 'link' as const, label: isJa ? '名言' : 'Quotes', href: isEnEdition ? `/en/quotes` : `/${country}/quotes` },
       { kind: 'sep' as const },
       { kind: 'link' as const, label: isJa ? 'サイトの説明' : 'About', href: isEnEdition ? `/en/about` : `/${country}/about` },
+      ...(country === 'jp' ? [] : ([{ kind: 'link' as const, label: labelRoot, href: '/' }] as const)),
     ]
   }, [country, isJa, locale, t])
 
   const mobilePrimaryItems = useMemo(() => {
     if (!country) return []
-    const labelTop = t?.nav.top ?? (isJa ? 'トップ' : 'Home')
-    const labelDailyToday = isJa ? '今日の朝刊' : "Today's Briefing"
-    const labelNews = isJa ? 'ニュース' : 'News'
+    const labelRoot = isJa ? 'ホーム' : 'Home (Global)'
+    const labelTop = isJa ? '最新ニュース' : 'Latest News'
+    const labelDailyToday = isJa ? '今朝の朝刊' : 'Morning Briefing'
+    const labelNews = isJa ? 'ニュース一覧' : 'News Index'
     const labelColumns = isJa ? 'コラム' : 'Columns'
     const labelQuotes = isJa ? '名言' : 'Quotes'
     const labelAbout = isJa ? 'サイトの説明' : 'About'
@@ -252,15 +259,17 @@ export function Header({ country, className }: HeaderProps) {
       { label: labelColumns, href: isEnEdition ? `/en/columns` : `/${country}/columns` },
       { label: labelQuotes, href: isEnEdition ? `/en/quotes` : `/${country}/quotes` },
       { label: labelAbout, href: isEnEdition ? `/en/about` : `/${country}/about` },
+      { label: labelRoot, href: '/' },
     ]
   }, [country, isJa, locale, t])
 
   // Desktop (>=1024想定): 下段ナビは「レベル1」だけに絞る（カテゴリは /news 側の棚に集約）
   const desktopNavItems = useMemo(() => {
     if (!country) return { left: [], right: null as any }
-    const labelTop = t?.nav.top ?? (isJa ? 'トップ' : 'Home')
-    const labelDailyToday = isJa ? '今日の朝刊' : "Today's Briefing"
-    const labelNews = isJa ? 'ニュース' : 'News'
+    const labelRoot = isJa ? 'ホーム' : 'Home (Global)'
+    const labelTop = isJa ? '最新ニュース' : 'Latest News'
+    const labelDailyToday = isJa ? '今朝の朝刊' : 'Morning Briefing'
+    const labelNews = isJa ? 'ニュース一覧' : 'News Index'
     const labelColumns = isJa ? 'コラム' : 'Columns'
     const labelQuotes = isJa ? '名言' : 'Quotes'
     const labelAbout = isJa ? 'サイトの説明' : 'About'
@@ -274,6 +283,7 @@ export function Header({ country, className }: HeaderProps) {
       { label: labelHeartwarming, href: `/${country}/category/heartwarming` },
       { label: labelColumns, href: isEnEdition ? `/en/columns` : `/${country}/columns` },
       { label: labelQuotes, href: isEnEdition ? `/en/quotes` : `/${country}/quotes` },
+      ...(country === 'jp' ? [] : ([{ label: labelRoot, href: '/' }] as const)),
     ]
     const right = { label: labelAbout, href: isEnEdition ? `/en/about` : `/${country}/about` }
     return { left, right }
