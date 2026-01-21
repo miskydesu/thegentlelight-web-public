@@ -419,6 +419,91 @@
   text-underline-offset: 3px;
 }
 
+.previewSubLink {
+  display: inline-block;
+  margin-top: 8px;
+  color: rgba(0, 0, 0, 0.48);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.previewSubLink:hover,
+.previewSubLink:focus-visible {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: rgba(0, 0, 0, 0.28);
+  text-underline-offset: 3px;
+}
+
+.previewLinks {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 0.9rem;
+}
+
+.previewLinkLabel {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.previewLinkItem {
+  color: rgba(0, 0, 0, 0.5);
+  text-decoration: none;
+}
+
+.previewLinkItem:hover,
+.previewLinkItem:focus-visible {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: rgba(0, 0, 0, 0.28);
+  text-underline-offset: 3px;
+}
+
+.previewLinkDot {
+  opacity: 0.45;
+}
+
+.quoteCard {
+  margin-top: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  padding: 14px 14px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.quoteText {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.quoteAuthor {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.quoteLink {
+  display: inline-block;
+  margin-top: 10px;
+  color: rgba(0, 0, 0, 0.6);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.quoteLink:hover,
+.quoteLink:focus-visible {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: rgba(0, 0, 0, 0.32);
+  text-underline-offset: 3px;
+}
+
 .footerNote {
   margin-top: 4px;
   padding: 18px 6px 6px;

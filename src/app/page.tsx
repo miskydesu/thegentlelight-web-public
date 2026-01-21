@@ -13,13 +13,18 @@ export function generateMetadata(): Metadata {
   return generateSEOMetadata({
     title: 'The Gentle Light — News, without the noise.',
     description:
-      'A calm editorial home for living with the news: reduce doomscrolling, lower anxiety, and stay informed without sensationalism. Start with guides, then choose your news edition (US / Canada).',
+      'A calm editorial home for living with the news: reduce doomscrolling, lower anxiety, and stay informed without sensationalism. Start with guides, then choose your news edition (US / Canada / UK).',
     keywords: [
       'doomscrolling',
+      'how to stop doomscrolling',
+      'how to stop scrolling',
+      'information overload',
       'news anxiety',
       'news fatigue',
       'calm news',
       'gentle news',
+      'digital minimalism',
+      'digital detox',
       'non-sensational news',
       'stay informed without anxiety',
       'healthy news consumption',
@@ -42,6 +47,16 @@ type ColumnListResponse = {
   meta: ApiMeta
 }
 
+type QuoteListResponse = {
+  quotes: Array<{
+    quote_id: string
+    text?: string | null
+    quote?: string | null
+    author?: string | null
+  }>
+  meta?: ApiMeta
+}
+
 export default async function Home() {
   const imageBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || process.env.IMAGE_BASE_URL || ''
   const b = imageBase ? imageBase.replace(/\/+$/, '') : ''
@@ -55,11 +70,12 @@ export default async function Home() {
   // / はグローバル入口。見出しは全版をHTMLに含め、クライアントで初期タブのみ切替する。
   // - columns/quotes は /en に集約（代表として CA のデータを利用）
   // - headlines は US/CA/UK を各1〜2件（JPは除外）
-  const [columns, usLatest, caLatest, ukLatest] = await Promise.all([
+  const [columns, usLatest, caLatest, ukLatest, quoteList] = await Promise.all([
     fetchJson<ColumnListResponse>(`/v1/ca/columns?limit=6`, { next: { revalidate: CACHE_POLICY.meta } }).catch(() => null),
     fetchJson<LatestResponse>(`/v1/us/latest?limit=3`, { next: { revalidate: CACHE_POLICY.meta } }).catch(() => null),
     fetchJson<LatestResponse>(`/v1/ca/latest?limit=3`, { next: { revalidate: CACHE_POLICY.meta } }).catch(() => null),
     fetchJson<LatestResponse>(`/v1/uk/latest?limit=3`, { next: { revalidate: CACHE_POLICY.meta } }).catch(() => null),
+    fetchJson<QuoteListResponse>(`/v1/ca/quotes?limit=1`, { next: { revalidate: CACHE_POLICY.meta } }).catch(() => null),
   ])
 
   const pickTopics = (r: LatestResponse | null) =>
@@ -71,6 +87,13 @@ export default async function Home() {
   const usTopics = pickTopics(usLatest)
   const caTopics = pickTopics(caLatest)
   const ukTopics = pickTopics(ukLatest)
+  const firstQuote = (quoteList?.quotes || [])[0]
+  const quoteText = String(firstQuote?.text || firstQuote?.quote || '').trim()
+  const quoteAuthor = String(firstQuote?.author || '').trim()
+  const fallbackQuote = 'Nothing can bring you peace but yourself.'
+  const fallbackAuthor = 'Ralph Waldo Emerson'
+  const displayQuoteText = quoteText || fallbackQuote
+  const displayQuoteAuthor = quoteAuthor || fallbackAuthor
 
   return (
     <>
@@ -159,6 +182,14 @@ export default async function Home() {
 
             <HeadlinesTabs us={usTopics} ca={caTopics} uk={ukTopics} />
           </section>
+
+          <div className={styles.quoteCard} aria-label="quote preview">
+            <p className={styles.quoteText}>“{displayQuoteText}”</p>
+            <div className={styles.quoteAuthor}>— {displayQuoteAuthor}</div>
+            <Link className={styles.quoteLink} href="/en/quotes">
+              See more (Quotes)
+            </Link>
+          </div>
 
           <div className={styles.footerNote} aria-label="closing note">
             Take what you need. Leave the rest.

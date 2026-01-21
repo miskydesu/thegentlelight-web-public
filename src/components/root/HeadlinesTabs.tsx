@@ -102,9 +102,24 @@ export function HeadlinesTabs({ us, ca, uk }: HeadlinesTabsProps) {
                   </li>
                 ))}
               </ul>
-              <Link className={styles.previewMore} href={`/${t.code}/news`}>
-                More, if you want
-              </Link>
+              <div className={styles.previewLinks} aria-label="headlines links">
+                <span className={styles.previewLinkLabel}>Explore</span>
+                <Link className={styles.previewLinkItem} href={`/${t.code}/news`}>
+                  See more ({t.label})
+                </Link>
+                <span className={styles.previewLinkDot} aria-hidden="true">
+                  ·
+                </span>
+                <Link className={styles.previewLinkItem} href={`/${t.code}`}>
+                  {t.label} home
+                </Link>
+                <span className={styles.previewLinkDot} aria-hidden="true">
+                  ·
+                </span>
+                <Link className={styles.previewLinkItem} href={`/${t.code}/category/heartwarming`}>
+                  Heartwarming
+                </Link>
+              </div>
             </div>
           </div>
         ))}
