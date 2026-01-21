@@ -40,12 +40,35 @@ function getSavedCountry(): Country | null {
 
 export function RootEditionHint() {
   const [saved, setSaved] = useState<Country | null>(null)
+  const [jpDetected, setJpDetected] = useState(false)
 
   useEffect(() => {
     setSaved(getSavedCountry())
+    try {
+      const lang = String(navigator.language || '').toLowerCase()
+      const langs = Array.isArray(navigator.languages) ? navigator.languages.map((l) => String(l).toLowerCase()) : []
+      const isJpLang = lang.startsWith('ja') || langs.some((l) => l.startsWith('ja'))
+      setJpDetected(isJpLang)
+    } catch {
+      // ignore
+    }
   }, [])
 
-  if (!saved) return null
+  if (!saved && !jpDetected) return null
+
+  if (!saved && jpDetected) {
+    return (
+      <div style={{ marginTop: 10, fontSize: '0.92rem', color: 'var(--muted)', lineHeight: 1.6 }}>
+        <Link
+          href="/jp"
+          onClick={() => setCountryPreference('jp')}
+          style={{ color: 'var(--text)', textDecoration: 'underline', textDecorationStyle: 'dotted', textUnderlineOffset: 3 }}
+        >
+          日本語版はこちら
+        </Link>
+      </div>
+    )
+  }
 
   const label = saved === 'us' ? 'US' : saved === 'ca' ? 'Canada' : saved === 'uk' ? 'UK' : 'Japan'
 
