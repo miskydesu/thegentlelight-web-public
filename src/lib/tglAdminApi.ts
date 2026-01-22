@@ -614,6 +614,7 @@ export async function adminCheckDuplicateQuote(quoteTextJa?: string, quoteTextEn
 export async function adminCreateQuoteWithGpt(body: {
   tags?: string[]
   is_published?: boolean
+  published_at?: string | null
   quote_text_ja: string
   author_name_ja?: string | null
   source_text_ja?: string | null
@@ -638,6 +639,7 @@ export async function adminCreateQuoteWithGpt(body: {
 export async function adminCreateQuoteWithGptEn(body: {
   tags?: string[]
   is_published?: boolean
+  published_at?: string | null
   quote_text_en: string
   author_name_en?: string | null
   source_text_en?: string | null

@@ -11,6 +11,7 @@ export default function AdminQuoteNewGptPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [availableTags, setAvailableTags] = useState<any[]>([])
   const [isPublished, setIsPublished] = useState(true)
+  const [publishedAtLocal, setPublishedAtLocal] = useState('') // datetime-local (browser local time)
   const [quoteTextJa, setQuoteTextJa] = useState('')
   const [authorNameJa, setAuthorNameJa] = useState('')
   const [sourceTextJa, setSourceTextJa] = useState('')
@@ -72,6 +73,7 @@ export default function AdminQuoteNewGptPage() {
       const res = await adminCreateQuoteWithGpt({
         tags: tagsArray,
         is_published: isPublished,
+        published_at: publishedAtLocal ? new Date(publishedAtLocal).toISOString() : null,
         quote_text_ja: quoteTextJa,
         author_name_ja: authorNameJa || null,
         source_text_ja: sourceTextJa || null,
@@ -105,6 +107,17 @@ export default function AdminQuoteNewGptPage() {
   const handleTagChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selected = Array.from(e.target.selectedOptions, (option) => option.value)
     setSelectedTags(selected)
+  }
+
+  const nowAsDatetimeLocal = (): string => {
+    const d = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const yyyy = d.getFullYear()
+    const mm = pad(d.getMonth() + 1)
+    const dd = pad(d.getDate())
+    const hh = pad(d.getHours())
+    const mi = pad(d.getMinutes())
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`
   }
 
   return (
@@ -254,6 +267,62 @@ export default function AdminQuoteNewGptPage() {
                 <option value="true">公開</option>
                 <option value="false">下書き</option>
               </select>
+            </label>
+            <label
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
+              <span style={{ color: '#495057', fontSize: '0.85rem', fontWeight: 500 }}>公開日時（published_at）</span>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <input
+                  type="datetime-local"
+                  value={publishedAtLocal}
+                  onChange={(e) => setPublishedAtLocal(e.target.value)}
+                  disabled={busy}
+                  style={{
+                    padding: '10px 12px',
+                    border: '1px solid #ced4da',
+                    borderRadius: '4px',
+                    fontSize: '0.9rem',
+                    backgroundColor: '#fff',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setPublishedAtLocal(nowAsDatetimeLocal())}
+                  disabled={busy}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: 6,
+                    border: '1px solid #ced4da',
+                    backgroundColor: '#fff',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                  }}
+                >
+                  今（Now）
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPublishedAtLocal('')}
+                  disabled={busy || !publishedAtLocal}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: 6,
+                    border: '1px solid #ced4da',
+                    backgroundColor: '#fff',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                  }}
+                  title="クリアすると published_at は null になります"
+                >
+                  クリア
+                </button>
+              </div>
+              <div style={{ color: '#6c757d', fontSize: '0.8rem' }}>※ is_published=true かつ published_at が未来の場合は予約投稿になります</div>
             </label>
           </div>
         </section>

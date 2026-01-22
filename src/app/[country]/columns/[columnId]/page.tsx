@@ -21,10 +21,11 @@ type ColumnDetailResponse = {
     seo_keywords?: string | null
     tags: string[]
     cover_image_key: string | null
-    column_name?: { name: string } | null
+    column_name?: { column_name_id?: string; slug?: string; name: string } | null
     writer_name?: string | null
     writer_name_en?: string | null
     writer_name_jp?: string | null
+    writers?: Array<{ writer_id: string; writer_name_en: string | null; writer_name_jp: string | null }>
     published_at: string | null
     updated_at: string | null
   }
@@ -81,6 +82,7 @@ export async function generateMetadata({ params }: { params: { country: string; 
   const canonical = canonicalUrl(`/${country}/columns/${encodeURIComponent(columnId)}`)
   const lang: Locale = getLocaleForCountry(country)
   const isJa = lang === 'ja'
+  const seriesSlug = c.column_name?.slug || c.column_name?.column_name_id || null
 
   const splitKeywords = (raw: string) =>
     String(raw || '')
@@ -190,7 +192,24 @@ export default async function ColumnDetailPage({ params }: { params: { country: 
         </CardTitle>
         <CardMeta className={styles.metaRow}>
           <span className={styles.metaLeft}>
-            {c.writer_name ? <span className={styles.countPill}>{c.writer_name}</span> : null}
+            {c.writers?.length
+              ? c.writers.map((w) => {
+                  const label = (isJa ? w.writer_name_jp : w.writer_name_en) || w.writer_name_en || w.writer_name_jp
+                  if (!label || !w.writer_id) return null
+                  return (
+                    <Link key={w.writer_id} href={`/${country}/writers/${encodeURIComponent(w.writer_id)}`} className={styles.writerPill}>
+                      {label}
+                    </Link>
+                  )
+                })
+              : c.writer_name
+                ? <span className={styles.countPill}>{c.writer_name}</span>
+                : null}
+            {c.column_name?.name && seriesSlug ? (
+              <Link href={`/${country}/columns/series/${encodeURIComponent(seriesSlug)}`} className={styles.seriesLink}>
+                {isJa ? `シリーズ: ${c.column_name.name}` : `Series: ${c.column_name.name}`}
+              </Link>
+            ) : null}
             {c.tags?.length
               ? c.tags.slice(0, 8).map((tag) => (
                   <span key={tag} className={styles.categoryBadge}>

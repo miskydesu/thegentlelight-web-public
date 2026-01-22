@@ -196,10 +196,12 @@ export default async function EnQuotesPage({ searchParams }: { searchParams: { q
             <Card key={qq.quote_id} className={styles.topCard}>
               <Link href={`/en/quotes/${qq.quote_id}`} className={styles.mainLink}>
                 <CardTitle className={styles.quoteTitle}>{qq.quote_text || '—'}</CardTitle>
-                <div className={styles.metaRow}>
-                  {qq.author_name ? <span>{qq.author_name}</span> : null}
-                  {qq.source_text ? <span>{qq.author_name ? ' / ' : ''}{qq.source_text}</span> : null}
-                </div>
+                {(qq.author_name || qq.source_text) ? (
+                  <div className={styles.metaRow}>
+                    {qq.author_name ? <span className={styles.quoteAuthor}>{qq.author_name}</span> : null}
+                    {qq.source_text ? <span className={styles.quoteSource}>{qq.source_text}</span> : null}
+                  </div>
+                ) : null}
               </Link>
 
               {qq.tags?.length

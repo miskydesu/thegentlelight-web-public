@@ -73,6 +73,43 @@
   white-space: nowrap;
 }
 
+.writerPill {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 4px;
+  padding: 1px 8px;
+  font-size: 0.80rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.writerPill:hover {
+  text-decoration: underline;
+}
+
+.seriesLink {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 999px;
+  padding: 1px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.seriesLink:hover {
+  text-decoration: underline;
+}
+
 .metaRow {
   display: flex;
   justify-content: space-between;

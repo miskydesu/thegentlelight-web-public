@@ -22,10 +22,11 @@ type ColumnDetailResponse = {
     seo_keywords?: string | null
     tags: string[]
     cover_image_key: string | null
-    column_name?: { name: string } | null
+    column_name?: { column_name_id?: string; slug?: string; name: string } | null
     writer_name?: string | null
     writer_name_en?: string | null
     writer_name_jp?: string | null
+    writers?: Array<{ writer_id: string; writer_name_en: string | null; writer_name_jp: string | null }>
     published_at: string | null
     updated_at: string | null
   }
@@ -140,6 +141,7 @@ export default async function EnColumnDetailPage({ params }: { params: { columnI
   const c = data.column
 
   const coverSrc = imageBase && c.cover_image_key ? joinUrl(imageBase, c.cover_image_key) : null
+  const seriesSlug = c.column_name?.slug || c.column_name?.column_name_id || null
   // column本文内の /{country}/... トークンは、ユーザーの「ニュース版」へ寄せる
   const html = c.body_md ? renderMarkdownToSafeishHtml(replaceCountryToken(c.body_md, preferred)) : ''
 
@@ -171,7 +173,24 @@ export default async function EnColumnDetailPage({ params }: { params: { columnI
         </CardTitle>
         <CardMeta className={styles.metaRow}>
           <span className={styles.metaLeft}>
-            {c.writer_name ? <span className={styles.countPill}>{c.writer_name}</span> : null}
+            {c.writers?.length
+              ? c.writers.map((w) => {
+                  const label = w.writer_name_en || w.writer_name_jp
+                  if (!label || !w.writer_id) return null
+                  return (
+                    <Link key={w.writer_id} href={`/en/writers/${encodeURIComponent(w.writer_id)}`} className={styles.writerPill}>
+                      {label}
+                    </Link>
+                  )
+                })
+              : c.writer_name
+                ? <span className={styles.countPill}>{c.writer_name}</span>
+                : null}
+            {c.column_name?.name && seriesSlug ? (
+              <Link href={`/en/columns/series/${encodeURIComponent(seriesSlug)}`} className={styles.seriesLink}>
+                {`Series: ${c.column_name.name}`}
+              </Link>
+            ) : null}
             {c.tags?.length
               ? c.tags.slice(0, 8).map((tag) => (
                   <span key={tag} className={styles.categoryBadge}>

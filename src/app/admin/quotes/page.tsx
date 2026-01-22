@@ -591,6 +591,9 @@ export default function AdminQuotesPage() {
                     公開状態
                   </th>
                   <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, color: '#495057', fontSize: '0.85rem' }}>
+                    公開日時
+                  </th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, color: '#495057', fontSize: '0.85rem' }}>
                     更新日時
                   </th>
                   <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, color: '#495057', fontSize: '0.85rem' }}>
@@ -673,31 +676,52 @@ export default function AdminQuotesPage() {
                       )}
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.85rem' }}>
-                      {item.is_published ? (
-                        <span
-                          style={{
-                            padding: '4px 12px',
-                            backgroundColor: '#d4edda',
-                            color: '#155724',
-                            borderRadius: '4px',
-                            fontWeight: 500,
-                          }}
-                        >
-                          公開
-                        </span>
-                      ) : (
-                        <span
-                          style={{
-                            padding: '4px 12px',
-                            backgroundColor: '#f8d7da',
-                            color: '#721c24',
-                            borderRadius: '4px',
-                            fontWeight: 500,
-                          }}
-                        >
-                          未公開
-                        </span>
-                      )}
+                      {(() => {
+                        const isScheduled = item.is_published && item.published_at && new Date(item.published_at) > new Date()
+                        if (isScheduled) {
+                          return (
+                            <span
+                              style={{
+                                padding: '4px 12px',
+                                backgroundColor: '#fff3cd',
+                                color: '#856404',
+                                borderRadius: '4px',
+                                fontWeight: 500,
+                              }}
+                            >
+                              予約
+                            </span>
+                          )
+                        }
+                        return item.is_published ? (
+                          <span
+                            style={{
+                              padding: '4px 12px',
+                              backgroundColor: '#d4edda',
+                              color: '#155724',
+                              borderRadius: '4px',
+                              fontWeight: 500,
+                            }}
+                          >
+                            公開
+                          </span>
+                        ) : (
+                          <span
+                            style={{
+                              padding: '4px 12px',
+                              backgroundColor: '#f8d7da',
+                              color: '#721c24',
+                              borderRadius: '4px',
+                              fontWeight: 500,
+                            }}
+                          >
+                            未公開
+                          </span>
+                        )
+                      })()}
+                    </td>
+                    <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.85rem', color: '#6c757d' }}>
+                      {formatDateTime(item.published_at)}
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.85rem', color: '#6c757d' }}>
                       {formatDateTime(item.updated_at)}

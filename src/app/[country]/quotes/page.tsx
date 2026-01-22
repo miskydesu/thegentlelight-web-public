@@ -147,7 +147,15 @@ export default async function QuotesPage({
     <main>
       <div className={styles.shelfHeader}>
         <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? '名言・癒しの言葉' : 'Inspirational Quotes'}</h1>
-        <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>{t.pages.quotes.subtitle}</span>
+        {lang === 'ja' ? (
+          <div className={styles.quoteSubcopy}>
+            心に残った名言を、少しずつ集めています。
+            <br />
+            落ち着きたいときに、そっと開ける場所に。
+          </div>
+        ) : (
+          <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>{t.pages.quotes.subtitle}</span>
+        )}
       </div>
 
       <div style={{ height: 12 }} />
@@ -235,10 +243,12 @@ export default async function QuotesPage({
             <Card key={q.quote_id} className={styles.topCard}>
               <Link href={`/${country}/quotes/${q.quote_id}`} className={styles.mainLink}>
                 <CardTitle className={styles.quoteTitle}>{q.quote_text || '—'}</CardTitle>
-                <div className={styles.metaRow}>
-                  {q.author_name ? <span>{q.author_name}</span> : null}
-                  {q.source_text ? <span>{q.author_name ? ' / ' : ''}{q.source_text}</span> : null}
-                </div>
+                {(q.author_name || q.source_text) ? (
+                  <div className={styles.metaRow}>
+                    {q.author_name ? <span className={styles.quoteAuthor}>{q.author_name}</span> : null}
+                    {q.source_text ? <span className={styles.quoteSource}>{q.source_text}</span> : null}
+                  </div>
+                ) : null}
               </Link>
 
               {q.tags?.length ? (() => {

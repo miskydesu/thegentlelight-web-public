@@ -18,6 +18,11 @@ type ColumnItem = {
   column_id: string
   published_at: string | null
   updated_at: string
+  column_name?: {
+    column_name_id: string
+    slug: string
+  } | null
+  writers?: Array<{ writer_id: string }>
 }
 
 type QuoteItem = {
@@ -119,6 +124,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { next: { revalidate: CACHE_POLICY.meta } } // キャッシュ（メタ系）
       )
 
+      const seriesSlugs = new Set<string>()
+      const writerIds = new Set<string>()
       for (const column of columnsResponse.columns) {
         const lastModified = column.published_at ? new Date(column.published_at) : new Date(column.updated_at)
         // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
@@ -128,6 +135,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           changeFrequency: 'weekly' as const,
           // コラム詳細（少数精鋭）
           priority: c.code === 'jp' ? 0.75 : 0.9,
+        })
+        if (column.column_name?.slug) seriesSlugs.add(column.column_name.slug)
+        for (const w of column.writers || []) {
+          if (w?.writer_id) writerIds.add(w.writer_id)
+        }
+      }
+
+      // コラム名（シリーズ）集約ページ
+      for (const slug of Array.from(seriesSlugs)) {
+        const seriesPrefix = c.code === 'ca' ? `${base}/en/columns/series` : `${base}/${c.code}/columns/series`
+        entries.push({
+          url: `${seriesPrefix}/${encodeURIComponent(slug)}`.replace(/\/$/, ''),
+          lastModified: now,
+          changeFrequency: 'weekly' as const,
+          priority: c.code === 'jp' ? 0.6 : 0.7,
+        })
+      }
+
+      for (const writerId of Array.from(writerIds)) {
+        const writerPrefix = c.code === 'ca' ? `${base}/en/writers` : `${base}/${c.code}/writers`
+        entries.push({
+          url: `${writerPrefix}/${encodeURIComponent(writerId)}`.replace(/\/$/, ''),
+          lastModified: now,
+          changeFrequency: 'weekly' as const,
+          priority: c.code === 'jp' ? 0.55 : 0.65,
         })
       }
     } catch (error) {

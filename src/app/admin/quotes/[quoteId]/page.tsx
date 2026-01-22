@@ -21,6 +21,7 @@ export default function AdminQuoteDetailPage() {
   const [sourceText, setSourceText] = useState('')
   const [tags, setTags] = useState('')
   const [isPublished, setIsPublished] = useState(true)
+  const [publishedAtLocal, setPublishedAtLocal] = useState('') // datetime-local (browser local time)
   // 言語別のstateを管理
   const [localizations, setLocalizations] = useState<{
     en: { quoteText: string; authorName: string; sourceText: string; note: string; context: string }
@@ -51,6 +52,20 @@ export default function AdminQuoteDetailPage() {
         const q = qEn || qJa
         setTags(Array.isArray(q.tags) ? q.tags.join(', ') : '')
         setIsPublished(q.is_published !== false)
+        // published_at(ISO) -> datetime-local
+        const iso = q.published_at ? String(q.published_at) : ''
+        if (iso) {
+          const d = new Date(iso)
+          const pad = (n: number) => String(n).padStart(2, '0')
+          const yyyy = d.getFullYear()
+          const mm = pad(d.getMonth() + 1)
+          const dd = pad(d.getDate())
+          const hh = pad(d.getHours())
+          const mi = pad(d.getMinutes())
+          setPublishedAtLocal(`${yyyy}-${mm}-${dd}T${hh}:${mi}`)
+        } else {
+          setPublishedAtLocal('')
+        }
         
         // 両言語のデータを保持
         const locEn = qEn?.localizations?.en
@@ -99,6 +114,7 @@ export default function AdminQuoteDetailPage() {
       await adminUpdateQuote(quoteId, {
         tags: tagsArray,
         is_published: isPublished,
+        published_at: publishedAtLocal ? new Date(publishedAtLocal).toISOString() : null,
         localizations: {
           en: {
             quote_text: localizations.en.quoteText,
@@ -122,6 +138,17 @@ export default function AdminQuoteDetailPage() {
     } finally {
       setBusy(false)
     }
+  }
+
+  const nowAsDatetimeLocal = (): string => {
+    const d = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const yyyy = d.getFullYear()
+    const mm = pad(d.getMonth() + 1)
+    const dd = pad(d.getDate())
+    const hh = pad(d.getHours())
+    const mi = pad(d.getMinutes())
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`
   }
 
   const handleGenerateEn = async () => {
@@ -224,6 +251,52 @@ export default function AdminQuoteDetailPage() {
           <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} />
             <span className="tglMuted">is_published</span>
+          </label>
+          <label>
+            <div className="tglMuted">公開日時（published_at）</div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <input
+                type="datetime-local"
+                value={publishedAtLocal}
+                onChange={(e) => setPublishedAtLocal(e.target.value)}
+                disabled={busy}
+                style={{ width: 'fit-content', padding: '0.6rem' }}
+              />
+              <button
+                type="button"
+                onClick={() => setPublishedAtLocal(nowAsDatetimeLocal())}
+                disabled={busy}
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: 6,
+                  border: '1px solid #ced4da',
+                  backgroundColor: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+              >
+                今（Now）
+              </button>
+              <button
+                type="button"
+                onClick={() => setPublishedAtLocal('')}
+                disabled={busy || !publishedAtLocal}
+                style={{
+                  padding: '6px 10px',
+                  borderRadius: 6,
+                  border: '1px solid #ced4da',
+                  backgroundColor: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+                title="クリアすると published_at は null になります"
+              >
+                クリア
+              </button>
+            </div>
+            <div style={{ color: '#6c757d', fontSize: '0.8rem' }}>
+              ※ is_published=true かつ published_at が未来の場合は予約投稿になります
+            </div>
           </label>
         </div>
 

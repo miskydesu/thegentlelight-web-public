@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { isCountry, fetchJson, type ApiMeta } from '@/lib/tglApi'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
+import { WriterLink } from '@/components/columns/WriterLink'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import styles from './columns.module.css'
 import { CACHE_POLICY } from '@/lib/cache-policy'
@@ -24,6 +25,7 @@ type ColumnsResponse = {
     tags: string[]
     cover_image_key: string | null
     writer_name?: string | null
+    writers?: Array<{ writer_id: string; writer_name_en: string | null; writer_name_jp: string | null }>
     column_name?: {
       column_name_id: string
       slug: string
@@ -91,6 +93,7 @@ export default async function ColumnsPage({ params }: { params: { country: strin
         title: string
         description: string | null
         display_order: number | null
+        slug: string | null
         columns: ColumnsResponse['columns']
       }
     >()
@@ -104,7 +107,7 @@ export default async function ColumnsPage({ params }: { params: { country: strin
       const description = cn?.description ?? null
       const display_order = cn?.display_order ?? null
       if (!map.has(key)) {
-        map.set(key, { key, title, description, display_order, columns: [] })
+        map.set(key, { key, title, description, display_order, slug: cn?.slug ?? null, columns: [] })
       }
       // descriptionは最初に来た値を採用（同じ棚内で揺れない想定）
       map.get(key)!.columns.push(c)
@@ -130,6 +133,30 @@ export default async function ColumnsPage({ params }: { params: { country: strin
     }
     return arr
   })()
+
+  const getDateValue = (c: ColumnsResponse['columns'][number]) => c.published_at || c.updated_at || ''
+  const featured = [...data.columns].sort((a, b) => getDateValue(b).localeCompare(getDateValue(a)))[0] || null
+  const featuredId = featured?.column_id || null
+  const visibleGroups = groups
+    .map((g) => ({ ...g, columns: g.columns.filter((c) => c.column_id !== featuredId) }))
+    .filter((g) => g.columns.length > 0)
+
+  const renderWriters = (writers?: ColumnsResponse['columns'][number]['writers'], fallback?: string | null) => {
+    if (writers?.length) {
+      return writers.map((w) => {
+        const label = (isJa ? w.writer_name_jp : w.writer_name_en) || w.writer_name_en || w.writer_name_jp
+        if (!label || !w.writer_id) return null
+        const text = isJa ? `ライター: ${label}` : `By ${label}`
+        return (
+          <WriterLink key={w.writer_id} href={`/${country}/writers/${encodeURIComponent(w.writer_id)}`} className={styles.writerName}>
+            {text}
+          </WriterLink>
+        )
+      })
+    }
+    if (!fallback) return null
+    return <span className={styles.writerName}>{isJa ? `ライター: ${fallback}` : `By ${fallback}`}</span>
+  }
 
   return (
     <main>
@@ -159,10 +186,56 @@ export default async function ColumnsPage({ params }: { params: { country: strin
 
       {data.columns.length > 0 ? (
         <div className={styles.groupList}>
-          {groups.map((g) => (
+          {featured ? (
+            <section className={styles.featuredSection}>
+              <div className={styles.featuredHeader}>{lang === 'ja' ? '最新のコラム' : 'Latest column'}</div>
+              <Link href={`/${country}/columns/${featured.column_id}`} style={{ textDecoration: 'none' }}>
+                <Card clickable className={`${styles.topCard} ${styles.featuredCard}`}>
+                  <div className={styles.featuredRow}>
+                    {imageBase && featured.cover_image_key ? (
+                      <img
+                        className={styles.featuredThumb}
+                        src={joinUrl(imageBase, featured.cover_image_key) + (featured.published_at ? `?v=${encodeURIComponent(featured.published_at)}` : '')}
+                        alt=""
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className={styles.featuredThumb} />
+                    )}
+                    <div className={styles.featuredBody}>
+                      <div className={styles.featuredLabel}>{lang === 'ja' ? 'Latest' : 'Latest'}</div>
+                      <CardTitle className={styles.featuredTitle}>{featured.title || '(no title)'}</CardTitle>
+                      {featured.excerpt ? (
+                        <CardContent style={{ marginTop: '0.25rem' }}>
+                          <p className={styles.featuredExcerpt}>{featured.excerpt}</p>
+                        </CardContent>
+                      ) : null}
+                      <div className={styles.metaRow}>
+                        <div className={styles.metaLeft}>
+                          {renderWriters(featured.writers, featured.writer_name)}
+                          {featured.tags?.length ? <span>{featured.tags.slice(0, 2).join(', ')}</span> : null}
+                        </div>
+                        {featured.published_at || featured.updated_at ? (
+                          <span className={styles.metaDate}>{new Date(featured.published_at || featured.updated_at || '').toLocaleDateString()}</span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            </section>
+          ) : null}
+
+          {visibleGroups.map((g) => (
             <section key={g.key} className={styles.groupSection}>
               <div className={styles.groupHeader}>
-                <h2 className={styles.groupTitle}>{g.title}</h2>
+                {g.slug && g.key !== '__uncategorized__' ? (
+                  <Link href={`/${country}/columns/series/${encodeURIComponent(g.slug)}`} className={styles.groupTitleLink}>
+                    <h2 className={styles.groupTitle}>{g.title}</h2>
+                  </Link>
+                ) : (
+                  <h2 className={styles.groupTitle}>{g.title}</h2>
+                )}
                 {g.description ? <div className={styles.groupDescription}>{g.description}</div> : null}
               </div>
               <div className={styles.listGrid}>
@@ -191,7 +264,7 @@ export default async function ColumnsPage({ params }: { params: { country: strin
 
                           <div className={styles.metaRow}>
                             <div className={styles.metaLeft}>
-                              {c.writer_name ? <span className={styles.writerName}>{lang === 'ja' ? `ライター: ${c.writer_name}` : `By ${c.writer_name}`}</span> : null}
+                            {renderWriters(c.writers, c.writer_name)}
                               {c.tags?.length ? <span>{c.tags.slice(0, 2).join(', ')}</span> : null}
                             </div>
                             {c.published_at || c.updated_at ? (
