@@ -1,26 +1,12 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { fetchJson, type ApiMeta } from '@/lib/tglApi'
+import { fetchJson, type QuoteAuthorsFromQuotesResponse } from '@/lib/tglApi'
 import styles from '../../../[country]/quotes/quotes.module.css'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 import { canonicalUrl } from '@/lib/seo'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { getCountryPreferenceHint } from '@/lib/server/preferred-english-country'
 import { EnglishEditionBanner } from '@/components/en/EnglishEditionBanner'
-
-type QuotesResponse = {
-  quotes: Array<{
-    quote_id: string
-    author_name: string | null
-    source_text: string | null
-    quote_text: string | null
-    note: string | null
-    tags: string[]
-    created_at: string | null
-    updated_at: string | null
-  }>
-  meta: ApiMeta
-}
 
 export async function generateMetadata() {
   return {
@@ -35,23 +21,11 @@ export default async function EnQuoteAuthorsPage() {
   const pref = getCountryPreferenceHint()
   const preferred = pref.country
 
-  // NOTE: 現状APIに「著者一覧」が無いため、最新N件から著者を抽出して上位順で並べる。
-  const data = await fetchJson<QuotesResponse>(`/v1/${sourceCountry}/quotes?limit=300`, {
+  const data = await fetchJson<QuoteAuthorsFromQuotesResponse>(`/v1/${sourceCountry}/quotes/authors?limit=200`, {
     next: { revalidate: CACHE_POLICY.stable },
   }).catch(() => null)
   if (!data) return notFound()
-
-  const counts = new Map<string, number>()
-  for (const q of data.quotes || []) {
-    const a = String(q.author_name || '').trim()
-    if (!a) continue
-    counts.set(a, (counts.get(a) || 0) + 1)
-  }
-
-  const authors = Array.from(counts.entries())
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-    .slice(0, 60)
+  const authors = (data.authors || []).filter((a) => a.name)
 
   return (
     <main>
@@ -82,17 +56,23 @@ export default async function EnQuoteAuthorsPage() {
           </div>
 
           <div className={styles.authorShelfGrid}>
-            {authors.map((a) => (
+            {authors.map((a) => {
+              const label = a.name
+              return (
               <Link
-                key={a.name}
-                href={`/en/quotes/author/${encodeURIComponent(a.name)}`}
+                key={label}
+                href={`/en/quotes/author/${encodeURIComponent(label)}`}
                 className={styles.themeItem}
-                title={`Quotes by ${a.name}`}
+                title={`Quotes by ${label}`}
               >
-                <span className={styles.themeLabel}>{a.name}</span>
+                <span className={styles.themeLabelWrap}>
+                  <span className={styles.themeLabel}>{label}</span>
+                  {a.has_detail ? <span className={styles.themeHint}>Details available</span> : null}
+                </span>
                 <span className={styles.themeCount}>{a.count}</span>
               </Link>
-            ))}
+              )
+            })}
           </div>
         </div>
       ) : (

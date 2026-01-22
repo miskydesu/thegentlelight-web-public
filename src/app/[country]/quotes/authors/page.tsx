@@ -1,26 +1,12 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { isCountry, fetchJson, type ApiMeta } from '@/lib/tglApi'
+import { isCountry, fetchJson, type QuoteAuthorsFromQuotesResponse } from '@/lib/tglApi'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import styles from '../quotes.module.css'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 import { canonicalUrl } from '@/lib/seo'
 import { generateHreflang } from '@/lib/seo-helpers'
 import { EmptyState } from '@/components/ui/EmptyState'
-
-type QuotesResponse = {
-  quotes: Array<{
-    quote_id: string
-    author_name: string | null
-    source_text: string | null
-    quote_text: string | null
-    note: string | null
-    tags: string[]
-    created_at: string | null
-    updated_at: string | null
-  }>
-  meta: ApiMeta
-}
 
 export async function generateMetadata({ params }: { params: { country: string } }) {
   const country = params.country
@@ -48,22 +34,10 @@ export default async function QuoteAuthorsPage({ params }: { params: { country: 
   const lang: Locale = getLocaleForCountry(country)
   const t = getTranslationsForCountry(country, lang)
 
-  // NOTE: 現状APIに「著者一覧」が無いため、最新N件から著者を抽出して上位順で並べる。
-  const data = await fetchJson<QuotesResponse>(`/v1/${country}/quotes?limit=300`, {
+  const data = await fetchJson<QuoteAuthorsFromQuotesResponse>(`/v1/${country}/quotes/authors?limit=200`, {
     next: { revalidate: CACHE_POLICY.stable },
   })
-
-  const counts = new Map<string, number>()
-  for (const q of data.quotes || []) {
-    const a = String(q.author_name || '').trim()
-    if (!a) continue
-    counts.set(a, (counts.get(a) || 0) + 1)
-  }
-
-  const authors = Array.from(counts.entries())
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-    .slice(0, 60)
+  const authors = (data.authors || []).filter((a) => a.name)
 
   return (
     <main>
@@ -89,17 +63,25 @@ export default async function QuoteAuthorsPage({ params }: { params: { country: 
           </div>
 
           <div className={styles.authorShelfGrid}>
-            {authors.map((a) => (
+            {authors.map((a) => {
+              const label = a.name
+              return (
               <Link
-                key={a.name}
-                href={`/${country}/quotes/author/${encodeURIComponent(a.name)}`}
+                key={label}
+                href={`/${country}/quotes/author/${encodeURIComponent(label)}`}
                 className={styles.themeItem}
-                title={lang === 'ja' ? `著者「${a.name}」の名言` : `Quotes by ${a.name}`}
+                title={lang === 'ja' ? `著者「${label}」の名言` : `Quotes by ${label}`}
               >
-                <span className={styles.themeLabel}>{a.name}</span>
+                <span className={styles.themeLabelWrap}>
+                  <span className={styles.themeLabel}>{label}</span>
+                  {a.has_detail ? (
+                    <span className={styles.themeHint}>{lang === 'ja' ? '詳細あり' : 'Details available'}</span>
+                  ) : null}
+                </span>
                 <span className={styles.themeCount}>{a.count}</span>
               </Link>
-            ))}
+              )
+            })}
           </div>
         </div>
       ) : (

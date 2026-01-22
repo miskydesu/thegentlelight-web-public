@@ -11,6 +11,7 @@ const NAV: NavItem[] = [
   { href: '/admin/summary', label: 'サマリー' },
   { href: '/admin/topics', label: 'トピック' },
   { href: '/admin/quotes', label: '名言' },
+  { href: '/admin/quote-authors', label: '名言著者' },
   { href: '/admin/writers', label: 'ライター' },
   { href: '/admin/column-names', label: 'コラム名' },
   { href: '/admin/columns', label: 'コラム' },

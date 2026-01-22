@@ -34,6 +34,61 @@ export function getApiBaseUrl(): string {
 
 export type ApiMeta = { is_partial?: boolean; next_cursor?: number; gentle?: boolean }
 
+export type QuoteSummary = {
+  quote_id: string
+  author_name: string | null
+  source_text: string | null
+  quote_text: string | null
+  note: string | null
+  tags: string[]
+  created_at: string | null
+  updated_at: string | null
+}
+
+export type QuoteAuthorSummary = {
+  author_id: string
+  canonical_key: string
+  type: string | null
+  image_key: string | null
+  display_name: string | null
+  one_liner: string | null
+  aliases: string[]
+}
+
+export type QuoteAuthorDetail = {
+  author_id: string
+  canonical_key: string
+  type: string | null
+  image_key: string | null
+  links: any | null
+  display_name: string | null
+  one_liner: string | null
+  detail_md: string | null
+  seo_title: string | null
+  seo_description: string | null
+}
+
+export type QuoteAuthorsResponse = {
+  authors: QuoteAuthorSummary[]
+  meta: ApiMeta
+}
+
+export type QuoteAuthorsFromQuotesResponse = {
+  authors: Array<{ name: string; count: number; has_detail: boolean }>
+  meta: ApiMeta
+}
+
+export type QuoteAuthorResolveResponse = {
+  author: QuoteAuthorDetail
+  aliases: string[]
+}
+
+export type QuoteAuthorQuotesResponse = {
+  author: QuoteAuthorDetail
+  quotes: QuoteSummary[]
+  meta: ApiMeta
+}
+
 export async function fetchJson<T>(path: string, init?: RequestInit & { next?: { revalidate?: number } }): Promise<T> {
   const base = getApiBaseUrl().replace(/\/$/, '')
   const url = `${base}${path.startsWith('/') ? path : `/${path}`}`

@@ -226,6 +226,12 @@
   white-space: nowrap;
 }
 
+.themeLabelWrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 @media (max-width: 559px) {
   .themeLabel {
     font-size: 0.84rem;
@@ -244,10 +250,240 @@
   border-radius: 999px;
 }
 
+.themeHint {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 @media (max-width: 559px) {
   .themeCount {
     display: none;
   }
+}
+
+.authorProfile {
+  margin: 16px 0 20px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.03),
+    0 10px 24px rgba(0, 0, 0, 0.05);
+}
+
+.authorProfileHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.authorName {
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.authorOneLiner {
+  font-size: 0.92rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.authorMeta {
+  font-size: 0.82rem;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.authorDetail {
+  margin-top: 12px;
+  line-height: 1.75;
+  font-size: 0.95rem;
+  color: rgba(0, 0, 0, 0.78);
+}
+
+.authorDetail h2,
+.authorDetail h3 {
+  margin: 12px 0 6px;
+  font-size: 0.95rem;
+}
+
+.authorDetailDisclosure {
+  margin-top: 6px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.authorDetailSummary {
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--text);
+  font-weight: 700;
+  list-style: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 8px 0;
+}
+
+.authorDetailSummary::-webkit-details-marker {
+  display: none;
+}
+
+.authorSummaryMain {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.authorDetailToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.authorDetailToggleOpen,
+.authorDetailToggleClose {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.authorDetailToggleClose {
+  display: none;
+}
+
+.authorDetailDisclosure[open] .authorDetailToggleOpen {
+  display: none;
+}
+
+.authorDetailDisclosure[open] .authorDetailToggleClose {
+  display: inline-flex;
+}
+
+.authorDetailToggleIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+  font-size: 0.95rem;
+}
+
+.authorDetailPreview {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.authorDetailDisclosure[open] .authorDetailPreview {
+  display: none;
+}
+
+.authorDetailHint {
+  display: none;
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.authorDetailDisclosure:not([open]) .authorDetailHint {
+  display: block;
+}
+
+.authorDetailBody {
+  max-height: 0;
+  overflow: hidden;
+  padding: 0;
+  opacity: 0;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.02);
+  transition: max-height 260ms ease, padding 260ms ease, opacity 200ms ease;
+}
+
+.authorDetailDisclosure[open] .authorDetailBody {
+  max-height: 1200px;
+  padding: 12px 14px;
+  opacity: 1;
+}
+
+.authorDetailContent {
+  line-height: 1.75;
+  font-size: 0.95rem;
+  color: rgba(0, 0, 0, 0.78);
+}
+
+.authorDetailContent h2,
+.authorDetailContent h3 {
+  margin: 12px 0 6px;
+  font-size: 0.95rem;
+}
+
+.authorDetailContent p {
+  margin: 0 0 10px;
+}
+
+.authorDetailContent ul,
+.authorDetailContent ol {
+  margin: 8px 0 12px;
+  padding-left: 1.25em;
+}
+
+.authorDetailContent li {
+  margin: 4px 0;
+}
+
+@media (max-width: 559px) {
+  .authorDetailSummary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .authorDetailToggle {
+    order: 3;
+    align-self: flex-start;
+  }
+}
+
+.authorLinks {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.authorLink {
+  font-size: 0.84rem;
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  padding-bottom: 1px;
+}
+
+.authorLink:hover,
+.authorLink:focus-visible {
+  border-bottom-color: rgba(0, 0, 0, 0.5);
 }
 
 .tagPill {

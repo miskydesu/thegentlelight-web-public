@@ -30,7 +30,15 @@ export async function adminFetchJson<T>(path: string, init?: RequestInit): Promi
   if (!headers['content-type'] && init?.body) headers['content-type'] = 'application/json'
 
   try {
-    const res = await fetch(url, { ...init, headers })
+    const controller = new AbortController()
+    const timeoutMs = 20000
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    let res: Response
+    try {
+      res = await fetch(url, { ...init, headers, signal: controller.signal })
+    } finally {
+      clearTimeout(timer)
+    }
     if (!res.ok) {
       const body = await res.text().catch(() => '')
       const err = new Error(`Admin API ${res.status} ${res.statusText}: ${url}${body ? `\n${body}` : ''}`)
@@ -39,6 +47,9 @@ export async function adminFetchJson<T>(path: string, init?: RequestInit): Promi
     }
     return (await res.json()) as T
   } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      throw new Error(`APIリクエストがタイムアウトしました（${url}）`)
+    }
     // ネットワークエラー（接続拒否など）の場合
     if (err instanceof TypeError && err.message.includes('fetch')) {
       throw new Error(`APIサーバーに接続できません。APIサーバーが起動しているか確認してください。\nURL: ${url}\n\nエラー: ${err.message}`)
@@ -589,6 +600,101 @@ export async function adminUpdateQuote(quoteId: string, body: any) {
 
 export async function adminDeleteQuote(quoteId: string) {
   return adminFetchJson<{ success: boolean }>(`/admin/v1/quotes/${encodeURIComponent(quoteId)}`, {
+    method: 'DELETE',
+  })
+}
+
+export type AdminQuoteAuthor = {
+  author_id: string
+  canonical_key: string
+  type: string | null
+  image_key: string | null
+  is_published: boolean
+  created_at: string
+  updated_at: string
+  localizations: {
+    ja: {
+      display_name: string
+      one_liner: string | null
+      detail_md: string | null
+      links: any | null
+      seo_title: string | null
+      seo_description: string | null
+    } | null
+    en: {
+      display_name: string
+      one_liner: string | null
+      detail_md: string | null
+      links: any | null
+      seo_title: string | null
+      seo_description: string | null
+    } | null
+  }
+  aliases: string[]
+}
+
+export async function adminListQuoteAuthors(q?: string) {
+  const sp = new URLSearchParams()
+  if (q) sp.set('q', q)
+  return adminFetchJson<{ authors: AdminQuoteAuthor[]; meta: { total: number } }>(`/admin/v1/quote-authors?${sp.toString()}`)
+}
+
+export async function adminGetQuoteAuthor(authorId: string) {
+  return adminFetchJson<{ author: AdminQuoteAuthor }>(`/admin/v1/quote-authors/${encodeURIComponent(authorId)}`)
+}
+
+export async function adminCreateQuoteAuthor(body: {
+  canonical_key: string
+  is_published?: boolean
+  type?: string | null
+  image_key?: string | null
+  display_name_ja: string
+  display_name_en: string
+  one_liner_ja?: string | null
+  one_liner_en?: string | null
+  detail_md_ja?: string | null
+  detail_md_en?: string | null
+  links_ja?: any | null
+  links_en?: any | null
+  seo_title_ja?: string | null
+  seo_title_en?: string | null
+  seo_description_ja?: string | null
+  seo_description_en?: string | null
+  aliases?: string[] | string
+}) {
+  return adminFetchJson<{ author: AdminQuoteAuthor }>('/admin/v1/quote-authors', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function adminUpdateQuoteAuthor(authorId: string, body: {
+  canonical_key?: string
+  is_published?: boolean
+  type?: string | null
+  image_key?: string | null
+  display_name_ja?: string
+  display_name_en?: string
+  one_liner_ja?: string | null
+  one_liner_en?: string | null
+  detail_md_ja?: string | null
+  detail_md_en?: string | null
+  links_ja?: any | null
+  links_en?: any | null
+  seo_title_ja?: string | null
+  seo_title_en?: string | null
+  seo_description_ja?: string | null
+  seo_description_en?: string | null
+  aliases?: string[] | string
+}) {
+  return adminFetchJson<{ author: AdminQuoteAuthor }>(`/admin/v1/quote-authors/${encodeURIComponent(authorId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function adminDeleteQuoteAuthor(authorId: string) {
+  return adminFetchJson<{ status: 'ok' }>(`/admin/v1/quote-authors/${encodeURIComponent(authorId)}`, {
     method: 'DELETE',
   })
 }

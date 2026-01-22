@@ -8,6 +8,7 @@ export default function AdminHomePage() {
     { href: '/admin/topics', title: 'トピック', desc: 'トピック一覧・詳細' },
     { href: '/admin/columns', title: 'コラム', desc: 'コラム一覧' },
     { href: '/admin/quotes', title: '名言', desc: '名言一覧' },
+    { href: '/admin/quote-authors', title: '名言著者', desc: '名言著者の管理・表記ゆれ' },
     { href: '/admin/jobs', title: 'ジョブ', desc: 'ジョブの実行・確認' },
     { href: '/admin/job-logs', title: 'ジョブログ', desc: '実行ログ' },
     { href: '/admin/ai-runs', title: 'AI実行ログ', desc: 'AI生成の履歴' },
