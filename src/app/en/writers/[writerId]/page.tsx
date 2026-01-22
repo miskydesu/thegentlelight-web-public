@@ -4,7 +4,7 @@ import { fetchJson, type ApiMeta } from '@/lib/tglApi'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 import { canonicalUrl } from '@/lib/seo'
 import { generateSEOMetadata } from '@/lib/seo-helpers'
-import styles from '../../[country]/columns/columns.module.css'
+import styles from '@/app/[country]/columns/columns.module.css'
 import { Card, CardContent, CardTitle } from '@/components/ui/Card'
 
 type ColumnsResponse = {

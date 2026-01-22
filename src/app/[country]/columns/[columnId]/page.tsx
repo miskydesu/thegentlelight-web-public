@@ -82,7 +82,6 @@ export async function generateMetadata({ params }: { params: { country: string; 
   const canonical = canonicalUrl(`/${country}/columns/${encodeURIComponent(columnId)}`)
   const lang: Locale = getLocaleForCountry(country)
   const isJa = lang === 'ja'
-  const seriesSlug = c.column_name?.slug || c.column_name?.column_name_id || null
 
   const splitKeywords = (raw: string) =>
     String(raw || '')
@@ -168,6 +167,7 @@ export default async function ColumnDetailPage({ params }: { params: { country: 
   const c = data.column
   if (!c) return notFound()
 
+  const seriesSlug = c.column_name?.slug || c.column_name?.column_name_id || null
   const coverSrc = imageBase && c.cover_image_key ? joinUrl(imageBase, c.cover_image_key) : null
   const html = c.body_md ? renderMarkdownToSafeishHtml(replaceCountryToken(c.body_md, country)) : ''
 

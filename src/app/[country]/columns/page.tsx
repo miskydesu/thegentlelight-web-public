@@ -79,6 +79,7 @@ export default async function ColumnsPage({ params }: { params: { country: strin
 
   const lang: Locale = getLocaleForCountry(country)
   const t = getTranslationsForCountry(country, lang)
+  const isJa = lang === 'ja'
   const imageBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || process.env.IMAGE_BASE_URL || ''
 
   const data = await fetchJson<ColumnsResponse>(`/v1/${country}/columns?limit=30`, {
