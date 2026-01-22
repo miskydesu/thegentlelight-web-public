@@ -11,26 +11,10 @@ import { HeadlinesTabs } from '@/components/root/HeadlinesTabs'
 export function generateMetadata(): Metadata {
   const canonical = canonicalUrl('/')
   return generateSEOMetadata({
-    title: 'The Gentle Light — News, without the noise.',
+    title: 'The Gentle Light — News, without the noise | Calm news & doomscrolling help',
     description:
       'A calm editorial home for living with the news: reduce doomscrolling, ease information overload, and practice gentle news through digital minimalism, digital detox, and healthy tech boundaries. Start with guides, then choose your news edition (US / Canada / UK).',
-    keywords: [
-      'doomscrolling',
-      'how to stop doomscrolling',
-      'how to stop scrolling',
-      'doom scroll',
-      'infinite scrolling',
-      'information overload',
-      'gentle news',
-      'how to use your phone less',
-      'digital minimalism',
-      'digital detox',
-      'social media detox',
-      'reduce screen time',
-      'phone detox',
-      'digital burnout',
-      'healthy tech boundaries',
-    ],
+    keywords: ['doomscrolling', 'how to stop scrolling', 'information overload', 'digital minimalism'],
     canonical,
     // 仕様: / は x-default（国別の同等ページではない、グローバル入口）
     hreflang: [{ lang: 'x-default', url: canonical }],
