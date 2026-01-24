@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { adminColumnsJaToEn, adminCreateColumn, adminListColumnNames, adminListWriters, adminSetColumnWriters, adminUploadColumnCover, adminUploadTempImage, clearAdminToken, type AdminColumnName, type AdminWriter } from '../../../../lib/tglAdminApi'
+import { adminColumnsEnToJa, adminColumnsJaToEn, adminCreateColumn, adminListColumnNames, adminListWriters, adminSetColumnWriters, adminUploadColumnCover, adminUploadTempImage, clearAdminToken, type AdminColumnName, type AdminWriter } from '../../../../lib/tglAdminApi'
 import { TiptapMarkdownEditor } from '@/components/admin/TiptapMarkdownEditor'
 import { CoverImageCropperModal } from '@/components/admin/CoverImageCropperModal'
 import { swalClose, swalConfirm, swalError, swalLoading, swalSuccess } from '@/lib/adminSwal'
@@ -229,6 +229,54 @@ export default function AdminColumnNewPage() {
       await swalSuccess('英語（en）を反映しました', '完了（Done）')
     } catch (err: any) {
       const msg = err?.message || '英語生成に失敗しました'
+      await swalError(msg, '生成失敗（Failed）')
+    } finally {
+      await swalClose()
+    }
+  }
+
+  const generateJaFromEn = async () => {
+    const en = loc.en
+    if (!en.title.trim() || !en.slug.trim() || !en.body_md.trim()) {
+      await swalError('英語（en）の title / slug / body_md を先に入力してください', '入力不足（Invalid）')
+      return
+    }
+
+    const ok = await swalConfirm({
+      title: '日本語（ja）を自動生成しますか？',
+      text: '英語（en）を元に、日本語向けの自然なローカライズで日本語欄を上書きします（画像URLはそのまま）。',
+      confirmText: '生成する',
+      cancelText: 'キャンセル',
+    })
+    if (!ok) return
+
+    try {
+      await swalLoading('生成中…', '日本語ローカライズを作成しています')
+      const r = await adminColumnsEnToJa({
+        title: en.title,
+        slug: en.slug,
+        excerpt: en.excerpt || null,
+        body_md: en.body_md,
+        seo_title: en.seo_title || null,
+        seo_description: en.seo_description || null,
+      })
+      const g = r.generated
+      setLoc((p) => ({
+        ...p,
+        ja: {
+          ...p.ja,
+          title: g.title_ja,
+          slug: g.slug_ja,
+          excerpt: g.excerpt_ja,
+          body_md: g.body_md_ja,
+          seo_title: g.seo_title_ja,
+          seo_description: g.seo_description_ja,
+        },
+      }))
+      setActiveLang('ja')
+      await swalSuccess('日本語（ja）を反映しました', '完了（Done）')
+    } catch (err: any) {
+      const msg = err?.message || '日本語生成に失敗しました'
       await swalError(msg, '生成失敗（Failed）')
     } finally {
       await swalClose()
@@ -463,6 +511,23 @@ export default function AdminColumnNewPage() {
                 title="日本語（ja）を元に英語（en）を自動生成（LLM）"
               >
                 JA→EN 自動生成（LLM）
+              </button>
+              <button
+                type="button"
+                onClick={() => void generateJaFromEn()}
+                disabled={busy}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #ced4da',
+                  backgroundColor: '#fff',
+                  color: '#212529',
+                  cursor: busy ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                }}
+                title="英語（en）を元に日本語（ja）を自動生成（LLM）"
+              >
+                EN→JA 自動生成（LLM）
               </button>
               <button
                 type="button"

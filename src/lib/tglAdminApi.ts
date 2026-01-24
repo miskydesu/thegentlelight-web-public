@@ -230,6 +230,31 @@ export async function adminColumnsJaToEn(ja: AdminColumnJaToEnInput) {
   })
 }
 
+export type AdminColumnEnToJaInput = {
+  title: string
+  slug?: string | null
+  excerpt?: string | null
+  body_md: string
+  seo_title?: string | null
+  seo_description?: string | null
+}
+
+export type AdminColumnEnToJaOutput = {
+  title_ja: string
+  slug_ja: string
+  excerpt_ja: string
+  body_md_ja: string
+  seo_title_ja: string
+  seo_description_ja: string
+}
+
+export async function adminColumnsEnToJa(en: AdminColumnEnToJaInput) {
+  return adminFetchJson<{ generated: AdminColumnEnToJaOutput }>('/admin/v1/tools/columns/en-to-ja', {
+    method: 'POST',
+    body: JSON.stringify({ en }),
+  })
+}
+
 export async function adminLogin(email: string, password: string): Promise<{ token: string; user: any }> {
   return adminFetchJson('/admin/v1/auth/login', {
     method: 'POST',
