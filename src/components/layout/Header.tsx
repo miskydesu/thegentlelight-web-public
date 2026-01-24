@@ -413,7 +413,7 @@ export function Header({ country, className }: HeaderProps) {
                         return (
                           <Dialog.Close asChild key={it.href}>
                             <Link
-                              href={withGentle(it.href)}
+                              href={it.href}
                               className={`${styles.mobileMenuLink} ${active ? styles.mobileMenuLinkActive : ''}`}
                               style={
                                 activeTheme
@@ -456,7 +456,7 @@ export function Header({ country, className }: HeaderProps) {
                           const href = `/${country}/category/${c.code}`
                           return (
                             <Dialog.Close asChild key={c.code}>
-                              <Link href={withGentle(href)} className={styles.mobileMenuLink}>
+                              <Link href={href} className={styles.mobileMenuLink}>
                                 {getCategoryLabel(c.code, locale)}
                               </Link>
                             </Dialog.Close>
@@ -522,7 +522,7 @@ export function Header({ country, className }: HeaderProps) {
         {/* ロゴ（画面中央） */}
         <div style={{ justifySelf: 'center', maxWidth: '100%', minWidth: 0 }}>
           <Link
-            href={withGentle(country ? `/${country}` : '/')}
+            href={country ? `/${country}` : '/'}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -564,7 +564,7 @@ export function Header({ country, className }: HeaderProps) {
             COUNTRIES.map((c) => (
               <Link
                 key={c.code}
-                href={withGentle(`/${c.code}`)}
+                href={`/${c.code}`}
                 style={{
                   fontSize: 14,
                   color: 'var(--muted)',
@@ -596,7 +596,7 @@ export function Header({ country, className }: HeaderProps) {
                   return (
                     <Link
                       key={x.href}
-                      href={withGentle(x.href)}
+                      href={x.href}
                       style={{
                         fontSize: 14,
                         color: active ? '#fff' : itemColor || 'var(--text)',
