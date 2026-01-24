@@ -21,10 +21,9 @@ export function generateMetadata() {
   }
 }
 
-export default async function EnAboutPage({ searchParams }: { searchParams?: { gentle?: string } }) {
+export default async function EnAboutPage() {
   const pref = getCountryPreferenceHint()
   const country = pref.country // us/ca/uk/jp（ニュース/朝刊の導線用）
-  const gentle = searchParams?.gentle === '1' || searchParams?.gentle === 'true'
   const base = getSiteBaseUrl()
 
   const normalizeDailyDate = (dateValue: string): string => {
@@ -202,7 +201,7 @@ export default async function EnAboutPage({ searchParams }: { searchParams?: { g
                 <span className={styles.hwChip}>Real-world</span>
               </div>
               <div style={{ marginTop: 10 }}>
-                <Link className={styles.textLink} href={`/${country}/category/heartwarming?gentle=1`}>
+                <Link className={styles.textLink} href={`/${country}/category/heartwarming`}>
                   🤍 Read heartwarming →
                 </Link>
               </div>
@@ -395,14 +394,14 @@ export default async function EnAboutPage({ searchParams }: { searchParams?: { g
               </div>
             </Link>
 
-            <Link className={styles.nextChoiceLink} href={`/${country}/category/heartwarming${gentle ? '?gentle=1' : ''}`}>
+            <Link className={styles.nextChoiceLink} href={`/${country}/category/heartwarming`}>
               <div className={styles.nextChoiceCard}>
                 <div className={styles.nextChoiceTitle}>🤍 Heartwarming</div>
                 <div className={styles.nextChoiceDesc}>Stories of kindness, support, and human connection.</div>
               </div>
             </Link>
 
-            <Link className={styles.nextChoiceLink} href={`/en/columns${gentle ? '?gentle=1' : ''}`}>
+            <Link className={styles.nextChoiceLink} href={`/en/columns`}>
               <div className={styles.nextChoiceCard}>
                 <div className={styles.nextChoiceTitle}>📖 Calming columns</div>
                 <div className={styles.nextChoiceDesc}>Step away from the news</div>

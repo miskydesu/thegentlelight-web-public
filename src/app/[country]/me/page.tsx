@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getSession, setUserToken, updateGentleMode, updateGentleAllowImportantNews, changePassword, requestEmailVerify, requestEmailChange, confirmEmailChange } from '@/lib/userAuth'
-import { addGentleToUrl, getPreferredGentle, setPreferredGentle, setPreferredGentleAllowImportantNews } from '@/lib/view-switch'
+import { getPreferredGentle, setPreferredGentle, setPreferredGentleAllowImportantNews } from '@/lib/view-switch'
 import styles from './me.module.css'
 
 export default function MyPage() {
@@ -94,7 +94,7 @@ export default function MyPage() {
     setCurrentGentle(next)
     setPreferredGentle(next)
     // その場で体感できるよう、トップへ遷移して反映（URLも揃える）
-    router.push(addGentleToUrl(`/${country}`, next))
+    router.push(`/${country}`)
   }
 
   const savePw = async () => {

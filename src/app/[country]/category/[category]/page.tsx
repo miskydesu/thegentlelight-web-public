@@ -5,7 +5,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
-import { getGentleFromSearchParams, getAllowImportantFromSearchParams } from '@/lib/view-switch'
+import { getGentleFromCookies, getAllowImportantFromCookies } from '@/lib/view-switch-server'
 import { CATEGORIES, getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import styles from './category.module.css'
 import { formatTopicListDate } from '@/lib/topicDate'
@@ -126,7 +126,7 @@ export default async function CategoryPage({
   searchParams,
 }: {
   params: { country: string; category: string }
-  searchParams: { q?: string; gentle?: string; allow_important?: string; cursor?: string; limit?: string }
+  searchParams: { q?: string; cursor?: string; limit?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
@@ -135,8 +135,8 @@ export default async function CategoryPage({
   const category = CATEGORIES.find((c) => c.code === params.category)
   if (!category) return notFound()
   const t = getTranslationsForCountry(country, lang)
-  const gentle = getGentleFromSearchParams(searchParams)
-  const allowImportant = getAllowImportantFromSearchParams(searchParams)
+  const gentle = getGentleFromCookies()
+  const allowImportant = getAllowImportantFromCookies()
   const locale = lang === 'ja' ? 'ja' : 'en'
   const base = getSiteBaseUrl()
   const isJa = country === 'jp'
@@ -168,8 +168,6 @@ export default async function CategoryPage({
   const buildUrl = (nextCursor: number) => {
     const sp = new URLSearchParams()
     if (query) sp.set('q', query)
-    if (gentle) sp.set('gentle', '1')
-    if (gentle && !allowImportant) sp.set('allow_important', '0')
     if (!isHeartwarmingPage && limit !== 30) sp.set('limit', String(limit))
     if (nextCursor > 0) sp.set('cursor', String(nextCursor))
     const qs = sp.toString()
@@ -213,10 +211,7 @@ export default async function CategoryPage({
         }}
       >
         <h1 style={{ fontSize: '1.4rem' }}>{getCategoryLabel(category.code, locale)}</h1>
-        <Link
-          href={`/${country}/news${gentle ? '?gentle=1' : ''}`}
-          style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}
-        >
+        <Link href={`/${country}/news`} style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}>
           {t.pages.category.seeMore}
         </Link>
       </div>
@@ -472,7 +467,7 @@ export default async function CategoryPage({
                     </div>
                   </div>
                 </Link>
-                <Link href={`/${country}/columns${gentle ? '?gentle=1' : ''}`}>
+                <Link href={`/${country}/columns`}>
                   <div
                     style={{
                       border: '1px solid rgba(0,0,0,0.08)',

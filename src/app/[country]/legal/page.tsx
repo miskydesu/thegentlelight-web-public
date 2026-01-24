@@ -60,13 +60,10 @@ function getText(country: Country) {
 
 export default function CountryLegalPage({
   params,
-  searchParams,
 }: {
   params: { country: string }
-  searchParams: { gentle?: string }
 }) {
   const country = isCountry(params.country) ? (params.country as Country) : 'jp'
-  const gentle = searchParams?.gentle === '1' || searchParams?.gentle === 'true'
   const t = getText(country)
 
   return (
@@ -98,7 +95,7 @@ export default function CountryLegalPage({
       </section>
 
       <div style={{ marginTop: '2rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
-        <Link href={`/${country}${gentle ? '?gentle=1' : ''}`} style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}>
+        <Link href={`/${country}`} style={{ fontSize: '0.9rem', color: 'var(--muted)', textDecoration: 'none' }}>
           {t.backToTop}
         </Link>
       </div>

@@ -671,7 +671,7 @@ export default async function DailyDetailPage({
               {locale === 'ja' ? '朝刊を読み終えた方、続けて読むならこちら' : 'After the briefing, pick what you want to read next.'}
             </div>
             <div className={styles.guideGrid}>
-              <Link href={`/${country}/category/heartwarming?gentle=1`} className={styles.guideCardLink}>
+              <Link href={`/${country}/category/heartwarming`} className={styles.guideCardLink}>
                 <div className={styles.guideCard}>
                   <div style={{ fontWeight: 700, marginBottom: 6 }}>{locale === 'ja' ? '🤍 心温まる話を読む' : '🤍 Read heartwarming'}</div>
                   <div className="tglMuted" style={{ fontSize: '0.92rem' }}>

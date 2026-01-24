@@ -5,7 +5,7 @@ import { canonicalUrl, isIndexableTopic } from '../../../../../lib/seo'
 import { getLocaleForCountry, type Locale } from '../../../../../lib/i18n'
 import { generateSEOMetadata, generateArticleJSONLD } from '../../../../../lib/seo-helpers'
 import { getSiteBaseUrl } from '../../../../../lib/seo'
-import { getGentleFromSearchParams, getAllowImportantFromSearchParams } from '../../../../../lib/view-switch'
+import { getGentleFromCookies, getAllowImportantFromCookies } from '../../../../../lib/view-switch-server'
 import { Card, CardContent, CardMeta, CardTitle } from '../../../../../components/ui/Card'
 import { getCategoryBadgeTheme, getCategoryLabel } from '../../../../../lib/categories'
 import styles from './topic.module.css'
@@ -100,17 +100,15 @@ export async function generateMetadata({
 
 export default async function TopicPage({
   params,
-  searchParams,
 }: {
   params: { country: string; topicId: string }
-  searchParams: { gentle?: string; allow_important?: string }
 }) {
   const { country, topicId } = params
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = getLocaleForCountry(country)
-  const gentle = getGentleFromSearchParams(searchParams)
-  const allowImportant = getAllowImportantFromSearchParams(searchParams)
+  const gentle = getGentleFromCookies()
+  const allowImportant = getAllowImportantFromCookies()
 
   let data: TopicDetailResponse
   try {
@@ -190,10 +188,7 @@ export default async function TopicPage({
 
       <main>
         <div className={styles.pageHeader}>
-          <Link
-            href={`/${country}/news${gentle ? `?gentle=1${allowImportant ? '' : '&allow_important=0'}` : ''}`}
-            style={{ fontSize: '0.95rem', color: 'var(--muted)', textDecoration: 'none' }}
-          >
+          <Link href={`/${country}/news`} style={{ fontSize: '0.95rem', color: 'var(--muted)', textDecoration: 'none' }}>
             {isJa ? '← ニュース' : '← News'}
           </Link>
           <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>{gentle ? 'Gentle' : 'All'}</span>

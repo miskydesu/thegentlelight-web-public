@@ -1,11 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useMemo } from 'react'
 import { COUNTRIES, type Country } from '@/lib/tglApi'
 import { getCountrySwitchUrl } from '@/lib/country-switch'
-import { addGentleToUrl } from '@/lib/view-switch'
 import * as Dialog from '@radix-ui/react-dialog'
 import { setCountryPreference } from '@/lib/client/set-country-preference'
 import { getUserToken, updateDefaultCountry } from '@/lib/userAuth'
@@ -18,11 +17,6 @@ export function RegionLangSwitch({
   className?: string
 }) {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
-
-  const gentleParam = searchParams?.get('gentle')
-  const gentle = gentleParam === '1' || gentleParam === 'true'
-
   // カテゴリを抽出（/category/... のときだけ維持）
   const categoryMatch = (pathname || '').match(/\/category\/([^/]+)/)
   const category = categoryMatch ? categoryMatch[1] : undefined
@@ -46,15 +40,14 @@ export function RegionLangSwitch({
     return COUNTRIES.map((c) => {
       const to = c.code
       const baseUrl = getCountrySwitchUrl(currentCountry, to, pathname || `/${currentCountry}`, category, null)
-      const href = addGentleToUrl(baseUrl, gentle)
       return {
         code: to,
         label: isJa ? labelsJa[to] : labelsEn[to],
-        href,
+        href: baseUrl,
         active: to === currentCountry,
       }
     })
-  }, [category, currentCountry, gentle, pathname])
+  }, [category, currentCountry, pathname])
 
   const defaultButtonStyle: React.CSSProperties = {
     background: 'transparent',

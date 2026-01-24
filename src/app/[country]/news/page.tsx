@@ -6,7 +6,7 @@ import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
 import { NewsSearchForm } from '@/components/news/NewsSearchForm'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
-import { getGentleFromSearchParams, getAllowImportantFromSearchParams } from '@/lib/view-switch'
+import { getGentleFromCookies, getAllowImportantFromCookies } from '@/lib/view-switch-server'
 import { formatTopicListDate } from '@/lib/topicDate'
 import { getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import styles from './news.module.css'
@@ -89,7 +89,7 @@ export default async function NewsPage({
   searchParams,
 }: {
   params: { country: string }
-  searchParams: { q?: string; category?: string; gentle?: string; allow_important?: string; cursor?: string; limit?: string }
+  searchParams: { q?: string; category?: string; cursor?: string; limit?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
@@ -98,14 +98,13 @@ export default async function NewsPage({
   const query = searchParams.q || ''
   const category = searchParams.category || ''
   const t = getTranslationsForCountry(country, lang)
-  const gentle = getGentleFromSearchParams(searchParams)
-  const allowImportant = getAllowImportantFromSearchParams(searchParams)
+  const gentle = getGentleFromCookies()
+  const allowImportant = getAllowImportantFromCookies()
   const locale = lang === 'ja' ? 'ja' : 'en'
 
   const cursor = Number.isFinite(Number(searchParams.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
   const defaultLimit = 10
   const limit = Number.isFinite(Number(searchParams.limit)) ? Math.min(100, Math.max(1, Math.trunc(Number(searchParams.limit)))) : defaultLimit
-  const gentleQs = gentle ? `?gentle=1${allowImportant ? '' : '&allow_important=0'}` : ''
   const isDefaultView = !query && !category && cursor === 0
 
   const recentUpdates = isDefaultView
@@ -164,7 +163,6 @@ export default async function NewsPage({
     const sp = new URLSearchParams()
     if (query) sp.set('q', query)
     if (category) sp.set('category', category)
-    if (gentle) sp.set('gentle', '1')
     if (limit !== 30) sp.set('limit', String(limit))
     if (nextCursor > 0) sp.set('cursor', String(nextCursor))
     const qs = sp.toString()
@@ -232,7 +230,7 @@ export default async function NewsPage({
               return (
                 <Link
                   key={x.topic_id}
-                  href={`/${country}/news/n/${x.topic_id}${gentleQs}`}
+                  href={`/${country}/news/n/${x.topic_id}`}
                   style={{
                     textDecoration: 'none',
                     color: 'inherit',
@@ -376,7 +374,7 @@ export default async function NewsPage({
               {locale === 'ja' ? '今の気分に近いものを選んでください' : 'Choose what fits your mood'}
             </div>
             <div className={styles.nextChoicesGrid}>
-              <Link href={`/${country}/category/heartwarming${gentle ? '?gentle=1' : ''}`}>
+              <Link href={`/${country}/category/heartwarming`}>
                 <div
                   style={{
                     border: '1px solid rgba(0,0,0,0.08)',
@@ -420,7 +418,7 @@ export default async function NewsPage({
                   </div>
                 </div>
               </Link>
-              <Link href={`/${country}/columns${gentle ? '?gentle=1' : ''}`}>
+              <Link href={`/${country}/columns`}>
                 <div
                   style={{
                     border: '1px solid rgba(0,0,0,0.08)',

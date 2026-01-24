@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { addGentleToUrl } from '@/lib/view-switch'
+import { setPreferredGentle, setPreferredGentleAllowImportantNews } from '@/lib/view-switch'
 
 const SEEN_KEY = 'tgl_gentle_caution_seen_v1'
 
@@ -39,13 +39,6 @@ export function GentleCautionBadge({
   const detailsChange = isJa
     ? '設定の変更は、PCならフッター／スマホならメニューから行えます。'
     : 'You can change this anytime: footer on desktop, menu on mobile.'
-
-  const gentleUrl = useMemo(() => {
-    if (typeof window === 'undefined') return ''
-    const qs = window.location.search ? window.location.search.replace(/^\?/, '') : ''
-    const current = `${window.location.pathname}${qs ? `?${qs}` : ''}`
-    return addGentleToUrl(current, true, { allowImportantNews: allowImportant })
-  }, [allowImportant])
 
   useEffect(() => {
     if (!canPrompt) return
@@ -143,8 +136,14 @@ export function GentleCautionBadge({
             <button
               type="button"
               onClick={() => {
-                if (!gentleUrl) return
-                window.location.href = gentleUrl
+                if (typeof window === 'undefined') return
+                setPreferredGentle(true)
+                setPreferredGentleAllowImportantNews(allowImportant)
+                const params = new URLSearchParams(window.location.search || '')
+                params.delete('gentle')
+                params.delete('allow_important')
+                const nextUrl = params.toString() ? `${window.location.pathname}?${params.toString()}` : window.location.pathname
+                window.location.href = nextUrl
               }}
               style={{
                 width: '100%',

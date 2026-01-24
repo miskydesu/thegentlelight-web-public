@@ -4,7 +4,7 @@ import { fetchJson, isCountry, type HomeResponse } from '../../lib/tglApi'
 import { canonicalUrl, getCountrySeoMeta, getSiteBaseUrl } from '../../lib/seo'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '../../lib/i18n'
 import { generateSEOMetadata, generateHreflang, generateBreadcrumbListJSONLD } from '../../lib/seo-helpers'
-import { getGentleFromSearchParams, getAllowImportantFromSearchParams } from '../../lib/view-switch'
+import { getGentleFromCookies, getAllowImportantFromCookies } from '../../lib/view-switch-server'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PartialNotice } from '@/components/ui/PartialNotice'
 import { Card, CardTitle, CardContent, CardMeta } from '@/components/ui/Card'
@@ -75,14 +75,14 @@ export default async function CountryHome({
   searchParams,
 }: {
   params: { country: string }
-  searchParams: { gentle?: string; allow_important?: string; from?: string }
+  searchParams: { from?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
 
   const lang: Locale = getLocaleForCountry(country)
-  const gentle = getGentleFromSearchParams(searchParams)
-  const allowImportant = getAllowImportantFromSearchParams(searchParams)
+  const gentle = getGentleFromCookies()
+  const allowImportant = getAllowImportantFromCookies()
   const fromRoot = String(searchParams?.from || '') === 'root'
   const base = getSiteBaseUrl()
   const isJa = country === 'jp'
@@ -432,7 +432,7 @@ export default async function CountryHome({
           items: heartwarmingFinal,
           kind: 'heartwarming',
           rightSlot: (
-            <Link className={styles.listMore} href={`/${country}/category/heartwarming${gentle ? '?gentle=1' : ''}`}>
+            <Link className={styles.listMore} href={`/${country}/category/heartwarming`}>
               {locale === 'ja' ? '心温まる話をもっと見る →' : 'See more heartwarming →'}
             </Link>
           ),
@@ -440,7 +440,7 @@ export default async function CountryHome({
           <EmptyState
             title={country === 'jp' ? 'まだ心温まる話がありません' : 'No heartwarming topics yet'}
             description={country === 'jp' ? 'しばらくしてからもう一度お試しください。' : 'Please try again later.'}
-            action={{ label: t.pages.home.seeMore, href: `/${country}/category/heartwarming${gentle ? '?gentle=1' : ''}` }}
+            action={{ label: t.pages.home.seeMore, href: `/${country}/category/heartwarming` }}
           />
         )}
       </section>
@@ -452,7 +452,7 @@ export default async function CountryHome({
           items: importantFinal,
           kind: 'other',
           rightSlot: (
-            <Link className={styles.listMore} href={`/${country}/news${gentle ? '?gentle=1' : ''}`}>
+            <Link className={styles.listMore} href={`/${country}/news`}>
               {locale === 'ja' ? 'ニュース一覧へ →' : 'See all news →'}
             </Link>
           ),
@@ -460,7 +460,7 @@ export default async function CountryHome({
           <EmptyState
             title={country === 'jp' ? '重要トピックスがありません' : 'No important topics'}
             description={country === 'jp' ? 'しばらくしてからもう一度お試しください。' : 'Please try again later.'}
-            action={{ label: t.pages.home.seeMore, href: `/${country}/latest${gentle ? '?gentle=1' : ''}` }}
+            action={{ label: t.pages.home.seeMore, href: `/${country}/latest` }}
           />
         )}
       </section>
@@ -471,7 +471,7 @@ export default async function CountryHome({
           {locale === 'ja' ? '今日の気分に合わせて、読みやすいものからどうぞ。' : 'After the briefing, pick what you want to read next.'}
         </div>
         <div className={styles.guideGrid}>
-          <Link href={`/${country}/category/heartwarming?gentle=1`} className={styles.guideCardLink}>
+          <Link href={`/${country}/category/heartwarming`} className={styles.guideCardLink}>
             <div className={styles.guideCard}>
               <div style={{ fontWeight: 700, marginBottom: 6 }}>{locale === 'ja' ? '🤍 心温まる話を読む' : '🤍 Read heartwarming'}</div>
               <div className="tglMuted" style={{ fontSize: '0.92rem' }}>

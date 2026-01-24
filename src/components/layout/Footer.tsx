@@ -1,11 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useMemo } from 'react'
 import { isCountry, type Country } from '@/lib/tglApi'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
-import { addGentleToUrl, getGentleFromUrl } from '@/lib/view-switch'
 import { RegionLangSwitch } from './RegionLangSwitch'
 import { ViewSwitch } from './ViewSwitch'
 import styles from './Footer.module.css'
@@ -19,8 +18,6 @@ function detectCountryFromPathname(pathname: string): Country | null {
 
 export function Footer() {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
-
   const country = useMemo(() => detectCountryFromPathname(pathname || ''), [pathname])
 
   const lang: Locale | null = country ? getLocaleForCountry(country) : null
@@ -28,8 +25,6 @@ export function Footer() {
   const locale = lang === 'ja' ? 'ja' : 'en'
   const isJa = locale === 'ja'
 
-  const gentle = getGentleFromUrl(`${pathname || ''}?${searchParams?.toString() || ''}`)
-  const withGentle = (url: string) => addGentleToUrl(url, gentle)
 
   const primaryLinks = useMemo(() => {
     if (!country) return []
@@ -46,7 +41,7 @@ export function Footer() {
       { label: labelRoot, href: '/', isPrimary: true },
       { label: labelDaily, href: `/${country}/daily` },
       { label: labelNews, href: `/${country}/news` },
-      { label: isJa ? '心温まる話' : 'Heartwarming', href: `/${country}/category/heartwarming?gentle=1` },
+      { label: isJa ? '心温まる話' : 'Heartwarming', href: `/${country}/category/heartwarming` },
       { label: isJa ? 'コラム' : 'Columns', href: columnsHref },
       { label: isJa ? '名言' : 'Quotes', href: quotesHref },
     ]
@@ -84,7 +79,7 @@ export function Footer() {
             <div className={styles.colTitle}>{isJa ? '読む' : 'Read'}</div>
             <nav className={styles.links} aria-label={isJa ? 'フッターメインリンク' : 'Footer main links'}>
               {primaryLinks.map((x) => (
-                <Link key={x.href} href={withGentle(x.href)} className={`${styles.pill} ${x.isPrimary ? styles.pillPrimary : ''}`}>
+                <Link key={x.href} href={x.href} className={`${styles.pill} ${x.isPrimary ? styles.pillPrimary : ''}`}>
                   {x.label}
                 </Link>
               ))}
@@ -97,12 +92,12 @@ export function Footer() {
               {country ? (
                 <RegionLangSwitch currentCountry={country} className={styles.pill} />
               ) : (
-                <Link href={withGentle('/')} className={styles.pill}>
+                <Link href="/" className={styles.pill}>
                   {isJa ? '地域と言語' : 'Region & Language'}
                 </Link>
               )}
               {secondaryLinks.map((x) => (
-                <Link key={x.href} href={withGentle(x.href)} className={styles.pill}>
+                <Link key={x.href} href={x.href} className={styles.pill}>
                   {x.label}
                 </Link>
               ))}
@@ -114,7 +109,7 @@ export function Footer() {
           <div className={styles.col}>
             <div className={styles.colTitle}>{isJa ? '迷ったら' : 'Start here'}</div>
             <div className={styles.links}>
-              <Link className={styles.pill} href={withGentle(`/${country}/daily`)}>
+              <Link className={styles.pill} href={`/${country}/daily`}>
                 {isJa ? '朝刊を見る' : 'Briefings'}
               </Link>
             </div>

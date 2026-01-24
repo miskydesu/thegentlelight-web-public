@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { getGentleFromUrl, getGentleSwitchedUrl, hasEverEnabledGentle, setPreferredGentle } from '@/lib/view-switch'
+import { getPreferredGentle, hasEverEnabledGentle, setPreferredGentle } from '@/lib/view-switch'
 import { getUserToken, updateGentleMode } from '@/lib/userAuth'
 import { cn } from '@/lib/cn'
 import styles from './ViewSwitch.module.css'
@@ -21,12 +21,13 @@ export function ViewSwitch({ className, labelJa }: ViewSwitchProps) {
   const searchParams = useSearchParams()
   const isJa = (pathname || '').startsWith('/jp')
   
-  const gentle = getGentleFromUrl(`${pathname || ''}?${searchParams?.toString() || ''}`)
+  const [gentle, setGentle] = useState(false)
   // Hydration mismatch対策:
-  // - getUserToken()/hasEverEnabledGentle() は localStorage/cookie に依存し、SSRと初回CSRで差が出やすい
-  // - そのため「URL由来（gentle）」だけはSSRでも確定させ、その他はmount後に判定する
+  // - getUserToken()/hasEverEnabledGentle()/getPreferredGentle() は localStorage/cookie に依存し、SSRと初回CSRで差が出やすい
+  // - mount後にまとめて反映する
   const [clientHints, setClientHints] = useState<{ loggedIn: boolean; everEnabled: boolean } | null>(null)
   useEffect(() => {
+    setGentle(getPreferredGentle() === true)
     setClientHints({ loggedIn: Boolean(getUserToken()), everEnabled: hasEverEnabledGentle() })
   }, [])
 
@@ -37,19 +38,21 @@ export function ViewSwitch({ className, labelJa }: ViewSwitchProps) {
   const handleToggle = (nextGentle: boolean) => {
     if (nextGentle === gentle) return
     
-    const currentPath = `${pathname || ''}?${searchParams?.toString() || ''}`
-    const newUrl = getGentleSwitchedUrl(currentPath, nextGentle)
-    
     setPreferredGentle(nextGentle)
+    setGentle(nextGentle)
     // ログイン中はユーザー設定にも保存（非ログイン時はCookie/localStorageのみ）
     if (Boolean(getUserToken())) {
       void updateGentleMode(nextGentle).catch(() => {
         // ignore (guest / network / unauthorized)
       })
     }
-    // window.location.hrefを使って完全にリロード
-    // これによりサーバーコンポーネントが確実に再レンダリングされ、リストアップ基準も変わる
-    window.location.href = newUrl
+    // gentle=1 をURLに載せず、cookie/localStorageの状態で再描画
+    const params = new URLSearchParams(searchParams?.toString() || '')
+    params.delete('gentle')
+    params.delete('allow_important')
+    const basePath = pathname || ''
+    const nextUrl = params.toString() ? `${basePath}?${params.toString()}` : basePath
+    window.location.href = nextUrl
   }
 
   return (

@@ -46,15 +46,12 @@ export function generateMetadata({ params }: { params: { country: string } }) {
 
 export default async function AboutPage({
   params,
-  searchParams,
 }: {
   params: { country: string }
-  searchParams?: { gentle?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
   const isJa = country === 'jp'
-  const gentle = searchParams?.gentle === '1' || searchParams?.gentle === 'true'
   const base = getSiteBaseUrl()
   const normalizeDailyDate = (dateValue: string): string => {
     if (!dateValue) return ''
@@ -265,7 +262,7 @@ export default async function AboutPage({
                 <span className={styles.hwChip}>出来事ベース</span>
               </div>
               <div style={{ marginTop: 10 }}>
-                <Link className={styles.textLink} href={`/${country}/category/heartwarming?gentle=1`}>
+                <Link className={styles.textLink} href={`/${country}/category/heartwarming`}>
                   🤍 心温まる話を読む →
                 </Link>
               </div>
@@ -284,7 +281,7 @@ export default async function AboutPage({
                 <span className={styles.hwChip}>Real-world</span>
               </div>
               <div style={{ marginTop: 10 }}>
-                <Link className={styles.textLink} href={`/${country}/category/heartwarming?gentle=1`}>
+                <Link className={styles.textLink} href={`/${country}/category/heartwarming`}>
                   🤍 Read heartwarming →
                 </Link>
               </div>
@@ -564,7 +561,7 @@ export default async function AboutPage({
             </div>
           </Link>
 
-          <Link className={styles.nextChoiceLink} href={`/${country}/category/heartwarming${gentle ? '?gentle=1' : ''}`}>
+          <Link className={styles.nextChoiceLink} href={`/${country}/category/heartwarming`}>
             <div className={styles.nextChoiceCard}>
               <div className={styles.nextChoiceTitle}>
                 {isJa ? '🤍 心温まる話へ' : '🤍 Heartwarming'}
@@ -577,7 +574,7 @@ export default async function AboutPage({
             </div>
           </Link>
 
-          <Link className={styles.nextChoiceLink} href={`/${country}/columns${gentle ? '?gentle=1' : ''}`}>
+          <Link className={styles.nextChoiceLink} href={`/${country}/columns`}>
             <div className={styles.nextChoiceCard}>
               <div className={styles.nextChoiceTitle}>{isJa ? '📖 心を整えるコラム' : '📖 Calming columns'}</div>
               <div className={styles.nextChoiceDesc}>

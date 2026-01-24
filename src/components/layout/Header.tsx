@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { COUNTRIES, isCountry, type Country } from '@/lib/tglApi'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { CATEGORIES, getCategoryLabel } from '@/lib/categories'
-import { addGentleToUrl, getGentleFromUrl, getPreferredGentle, hasEverEnabledGentle } from '@/lib/view-switch'
+import { hasEverEnabledGentle, setPreferredGentle, setPreferredGentleAllowImportantNews } from '@/lib/view-switch'
 import { getCountrySwitchUrl } from '@/lib/country-switch'
 import { getUserToken, updateDefaultCountry } from '@/lib/userAuth'
 import { RegionLangSwitch } from './RegionLangSwitch'
@@ -45,25 +45,6 @@ export function Header({ country, className }: HeaderProps) {
   const locale = lang === 'ja' ? 'ja' : 'en'
   const isJa = locale === 'ja'
   const imageBase = process.env.NEXT_PUBLIC_IMAGE_BASE_URL || process.env.IMAGE_BASE_URL || ''
-
-  // gentle=1 を「一度設定したら持ち回り」にする
-  // - URLにgentleが無い場合、localStorageに保存された前回設定を見て gentle=1 を自動付与
-  // - これにより、リンク側でgentleを付け忘れてもページ遷移でリセットされない
-  useEffect(() => {
-    const qs = searchParams?.toString() || ''
-    const currentUrl = `${safePathname}${qs ? `?${qs}` : ''}`
-    const hasGentleParam = searchParams?.get('gentle') != null
-    if (hasGentleParam) return
-
-    const preferred = getPreferredGentle()
-    if (preferred !== true) return
-
-    const nextUrl = addGentleToUrl(currentUrl, true)
-    if (nextUrl !== currentUrl) {
-      // server components を確実に切り替えるため full reload
-      window.location.replace(nextUrl)
-    }
-  }, [pathname, searchParams])
 
   // Mobile header hide-on-scroll (down) / show-on-scroll (up)
   useEffect(() => {
@@ -138,6 +119,30 @@ export function Header({ country, className }: HeaderProps) {
     }
   }, [])
 
+  // gentle=1 でアクセスした場合、未ログインなら選好として保持（ログイン中は無視）
+  useEffect(() => {
+    const gentleParam = searchParams?.get('gentle')
+    if (!gentleParam) return
+    const gentleEnabled = gentleParam === '1' || gentleParam === 'true'
+    if (gentleEnabled && !getUserToken()) {
+      setPreferredGentle(true)
+      const allowParam = searchParams?.get('allow_important')
+      const allowImportant = !(allowParam === '0' || allowParam === 'false')
+      setPreferredGentleAllowImportantNews(allowImportant)
+    }
+    // URLからパラメータを除去（持ち回りを避ける）
+    try {
+      const params = new URLSearchParams(searchParams?.toString() || '')
+      params.delete('gentle')
+      params.delete('allow_important')
+      const basePath = pathname || ''
+      const nextUrl = params.toString() ? `${basePath}?${params.toString()}` : basePath
+      window.history.replaceState(null, '', nextUrl)
+    } catch {
+      // ignore
+    }
+  }, [pathname, searchParams])
+
   // Route marker for CSS-based sidebar overrides (server-side pathname is not always reliable in dev/edge)
   useEffect(() => {
     const isColumns = /\/columns(\/|$)/.test(safePathname)
@@ -148,15 +153,11 @@ export function Header({ country, className }: HeaderProps) {
     }
   }, [safePathname])
 
-  const gentle = getGentleFromUrl(`${safePathname}?${searchParams?.toString() || ''}`)
-  const withGentle = (url: string) => addGentleToUrl(url, gentle)
-  const showGentleSwitch = Boolean(getUserToken()) || gentle || hasEverEnabledGentle()
+  const showGentleSwitch = Boolean(getUserToken()) || hasEverEnabledGentle()
 
   // mobile menu: Region & Language items (Dialog内に直接表示したいので、RegionLangSwitchのロジックをここでも生成)
   const regionItems = useMemo(() => {
     if (!country) return []
-    const gentleParam = searchParams?.get('gentle')
-    const gentle2 = gentleParam === '1' || gentleParam === 'true'
     const categoryMatch = safePathname.match(/\/category\/([^/]+)/)
     const category = categoryMatch ? categoryMatch[1] : undefined
 
@@ -176,10 +177,9 @@ export function Header({ country, className }: HeaderProps) {
     return COUNTRIES.map((c) => {
       const to = c.code
       const baseUrl = getCountrySwitchUrl(country, to, safePathname || `/${country}`, category, null)
-      const href = addGentleToUrl(baseUrl, gentle2)
-      return { code: to, label: isJa2 ? labelsJa[to] : labelsEn[to], href, active: to === country }
+      return { code: to, label: isJa2 ? labelsJa[to] : labelsEn[to], href: baseUrl, active: to === country }
     })
-  }, [country, safePathname, searchParams])
+  }, [country, safePathname])
 
   const getMenuTextColor = (href: string): string | null => {
     if (!country) return null

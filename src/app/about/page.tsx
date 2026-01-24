@@ -6,9 +6,7 @@ export const metadata = {
   title: { absolute: 'このサイトについて - The Gentle Light' },
 }
 
-export default function AboutRedirect({ searchParams }: { searchParams: { gentle?: string } }) {
-  const gentle = searchParams?.gentle === '1' || searchParams?.gentle === 'true'
-
+export default function AboutRedirect() {
   const cookieStore = cookies()
   const savedCountry = (cookieStore.get('tgl_country')?.value || '').trim().toLowerCase()
   const validSaved = savedCountry === 'us' || savedCountry === 'ca' || savedCountry === 'uk' || savedCountry === 'jp'
@@ -37,6 +35,6 @@ export default function AboutRedirect({ searchParams }: { searchParams: { gentle
   // - EN (US/CA/UK) → /en/about
   const picked = (validSaved ? (savedCountry as 'us' | 'ca' | 'uk' | 'jp') : detected) || 'us'
   const target = picked === 'jp' ? '/jp/about' : '/en/about'
-  redirect(`${target}${gentle ? '?gentle=1' : ''}`)
+  redirect(target)
 }
 

@@ -1,11 +1,12 @@
 export type GentleMode = boolean
 
-const GENTLE_STORAGE_KEY = 'tgl_gentle_mode'
-const GENTLE_ALLOW_IMPORTANT_STORAGE_KEY = 'tgl_gentle_allow_important_news'
-const GENTLE_EVER_STORAGE_KEY = 'tgl_gentle_mode_ever'
+export const GENTLE_STORAGE_KEY = 'tgl_gentle_mode'
+export const GENTLE_ALLOW_IMPORTANT_STORAGE_KEY = 'tgl_gentle_allow_important_news'
+export const GENTLE_EVER_STORAGE_KEY = 'tgl_gentle_mode_ever'
 
-const GENTLE_COOKIE_KEY = 'tgl_gentle_mode'
-const GENTLE_EVER_COOKIE_KEY = 'tgl_gentle_mode_ever'
+export const GENTLE_COOKIE_KEY = 'tgl_gentle_mode'
+export const GENTLE_ALLOW_IMPORTANT_COOKIE_KEY = 'tgl_gentle_allow_important_news'
+export const GENTLE_EVER_COOKIE_KEY = 'tgl_gentle_mode_ever'
 
 function getCookieValue(name: string): string | null {
   if (typeof document === 'undefined') return null
@@ -158,6 +159,8 @@ export function setPreferredGentleAllowImportantNews(allow: boolean): void {
   } catch {
     // ignore
   }
+  // cookie: 180 days
+  setCookieValue(GENTLE_ALLOW_IMPORTANT_COOKIE_KEY, allow ? '1' : '0', 60 * 60 * 24 * 180)
 }
 
 /**

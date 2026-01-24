@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type TopicSourcesResponse } from '../../../../../../lib/tglApi'
 import { canonicalUrl } from '../../../../../../lib/seo'
 import { getLocaleForCountry } from '../../../../../../lib/i18n'
-import { getGentleFromSearchParams, getAllowImportantFromSearchParams } from '../../../../../../lib/view-switch'
+import { getGentleFromCookies, getAllowImportantFromCookies } from '../../../../../../lib/view-switch-server'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 import { ExternalLinkWithConfirm } from '@/components/ExternalLinkWithConfirm'
 
@@ -18,16 +18,14 @@ export function generateMetadata({ params }: { params: { country: string; topicI
 
 export default async function TopicSourcesPage({
   params,
-  searchParams,
 }: {
   params: { country: string; topicId: string }
-  searchParams: { gentle?: string; allow_important?: string }
 }) {
   const { country, topicId } = params
   if (!isCountry(country)) return notFound()
 
-  const gentle = getGentleFromSearchParams(searchParams)
-  const allowImportant = getAllowImportantFromSearchParams(searchParams)
+  const gentle = getGentleFromCookies()
+  const allowImportant = getAllowImportantFromCookies()
   const isJa = getLocaleForCountry(country) === 'ja'
   const data = await fetchJson<TopicSourcesResponse>(
     `/v1/${country}/topics/${encodeURIComponent(topicId)}/sources${gentle ? `?gentle=1${allowImportant ? '' : '&allow_important=0'}` : ''}`,
@@ -44,8 +42,8 @@ export default async function TopicSourcesPage({
   return (
     <main>
       <div className="tglMuted" style={{ marginBottom: 10, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <Link href={`/${country}/news/n/${topicId}${gentle ? '?gentle=1' : ''}`}>{isJa ? '← トピック' : '← Topic'}</Link>
-        <Link href={`/${country}/news${gentle ? '?gentle=1' : ''}`}>{isJa ? 'ニュース' : 'News'}</Link>
+        <Link href={`/${country}/news/n/${topicId}`}>{isJa ? '← トピック' : '← Topic'}</Link>
+        <Link href={`/${country}/news`}>{isJa ? 'ニュース' : 'News'}</Link>
       </div>
 
       <h1 style={{ fontSize: '1.35rem' }}>{isJa ? '参照元一覧' : 'Sources'}</h1>
