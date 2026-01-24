@@ -602,40 +602,43 @@ export default function AdminColumnDetailPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
           <h2 style={{ fontSize: '1.1rem', marginBottom: 12, fontWeight: 600, color: '#1a1a1a' }}>ローカライズ（Localization）</h2>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => void generateEnFromJa()}
-              disabled={busy}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: '1px solid #ced4da',
-                backgroundColor: '#fff',
-                color: '#212529',
-                cursor: busy ? 'not-allowed' : 'pointer',
-                fontWeight: 600,
-              }}
-              title="日本語（ja）を元に英語（en）を再生成（LLM）"
-            >
-              JA→EN 再生成（LLM）
-            </button>
-            <button
-              type="button"
-              onClick={() => void generateJaFromEn()}
-              disabled={busy}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: '1px solid #ced4da',
-                backgroundColor: '#fff',
-                color: '#212529',
-                cursor: busy ? 'not-allowed' : 'pointer',
-                fontWeight: 600,
-              }}
-              title="英語（en）を元に日本語（ja）を再生成（LLM）"
-            >
-              EN→JA 再生成（LLM）
-            </button>
+            {activeLang === 'ja' ? (
+              <button
+                type="button"
+                onClick={() => void generateEnFromJa()}
+                disabled={busy}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #ced4da',
+                  backgroundColor: '#fff',
+                  color: '#212529',
+                  cursor: busy ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                }}
+                title="日本語（ja）を元に英語（en）を再生成（LLM）"
+              >
+                JA→EN 再生成（LLM）
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void generateJaFromEn()}
+                disabled={busy}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #ced4da',
+                  backgroundColor: '#fff',
+                  color: '#212529',
+                  cursor: busy ? 'not-allowed' : 'pointer',
+                  fontWeight: 600,
+                }}
+                title="英語（en）を元に日本語（ja）を再生成（LLM）"
+              >
+                EN→JA 再生成（LLM）
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setActiveLang('ja')}
