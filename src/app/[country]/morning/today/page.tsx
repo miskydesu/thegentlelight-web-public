@@ -1,5 +1,9 @@
-import { permanentRedirect, notFound } from 'next/navigation'
+import { redirect, notFound } from 'next/navigation'
 import { fetchJson, isCountry, type TodayResponse, type HomeResponse } from '@/lib/tglApi'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+export const fetchCache = 'force-no-store'
 
 function normalizeDailyDate(dateValue: string): string {
   if (!dateValue) return ''
@@ -19,7 +23,7 @@ export default function MorningTodayPage({ params }: { params: { country: string
     } catch {}
     if (!today) {
       // fallback: list page is stable and indexable
-      permanentRedirect(`/${country}/daily`)
+      redirect(`/${country}/daily`)
     }
     // Prefer the latest generated daily date if present
     let latestDailyDate = ''
@@ -27,6 +31,6 @@ export default function MorningTodayPage({ params }: { params: { country: string
       const home = await fetchJson<HomeResponse>(`/v1/${country}/home`, { cache: 'no-store' })
       latestDailyDate = normalizeDailyDate(home?.daily_latest?.date_local ?? '')
     } catch {}
-    permanentRedirect(`/${country}/daily/${latestDailyDate || today}`)
+    redirect(`/${country}/daily/${latestDailyDate || today}`)
   })() as any
 }
