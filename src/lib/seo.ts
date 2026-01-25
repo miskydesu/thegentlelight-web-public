@@ -85,8 +85,8 @@ export function isIndexableTopic(input: IndexableTopicInput): boolean {
   const distress = Number.isFinite(Number(input.distress_score)) ? Number(input.distress_score) : null
   const highArousal = Boolean(input.high_arousal)
 
-  // 品質担保（設計メモより重要度の目安は importance_score >= 10）
-  if (!(importance >= 10 || sources >= 4)) return false
+  // 品質担保（目安: importance_score >= 10 か、複数ソースで裏取りできている）
+  if (!(importance >= 10 || sources >= 2)) return false
   if (highArousal) return false
   if (distress !== null && distress > 60) return false
   return true
