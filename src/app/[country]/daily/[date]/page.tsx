@@ -249,10 +249,15 @@ export default async function DailyDetailPage({
   const plannedMeta = needsFallback ? formatPlannedMetaLabel(date, locale) : null
   const showMeta = !fromToday
 
+  // Section mapping must match API generation logic (thegentlelight-api/src/jobs/daily.ts):
+  // - A: main
+  // - B: politics/economy (politics|business)
+  // - C: bright
+  // - D: near-life
   const mainTopic = data.topics.find((x: any) => x.section === 'A') || data.topics.find((x: any) => (x.rank ?? 0) === 1) || null
-  const nearTopic = data.topics.find((x: any) => x.section === 'B') || data.topics.find((x: any) => (x.rank ?? 0) === 2) || null
+  const polEconTopic = data.topics.find((x: any) => x.section === 'B') || data.topics.find((x: any) => (x.rank ?? 0) === 2) || null
   const brightTopic = data.topics.find((x: any) => x.section === 'C') || data.topics.find((x: any) => (x.rank ?? 0) === 3) || null
-  const polEconTopic = data.topics.find((x: any) => x.section === 'D') || data.topics.find((x: any) => (x.rank ?? 0) === 4) || null
+  const nearTopic = data.topics.find((x: any) => x.section === 'D') || data.topics.find((x: any) => (x.rank ?? 0) === 4) || null
 
   const renderTopicCards = (
     items: Array<any>,
