@@ -41,6 +41,51 @@ const BoldShortcutSelectionOnly = Extension.create({
   },
 })
 
+function normalizeMarkdownForRender(md: string): string {
+  // Defensive normalization:
+  // Some inputs may contain escaped markdown markers (e.g. "\\*\\*bold\\*\\*") or HTML entities ("&ast;")
+  // which would otherwise render as literal "**" in the editor after reload.
+  let s = String(md || '')
+  // Decode asterisk entities commonly produced by some converters
+  s = s.replace(/&ast;/g, '*').replace(/&#42;/g, '*')
+  // Unescape backslash-escaped emphasis markers
+  s = s.replace(/\\\*/g, '*').replace(/\\_/g, '_')
+
+  // CommonMark-style emphasis rules can fail for CJK when **...** is inside a "word"
+  // (e.g. "つまり**と**で"). In that case, render as HTML <strong> so it always shows as bold.
+  const isWordChar = (ch: string) => /[\p{L}\p{N}]/u.test(ch)
+  const convertInWordStrong = (input: string): string => {
+    let out = ''
+    let i = 0
+    while (i < input.length) {
+      const start = input.indexOf('**', i)
+      if (start < 0) {
+        out += input.slice(i)
+        break
+      }
+      const end = input.indexOf('**', start + 2)
+      if (end < 0) {
+        out += input.slice(i)
+        break
+      }
+      const prev = start > 0 ? input[start - 1] : ''
+      const next = end + 2 < input.length ? input[end + 2] : ''
+      const content = input.slice(start + 2, end)
+      out += input.slice(i, start)
+
+      if (content && isWordChar(prev) && isWordChar(next)) {
+        out += `<strong>${content}</strong>`
+      } else {
+        out += `**${content}**`
+      }
+      i = end + 2
+    }
+    return out
+  }
+  s = convertInWordStrong(s)
+  return s
+}
+
 function buildTurndown() {
   const td = new TurndownService({
     headingStyle: 'atx',
@@ -150,7 +195,7 @@ export function TiptapMarkdownEditor({ value, onChange, placeholder, disabled, u
     lastApplied.current = current
 
     // NOTE: Markdownの単一改行も <br> として表示したい（プレビュー反映の安定化）
-    const parsed = marked.parse(current || '', { breaks: true } as any)
+    const parsed = marked.parse(normalizeMarkdownForRender(current || ''), { breaks: true } as any)
     if (typeof parsed === 'string') {
       isApplyingExternalValue.current = true
       editor.commands.setContent(parsed, { emitUpdate: false })
