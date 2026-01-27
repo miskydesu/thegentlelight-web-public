@@ -61,7 +61,18 @@ function normalizeMarkdownForRender(md: string): string {
 
   // CommonMark-style emphasis rules can fail for CJK when **...** is inside a "word"
   // (e.g. "つまり**と**で"). In that case, render as HTML <strong> so it always shows as bold.
-  const isWordChar = (ch: string) => /[\p{L}\p{N}]/u.test(ch)
+  // NOTE: tsconfig target is es5, so avoid Unicode property escapes like \p{L}.
+  const isWordChar = (ch: string) => {
+    if (!ch) return false
+    const code = ch.charCodeAt(0)
+    // ASCII letters/digits
+    if ((code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122)) return true
+    // Hiragana, Katakana, CJK Unified Ideographs, Halfwidth Katakana
+    if ((code >= 0x3040 && code <= 0x30ff) || (code >= 0x4e00 && code <= 0x9fff) || (code >= 0xff66 && code <= 0xff9d)) return true
+    // Fullwidth alnum
+    if ((code >= 0xff10 && code <= 0xff19) || (code >= 0xff21 && code <= 0xff3a) || (code >= 0xff41 && code <= 0xff5a)) return true
+    return false
+  }
   const convertInWordStrong = (input: string): string => {
     let out = ''
     let i = 0
