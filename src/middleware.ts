@@ -156,7 +156,15 @@ export async function middleware(req: NextRequest) {
   }
 
   // / は「国選択（ルート表示）」を優先する（意図して直打ちしてくる人のため）
-  return NextResponse.next()
+  const res = NextResponse.next()
+  // IMPORTANT: `/` はHTMLなので長期キャッシュさせない（404の強キャッシュ事故を防ぐ）
+  res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+  res.headers.set('Pragma', 'no-cache')
+  res.headers.set('Expires', '0')
+  // CDN側も明示的に抑止（Cloudflare等）
+  res.headers.set('CDN-Cache-Control', 'no-store')
+  res.headers.set('Surrogate-Control', 'no-store')
+  return res
 }
 
 export const config = {

@@ -79,6 +79,7 @@ function getLocalYmdForCountry(country: 'us' | 'uk' | 'ca' | 'jp', now: Date = n
 
 export async function SidebarGentleIntro({ country }: { country: 'us' | 'uk' | 'ca' | 'jp' }) {
   const WELCOME_COLUMN_NAME_ID = 'mkcfunk9k7yk9nymsug0000000'
+  const GENTLE_GUIDE_FIXED_IDS = ['mkcnb9euo4wrdycp3p00000000', 'mkch38a2dt00tz1z5fn0000000'] as const
   const title = country === 'jp' ? 'The Gentle Lightへようこそ' : 'Welcome to The Gentle Light'
   const desc =
     country === 'jp'
@@ -91,30 +92,60 @@ export async function SidebarGentleIntro({ country }: { country: 'us' | 'uk' | '
     return nameId === WELCOME_COLUMN_NAME_ID
   }
 
-  // NOTE: show all "welcome" columns under the switch, oldest-first.
-  const welcomeColumns = await (async () => {
+  // Pick 3 columns for "The Gentle Guide":
+  // - latest from the GentleGuide category
+  // - 2 fixed column_id
+  // - fallback: fill from GentleGuide pool if missing
+  const { welcomeColumnName, selectedWelcomeColumns } = await (async () => {
     try {
       const sourceCountry = country === 'jp' ? 'jp' : 'ca'
       const d = await fetchJson<ColumnsResponse>(`/v1/${sourceCountry}/columns?limit=100`, { next: { revalidate: CACHE_POLICY.stable } })
-      const cols = (d.columns || []).filter(isWelcomeColumn)
-      cols.sort((a, b) => {
+      const all = d.columns || []
+      const byId = new Map<string, ColumnsResponse['columns'][number]>(all.map((c) => [String(c.column_id), c]))
+
+      const welcomePool = all.filter(isWelcomeColumn)
+      const sortDesc = (a: ColumnsResponse['columns'][number], b: ColumnsResponse['columns'][number]) => {
         const ax = a.published_at || a.updated_at || ''
         const ay = b.published_at || b.updated_at || ''
-        if (!ax && !ay) return String(a.column_id).localeCompare(String(b.column_id))
-        if (!ax) return -1
-        if (!ay) return 1
-        return ax.localeCompare(ay) // oldest first
-      })
-      return cols
+        if (!ax && !ay) return String(b.column_id).localeCompare(String(a.column_id))
+        if (!ax) return 1
+        if (!ay) return -1
+        return ay.localeCompare(ax) // newest first
+      }
+      welcomePool.sort(sortDesc)
+
+      const latestWelcome = welcomePool[0] || null
+      const fixed = GENTLE_GUIDE_FIXED_IDS.map((id) => byId.get(id)).filter(Boolean)
+
+      const usedIds = new Set<string>()
+      const picked: ColumnsResponse['columns'][number][] = []
+      const push = (c: ColumnsResponse['columns'][number] | null | undefined) => {
+        if (!c?.column_id) return
+        const id = String(c.column_id)
+        if (usedIds.has(id)) return
+        usedIds.add(id)
+        picked.push(c)
+      }
+
+      push(latestWelcome)
+      for (const c of fixed) push(c)
+      for (const c of welcomePool) {
+        if (picked.length >= 3) break
+        push(c)
+      }
+
+      const name = (() => {
+        const first = latestWelcome || welcomePool[0]
+        const n = first?.column_name?.name ? String(first.column_name.name) : ''
+        return n.trim()
+      })()
+
+      return { welcomeColumnName: name, selectedWelcomeColumns: picked.slice(0, 3) }
     } catch {
-      return []
+      return { welcomeColumnName: '', selectedWelcomeColumns: [] as ColumnsResponse['columns'] }
     }
   })()
-  const welcomeColumnName = (() => {
-    const first = welcomeColumns[0]
-    const name = first?.column_name?.name ? String(first.column_name.name) : ''
-    return name.trim()
-  })()
+  const gentleGuideHref = country === 'jp' ? '/jp/columns/series/the_gentle_guide' : '/en/columns/series/the_gentle_guide'
 
   return (
     <div className={styles.sidebarCard}>
@@ -127,14 +158,18 @@ export async function SidebarGentleIntro({ country }: { country: 'us' | 'uk' | '
         ))}
       </div>
 
-      {/* Welcome columns (oldest first) */}
+      {/* The Gentle Guide (3 selected columns) */}
       <div style={{ marginTop: 12 }}>
         {welcomeColumnName ? (
-          <div style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: 8, color: 'var(--text)' }}>{welcomeColumnName}</div>
+          <div style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: 8, color: 'var(--text)' }}>
+            <Link href={gentleGuideHref} style={{ color: 'inherit', textDecoration: 'none' }}>
+              {welcomeColumnName}
+            </Link>
+          </div>
         ) : null}
-        {welcomeColumns.length ? (
+        {selectedWelcomeColumns.length ? (
           <div className={styles.sidebarList}>
-            {welcomeColumns.map((c) => (
+            {selectedWelcomeColumns.map((c) => (
               <Link
                 key={c.column_id}
                 className={styles.sidebarItemLink}
