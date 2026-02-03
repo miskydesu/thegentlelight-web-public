@@ -18,8 +18,10 @@ export async function generateMetadata({ params }: { params: { country: string }
   const hreflang = generateHreflang('/quotes/authors')
 
   return {
-    title: isJa ? '著者で選ぶ' : 'Browse by Author',
-    description: isJa ? '名言を著者から選べます。' : 'Browse quotes by author.',
+    title: isJa ? '名言を偉人・著者で探す' : 'Find quotes by great thinkers & authors',
+    description: isJa
+      ? '哲学者・作家など偉人／著者別に、名言を探せます。'
+      : 'Browse calming quotes by philosophers, writers, and other great thinkers.',
     alternates: {
       canonical,
       languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
@@ -42,7 +44,9 @@ export default async function QuoteAuthorsPage({ params }: { params: { country: 
   return (
     <main>
       <div className={styles.shelfHeader}>
-        <h1 style={{ fontSize: '1.4rem' }}>{lang === 'ja' ? '著者で選ぶ' : 'Browse by Author'}</h1>
+        <h1 style={{ fontSize: '1.4rem' }}>
+          {lang === 'ja' ? '名言を偉人・著者で探す' : 'Find quotes by great thinkers & authors'}
+        </h1>
         <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>{t.pages.quotes.subtitle}</span>
       </div>
 

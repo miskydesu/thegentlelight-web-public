@@ -10,8 +10,8 @@ import { EnglishEditionBanner } from '@/components/en/EnglishEditionBanner'
 
 export async function generateMetadata() {
   return {
-    title: 'Browse by Author',
-    description: 'Browse quotes by author.',
+    title: 'Find Calming Quotes by Great Thinkers & Authors',
+    description: 'Browse calming quotes by philosophers, writers, and other great thinkers.',
     alternates: { canonical: canonicalUrl('/en/quotes/authors') },
   }
 }
@@ -30,7 +30,7 @@ export default async function EnQuoteAuthorsPage() {
   return (
     <main>
       <div className={styles.shelfHeader}>
-        <h1 style={{ fontSize: '1.4rem' }}>Browse by Author</h1>
+        <h1 style={{ fontSize: '1.4rem' }}>Find quotes by great thinkers & authors</h1>
         <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>calm words</span>
       </div>
 

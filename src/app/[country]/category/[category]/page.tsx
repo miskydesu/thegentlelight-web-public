@@ -83,7 +83,7 @@ export function generateMetadata({
     : baseDescription
   const meta: any = {
     title: (() => {
-      if (isJa && isHeartwarming) return '心温まる話（癒やしと希望）'
+      if (isJa && isHeartwarming) return '心温まるニュース一覧'
       return isJa ? `${catLabel}ニュース` : `${catLabel} News`
     })(),
     // カテゴリ棚は正URLとして運用するため、descriptionは国別差分込みで統一
