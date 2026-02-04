@@ -32,15 +32,23 @@ type QuoteThemesResponse = {
   meta: ApiMeta
 }
 
-export async function generateMetadata({ params }: { params: { theme: string } }) {
+export async function generateMetadata({ params, searchParams }: { params: { theme: string }; searchParams?: { q?: string; cursor?: string } }) {
   const theme = String(params.theme || '').trim()
   if (!theme) return {}
-  return {
+  const q = typeof searchParams?.q === 'string' ? searchParams.q.trim() : ''
+  const cursor = Number.isFinite(Number(searchParams?.cursor)) ? Math.max(0, Math.trunc(Number(searchParams?.cursor))) : 0
+  const canonical = canonicalUrl(`/en/quotes/theme/${encodeURIComponent(theme)}`)
+  const meta: any = {
     title: `${theme} Quotes`,
     alternates: {
-      canonical: canonicalUrl(`/en/quotes/theme/${encodeURIComponent(theme)}`),
+      canonical,
     },
   }
+  if (q || cursor > 0) {
+    meta.robots = { index: false, follow: true, googleBot: { index: false, follow: true } }
+    meta.alternates = { canonical }
+  }
+  return meta
 }
 
 export default async function EnQuotesThemePage({
@@ -48,14 +56,16 @@ export default async function EnQuotesThemePage({
   searchParams,
 }: {
   params: { theme: string }
-  searchParams: { q?: string }
+  searchParams: { q?: string; cursor?: string }
 }) {
   const sourceCountry = 'ca'
   const theme = String(params.theme || '').trim()
   if (!theme) return notFound()
 
   const q = typeof searchParams.q === 'string' ? searchParams.q.trim() : ''
-  const apiPath = `/v1/${sourceCountry}/quotes?limit=30${q ? `&q=${encodeURIComponent(q)}` : ''}&theme=${encodeURIComponent(theme)}`
+  const cursor = Number.isFinite(Number(searchParams.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
+  const limit = 20
+  const apiPath = `/v1/${sourceCountry}/quotes?limit=${limit}&cursor=${cursor}${q ? `&q=${encodeURIComponent(q)}` : ''}&theme=${encodeURIComponent(theme)}`
 
   const [data, themesData] = await Promise.all([
     fetchJson<QuotesResponse>(apiPath, { next: { revalidate: CACHE_POLICY.stable } }).catch(() => null),
@@ -87,6 +97,20 @@ export default async function EnQuotesThemePage({
     if (name) themeNameByTheme.set(key, name)
   }
   const themeLabel = themeNameByTheme.get(theme) || theme
+
+  const hasPrev = cursor > 0
+  const nextCursorFromMeta = Number.isFinite(Number(data.meta?.next_cursor)) ? Number(data.meta?.next_cursor) : null
+  const hasNext = typeof nextCursorFromMeta === 'number' ? nextCursorFromMeta > cursor : data.quotes.length === limit
+  const nextCursor = typeof nextCursorFromMeta === 'number' ? nextCursorFromMeta : cursor + data.quotes.length
+  const start = data.quotes.length > 0 ? cursor + 1 : 0
+  const end = cursor + data.quotes.length
+  const buildUrl = (nextC: number) => {
+    const sp = new URLSearchParams()
+    if (q) sp.set('q', q)
+    if (nextC > 0) sp.set('cursor', String(nextC))
+    const qs = sp.toString()
+    return `/en/quotes/theme/${encodeURIComponent(theme)}${qs ? `?${qs}` : ''}`
+  }
 
   return (
     <main>
@@ -161,8 +185,16 @@ export default async function EnQuotesThemePage({
       </form>
 
       {data.quotes.length > 0 ? (
-        <div className={styles.listGrid}>
-          {data.quotes.map((qq) => (
+        <>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>
+              {start && end ? `Showing: ${start}-${end}` : null}
+            </span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>{`${limit} per page`}</span>
+          </div>
+
+          <div className={styles.listGrid}>
+            {data.quotes.map((qq) => (
             <Card key={qq.quote_id} className={styles.topCard}>
               <Link href={`/en/quotes/${qq.quote_id}`} className={styles.mainLink}>
                 <CardTitle className={styles.quoteTitle}>{qq.quote_text || '—'}</CardTitle>
@@ -172,8 +204,41 @@ export default async function EnQuotesThemePage({
                 </div>
               </Link>
             </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
+            <div style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>{start && end ? `Showing: ${start}-${end}` : null}</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {hasPrev ? (
+                <Link className="tglButton" href={buildUrl(Math.max(0, cursor - limit))}>
+                  Back
+                </Link>
+              ) : (
+                <span className="tglButton" style={{ opacity: 0.35, pointerEvents: 'none' }}>
+                  Back
+                </span>
+              )}
+              {hasNext ? (
+                <Link className="tglButton" href={buildUrl(nextCursor)}>
+                  Read a little more
+                </Link>
+              ) : (
+                <span className="tglButton" style={{ opacity: 0.35, pointerEvents: 'none' }}>
+                  Read a little more
+                </span>
+              )}
+            </div>
+          </div>
+
+          {!hasNext ? (
+            <div style={{ marginTop: 18, padding: '12px 12px', borderRadius: 10, background: 'rgba(0, 0, 0, 0.03)', color: 'var(--text)', lineHeight: 1.6 }}>
+              This is enough for today.
+              <br />
+              Come back when you need a gentle moment.
+            </div>
+          ) : null}
+        </>
       ) : (
         <EmptyState
           title={q ? 'No results' : 'No quotes yet'}

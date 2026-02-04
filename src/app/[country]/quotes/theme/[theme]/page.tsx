@@ -36,26 +36,37 @@ type QuoteThemesResponse = {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: { country: string; theme: string }
+  searchParams?: { q?: string; cursor?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return {}
   const isJa = country === 'jp'
   const theme = String(params.theme || '').trim()
   if (!theme) return {}
+  const q = typeof searchParams?.q === 'string' ? searchParams.q.trim() : ''
+  const cursor = Number.isFinite(Number(searchParams?.cursor)) ? Math.max(0, Math.trunc(Number(searchParams?.cursor))) : 0
 
   // theme は固定語彙として index を狙う前提（実体は API themes から出る想定）
   const canonical = canonicalUrl(`/${country}/quotes/theme/${encodeURIComponent(theme)}`)
   const hreflang = generateHreflang(`/quotes/theme/${theme}`)
 
-  return {
+  const meta: any = {
     title: isJa ? `${theme}の名言` : `${theme} Quotes`,
     alternates: {
       canonical,
       languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
     },
   }
+  // 検索/ページングは noindex（重複・無限URLを避ける）
+  if (q || cursor > 0) {
+    meta.robots = { index: false, follow: true, googleBot: { index: false, follow: true } }
+    // canonical は常に「フィルタ無し・先頭ページ」に寄せる
+    meta.alternates = { canonical }
+  }
+  return meta
 }
 
 export default async function QuotesThemePage({
@@ -63,7 +74,7 @@ export default async function QuotesThemePage({
   searchParams,
 }: {
   params: { country: string; theme: string }
-  searchParams: { q?: string }
+  searchParams: { q?: string; cursor?: string }
 }) {
   const country = params.country
   if (!isCountry(country)) return notFound()
@@ -75,7 +86,9 @@ export default async function QuotesThemePage({
   const t = getTranslationsForCountry(country, lang)
 
   const q = typeof searchParams.q === 'string' ? searchParams.q.trim() : ''
-  const apiPath = `/v1/${country}/quotes?limit=30${q ? `&q=${encodeURIComponent(q)}` : ''}&theme=${encodeURIComponent(theme)}`
+  const cursor = Number.isFinite(Number(searchParams.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
+  const limit = 20
+  const apiPath = `/v1/${country}/quotes?limit=${limit}&cursor=${cursor}${q ? `&q=${encodeURIComponent(q)}` : ''}&theme=${encodeURIComponent(theme)}`
 
   const [data, themesData] = await Promise.all([
     fetchJson<QuotesResponse>(apiPath, { next: { revalidate: CACHE_POLICY.stable } }),
@@ -106,6 +119,20 @@ export default async function QuotesThemePage({
     if (name) themeNameByTheme.set(key, name)
   }
   const themeLabel = themeNameByTheme.get(theme) || theme
+
+  const hasPrev = cursor > 0
+  const nextCursorFromMeta = Number.isFinite(Number(data.meta?.next_cursor)) ? Number(data.meta?.next_cursor) : null
+  const hasNext = typeof nextCursorFromMeta === 'number' ? nextCursorFromMeta > cursor : data.quotes.length === limit
+  const nextCursor = typeof nextCursorFromMeta === 'number' ? nextCursorFromMeta : cursor + data.quotes.length
+  const start = data.quotes.length > 0 ? cursor + 1 : 0
+  const end = cursor + data.quotes.length
+  const buildUrl = (nextC: number) => {
+    const sp = new URLSearchParams()
+    if (q) sp.set('q', q)
+    if (nextC > 0) sp.set('cursor', String(nextC))
+    const qs = sp.toString()
+    return `/${country}/quotes/theme/${encodeURIComponent(theme)}${qs ? `?${qs}` : ''}`
+  }
 
   return (
     <main>
@@ -196,8 +223,16 @@ export default async function QuotesThemePage({
       </form>
 
       {data.quotes.length > 0 ? (
-        <div className={styles.listGrid}>
-          {data.quotes.map((q) => (
+        <>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>
+              {start && end ? (lang === 'ja' ? `表示：${start}-${end}` : `Showing: ${start}-${end}`) : null}
+            </span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>{lang === 'ja' ? `1ページ ${limit}件` : `${limit} per page`}</span>
+          </div>
+
+          <div className={styles.listGrid}>
+            {data.quotes.map((q) => (
             <Card key={q.quote_id} className={styles.topCard}>
               <Link href={`/${country}/quotes/${q.quote_id}`} className={styles.mainLink}>
                 <CardTitle className={styles.quoteTitle}>{q.quote_text || '—'}</CardTitle>
@@ -207,8 +242,53 @@ export default async function QuotesThemePage({
                 </div>
               </Link>
             </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
+            <div style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
+              {start && end ? (lang === 'ja' ? `表示：${start}-${end}` : `Showing: ${start}-${end}`) : null}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {hasPrev ? (
+                <Link className="tglButton" href={buildUrl(Math.max(0, cursor - limit))}>
+                  {lang === 'ja' ? '戻る' : 'Back'}
+                </Link>
+              ) : (
+                <span className="tglButton" style={{ opacity: 0.35, pointerEvents: 'none' }}>
+                  {lang === 'ja' ? '戻る' : 'Back'}
+                </span>
+              )}
+              {hasNext ? (
+                <Link className="tglButton" href={buildUrl(nextCursor)}>
+                  {lang === 'ja' ? 'もう少し読む' : 'Read a little more'}
+                </Link>
+              ) : (
+                <span className="tglButton" style={{ opacity: 0.35, pointerEvents: 'none' }}>
+                  {lang === 'ja' ? 'もう少し読む' : 'Read a little more'}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {!hasNext ? (
+            <div style={{ marginTop: 18, padding: '12px 12px', borderRadius: 10, background: 'rgba(0, 0, 0, 0.03)', color: 'var(--text)', lineHeight: 1.6 }}>
+              {lang === 'ja' ? (
+                <>
+                  今日は、これくらいでも十分です。
+                  <br />
+                  また、必要なときに。
+                </>
+              ) : (
+                <>
+                  This is enough for today.
+                  <br />
+                  Come back when you need a gentle moment.
+                </>
+              )}
+            </div>
+          ) : null}
+        </>
       ) : (
         <EmptyState
           title={q ? t.pages.quotes.noResults : t.pages.quotes.empty}

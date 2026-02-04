@@ -35,9 +35,16 @@ function buildDetailPreview(md: string): string {
   return compact.slice(0, 240)
 }
 
-export async function generateMetadata({ params }: { params: { author: string } }) {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: { author: string }
+  searchParams?: { cursor?: string }
+}) {
   const authorKey = String(decodeURIComponent(params.author || '')).trim()
   if (!authorKey) return {}
+  const cursor = Number.isFinite(Number(searchParams?.cursor)) ? Math.max(0, Math.trunc(Number(searchParams?.cursor))) : 0
   let resolved: QuoteAuthorResolveResponse | null = null
   try {
     resolved = await fetchJson<QuoteAuthorResolveResponse>(
@@ -49,28 +56,55 @@ export async function generateMetadata({ params }: { params: { author: string } 
   }
   const displayName = resolved?.author?.display_name || authorKey
   const canonicalKey = resolved?.author?.canonical_key || authorKey
-  return {
+  const canonical = canonicalUrl(`/en/quotes/author/${encodeURIComponent(canonicalKey)}`)
+  const meta: any = {
     title: `${displayName} Quotes`,
     description: `Quotes by ${displayName}.`,
-    alternates: { canonical: canonicalUrl(`/en/quotes/author/${encodeURIComponent(canonicalKey)}`) },
+    alternates: { canonical },
   }
+  if (cursor > 0) {
+    meta.robots = { index: false, follow: true, googleBot: { index: false, follow: true } }
+    meta.alternates = { canonical }
+  }
+  return meta
 }
 
-export default async function EnQuoteAuthorPage({ params }: { params: { author: string } }) {
+export default async function EnQuoteAuthorPage({
+  params,
+  searchParams,
+}: {
+  params: { author: string }
+  searchParams: { cursor?: string }
+}) {
   const sourceCountry = 'ca'
   const pref = getCountryPreferenceHint()
   const preferred = pref.country
   const authorKey = String(decodeURIComponent(params.author || '')).trim()
   if (!authorKey) return notFound()
 
-  const data = await fetchJson<QuoteAuthorQuotesResponse>(`/v1/${sourceCountry}/quote-authors/${encodeURIComponent(authorKey)}/quotes?limit=80`, {
-    next: { revalidate: CACHE_POLICY.stable },
-  }).catch(() => null)
+  const cursor = Number.isFinite(Number(searchParams.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
+  const limit = 20
+  const data = await fetchJson<QuoteAuthorQuotesResponse>(
+    `/v1/${sourceCountry}/quote-authors/${encodeURIComponent(authorKey)}/quotes?limit=${limit}&cursor=${cursor}`,
+    { next: { revalidate: CACHE_POLICY.stable } },
+  ).catch(() => null)
   if (!data) return notFound()
   const author = data.author
   const quotes = data.quotes || []
   const displayName = author?.display_name || authorKey
   const detailPreview = author?.detail_md ? buildDetailPreview(author.detail_md) : ''
+  const hasPrev = cursor > 0
+  const nextCursorFromMeta = Number.isFinite(Number(data.meta?.next_cursor)) ? Number(data.meta?.next_cursor) : null
+  const hasNext = typeof nextCursorFromMeta === 'number' ? nextCursorFromMeta > cursor : quotes.length === limit
+  const nextCursor = typeof nextCursorFromMeta === 'number' ? nextCursorFromMeta : cursor + quotes.length
+  const start = quotes.length > 0 ? cursor + 1 : 0
+  const end = cursor + quotes.length
+  const buildUrl = (nextC: number) => {
+    const sp = new URLSearchParams()
+    if (nextC > 0) sp.set('cursor', String(nextC))
+    const qs = sp.toString()
+    return `/en/quotes/author/${encodeURIComponent(authorKey)}${qs ? `?${qs}` : ''}`
+  }
 
   return (
     <main>
@@ -104,7 +138,7 @@ export default async function EnQuoteAuthorPage({ params }: { params: { author: 
         <div className={styles.authorShelfGrid}>
           <div className={`${styles.themeItem} ${styles.themeItemActive}`}>
             <span className={styles.themeLabel}>{displayName}</span>
-            <span className={styles.themeCount}>{quotes.length}</span>
+            <span className={styles.themeCount}>{`${end}${hasNext ? '+' : ''}`}</span>
           </div>
         </div>
       </div>
@@ -171,8 +205,16 @@ export default async function EnQuoteAuthorPage({ params }: { params: { author: 
       ) : null}
 
       {quotes.length ? (
-        <div className={styles.listGrid}>
-          {quotes.map((q) => (
+        <>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>
+              {start && end ? `Showing: ${start}-${end}` : null}
+            </span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>{`${limit} per page`}</span>
+          </div>
+
+          <div className={styles.listGrid}>
+            {quotes.map((q) => (
             <Card key={q.quote_id} className={styles.topCard}>
               <Link href={`/en/quotes/${q.quote_id}`} className={styles.mainLink}>
                 <CardTitle className={styles.quoteTitle}>{q.quote_text || '—'}</CardTitle>
@@ -182,8 +224,41 @@ export default async function EnQuoteAuthorPage({ params }: { params: { author: 
                 </div>
               </Link>
             </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
+            <div style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>{start && end ? `Showing: ${start}-${end}` : null}</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {hasPrev ? (
+                <Link className="tglButton" href={buildUrl(Math.max(0, cursor - limit))}>
+                  Back
+                </Link>
+              ) : (
+                <span className="tglButton" style={{ opacity: 0.35, pointerEvents: 'none' }}>
+                  Back
+                </span>
+              )}
+              {hasNext ? (
+                <Link className="tglButton" href={buildUrl(nextCursor)}>
+                  Read a little more
+                </Link>
+              ) : (
+                <span className="tglButton" style={{ opacity: 0.35, pointerEvents: 'none' }}>
+                  Read a little more
+                </span>
+              )}
+            </div>
+          </div>
+
+          {!hasNext ? (
+            <div style={{ marginTop: 18, padding: '12px 12px', borderRadius: 10, background: 'rgba(0, 0, 0, 0.03)', color: 'var(--text)', lineHeight: 1.6 }}>
+              This is enough for today.
+              <br />
+              Come back when you need a gentle moment.
+            </div>
+          ) : null}
+        </>
       ) : (
         <EmptyState
           title="No quotes found"
