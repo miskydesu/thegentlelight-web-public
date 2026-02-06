@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { fetchJson, type ApiMeta } from '@/lib/tglApi'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 import { canonicalUrl } from '@/lib/seo'
-import { generateSEOMetadata } from '@/lib/seo-helpers'
+import { generateHreflangSharedEn, generateSEOMetadata } from '@/lib/seo-helpers'
 import { marked } from 'marked'
 import styles from '../../../[country]/columns/[columnId]/columnDetail.module.css'
 import { Card, CardContent, CardMeta, CardTitle } from '@/components/ui/Card'
@@ -109,6 +109,7 @@ function replaceCountryToken(input: string, country: string): string {
 export async function generateMetadata({ params }: { params: { columnId: string } }) {
   const { columnId } = params
   const canonical = canonicalUrl(`/en/columns/${encodeURIComponent(columnId)}`)
+  const hreflang = generateHreflangSharedEn(`/columns/${encodeURIComponent(columnId)}`)
 
   const splitKeywords = (raw: string) =>
     String(raw || '')
@@ -161,11 +162,13 @@ export async function generateMetadata({ params }: { params: { columnId: string 
       keywords: keywords.length ? keywords : undefined,
       type: 'article',
       canonical,
+      hreflang,
     })
   } catch {
     return generateSEOMetadata({
       title: 'Columns',
       canonical,
+      hreflang,
     })
   }
 }

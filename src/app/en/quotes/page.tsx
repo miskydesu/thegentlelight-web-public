@@ -8,6 +8,7 @@ import { CACHE_POLICY } from '@/lib/cache-policy'
 import { canonicalUrl } from '@/lib/seo'
 import { getCountryPreferenceHint } from '@/lib/server/preferred-english-country'
 import { EnglishEditionBanner } from '@/components/en/EnglishEditionBanner'
+import { generateHreflangSharedEn } from '@/lib/seo-helpers'
 
 type QuotesResponse = {
   quotes: Array<{
@@ -61,7 +62,10 @@ export function generateMetadata({ searchParams }: { searchParams: { q?: string;
     description:
       'Famous words and quotes, curated with a gentle lens—focused on learning and calm (mainly quotations and summaries).',
     keywords: ['calming quotes', 'inspirational quotes', 'peaceful words', 'mental wellness', 'mindfulness'],
-    alternates: { canonical: canonicalUrl('/en/quotes') },
+    alternates: {
+      canonical: canonicalUrl('/en/quotes'),
+      languages: Object.fromEntries(generateHreflangSharedEn('/quotes').map((h) => [h.lang, h.url])),
+    },
   }
   if (cursor > 0) {
     meta.robots = { index: false, follow: true, googleBot: { index: false, follow: true } }

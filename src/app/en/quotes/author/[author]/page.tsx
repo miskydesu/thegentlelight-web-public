@@ -9,6 +9,7 @@ import { canonicalUrl } from '@/lib/seo'
 import { getCountryPreferenceHint } from '@/lib/server/preferred-english-country'
 import { EnglishEditionBanner } from '@/components/en/EnglishEditionBanner'
 import { marked } from 'marked'
+import { generateHreflangSharedEn } from '@/lib/seo-helpers'
 
 function sanitizeHtmlLoosely(html: string): string {
   let s = String(html || '')
@@ -57,10 +58,14 @@ export async function generateMetadata({
   const displayName = resolved?.author?.display_name || authorKey
   const canonicalKey = resolved?.author?.canonical_key || authorKey
   const canonical = canonicalUrl(`/en/quotes/author/${encodeURIComponent(canonicalKey)}`)
+  const hreflang = generateHreflangSharedEn(`/quotes/author/${encodeURIComponent(canonicalKey)}`)
   const meta: any = {
     title: `${displayName} Quotes`,
     description: `Quotes by ${displayName}.`,
-    alternates: { canonical },
+    alternates: {
+      canonical,
+      languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),
+    },
   }
   if (cursor > 0) {
     meta.robots = { index: false, follow: true, googleBot: { index: false, follow: true } }

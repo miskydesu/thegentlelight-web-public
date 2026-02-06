@@ -7,12 +7,16 @@ import { canonicalUrl } from '@/lib/seo'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { getCountryPreferenceHint } from '@/lib/server/preferred-english-country'
 import { EnglishEditionBanner } from '@/components/en/EnglishEditionBanner'
+import { generateHreflangSharedEn } from '@/lib/seo-helpers'
 
 export async function generateMetadata() {
   return {
     title: 'Find Calming Quotes by Great Thinkers & Authors',
     description: 'Browse calming quotes by philosophers, writers, and other great thinkers.',
-    alternates: { canonical: canonicalUrl('/en/quotes/authors') },
+    alternates: {
+      canonical: canonicalUrl('/en/quotes/authors'),
+      languages: Object.fromEntries(generateHreflangSharedEn('/quotes/authors').map((h) => [h.lang, h.url])),
+    },
   }
 }
 

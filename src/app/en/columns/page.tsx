@@ -9,6 +9,7 @@ import { CACHE_POLICY } from '@/lib/cache-policy'
 import { canonicalUrl } from '@/lib/seo'
 import { getCountryPreferenceHint } from '@/lib/server/preferred-english-country'
 import { EnglishEditionBanner } from '@/components/en/EnglishEditionBanner'
+import { generateHreflangSharedEn } from '@/lib/seo-helpers'
 
 function joinUrl(base: string, key: string): string {
   const b = base.replace(/\/+$/, '')
@@ -48,6 +49,7 @@ export function generateMetadata() {
     keywords: ['news columns', 'mental health news', 'how to stay informed', 'news without anxiety', 'healthy news consumption'],
     alternates: {
       canonical: canonicalUrl('/en/columns'),
+      languages: Object.fromEntries(generateHreflangSharedEn('/columns').map((h) => [h.lang, h.url])),
     },
   }
 }

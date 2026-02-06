@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { fetchJson, type ApiMeta } from '@/lib/tglApi'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 import { canonicalUrl } from '@/lib/seo'
-import { generateSEOMetadata } from '@/lib/seo-helpers'
+import { generateHreflangSharedEn, generateSEOMetadata } from '@/lib/seo-helpers'
 import styles from '@/app/[country]/columns/columns.module.css'
 import { Card, CardContent, CardTitle } from '@/components/ui/Card'
 import { WriterLink } from '@/components/columns/WriterLink'
@@ -47,6 +47,7 @@ function matchSeriesSlug(slug: string, c: ColumnsResponse['columns'][number]) {
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const { slug } = params
   const canonical = canonicalUrl(`/en/columns/series/${encodeURIComponent(slug)}`)
+  const hreflang = generateHreflangSharedEn(`/columns/series/${encodeURIComponent(slug)}`)
 
   try {
     const sourceCountry = 'ca'
@@ -60,11 +61,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       title: titleCore,
       description: desc,
       canonical,
+      hreflang,
     })
   } catch {
     return generateSEOMetadata({
       title: 'Columns',
       canonical,
+      hreflang,
     })
   }
 }

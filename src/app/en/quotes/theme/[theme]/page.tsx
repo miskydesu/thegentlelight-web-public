@@ -6,6 +6,7 @@ import { Card, CardTitle } from '@/components/ui/Card'
 import styles from '../../../../[country]/quotes/quotes.module.css'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 import { canonicalUrl } from '@/lib/seo'
+import { generateHreflangSharedEn } from '@/lib/seo-helpers'
 
 type QuotesResponse = {
   quotes: Array<{
@@ -42,6 +43,7 @@ export async function generateMetadata({ params, searchParams }: { params: { the
     title: `${theme} Quotes`,
     alternates: {
       canonical,
+      languages: Object.fromEntries(generateHreflangSharedEn(`/quotes/theme/${encodeURIComponent(theme)}`).map((h) => [h.lang, h.url])),
     },
   }
   if (q || cursor > 0) {

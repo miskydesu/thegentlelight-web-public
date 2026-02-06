@@ -4,7 +4,7 @@ import { fetchJson, type ApiMeta } from '@/lib/tglApi'
 import styles from '../../../[country]/quotes/[quoteId]/quoteDetail.module.css'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 import { canonicalUrl } from '@/lib/seo'
-import { generateSEOMetadata } from '@/lib/seo-helpers'
+import { generateHreflangSharedEn, generateSEOMetadata } from '@/lib/seo-helpers'
 import { Card, CardContent, CardMeta, CardTitle } from '@/components/ui/Card'
 import { getCountryPreferenceHint, getPreferredCountry } from '@/lib/server/preferred-english-country'
 import { EnglishEditionBanner } from '@/components/en/EnglishEditionBanner'
@@ -37,6 +37,7 @@ type QuoteThemesResponse = {
 export async function generateMetadata({ params }: { params: { quoteId: string } }) {
   const { quoteId } = params
   const canonical = canonicalUrl(`/en/quotes/${encodeURIComponent(quoteId)}`)
+  const hreflang = generateHreflangSharedEn(`/quotes/${encodeURIComponent(quoteId)}`)
   const siteName = 'The Gentle Light'
 
   const snippet = (s: string, max: number) => {
@@ -85,11 +86,13 @@ export async function generateMetadata({ params }: { params: { quoteId: string }
       keywords: keywords.length ? keywords : keywordsBase,
       type: 'article',
       canonical,
+      hreflang,
     })
   } catch {
     return generateSEOMetadata({
       title: `Quote｜${siteName}`,
       canonical,
+      hreflang,
     })
   }
 }

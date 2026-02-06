@@ -235,3 +235,36 @@ export function generateHreflang(pathWithinCountry: string): Array<{ lang: strin
   return hreflang
 }
 
+/**
+ * hreflang（/en 共通コンテンツ用）
+ *
+ * 方針:
+ * - 英語圏の共通コンテンツ（columns/quotes）は /en に恒久集約（正本）
+ * - /us|/ca|/uk への308URLを hreflang に出すと不確実性が増えるため、
+ *   すべて「最終URL（/en/...）」に統一して出す
+ *
+ * 例:
+ * - /en/columns
+ * - /en/quotes/123
+ */
+export function generateHreflangSharedEn(pathWithinEn: string): Array<{ lang: string; url: string }> {
+  const base = getSiteBaseUrl()
+  const p = (() => {
+    const raw = String(pathWithinEn || '').trim()
+    if (!raw) return ''
+    const path = raw.startsWith('/') ? raw : `/${raw}`
+    // Allow callers to pass either "/columns/..." or "/en/columns/..."
+    const withoutEn = path.startsWith('/en') ? path.slice('/en'.length) || '' : path
+    // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
+    return (withoutEn.replace(/\/$/, '') || '')
+  })()
+  const url = `${base}/en${p}`.replace(/\/$/, '') || `${base}/en`
+  return [
+    { lang: 'en', url },
+    { lang: 'en-US', url },
+    { lang: 'en-CA', url },
+    { lang: 'en-GB', url },
+    { lang: 'x-default', url },
+  ]
+}
+
