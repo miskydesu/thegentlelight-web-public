@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { fetchJson, isCountry, type TopicDetailResponse, type TopicSourcesResponse } from '../../../../../lib/tglApi'
-import { canonicalUrl, isIndexableTopic } from '../../../../../lib/seo'
+import { canonicalUrl, getCountrySeoMeta, isIndexableTopic } from '../../../../../lib/seo'
 import { getLocaleForCountry, type Locale } from '../../../../../lib/i18n'
 import { generateSEOMetadata, generateArticleJSONLD } from '../../../../../lib/seo-helpers'
 import { getSiteBaseUrl } from '../../../../../lib/seo'
@@ -31,9 +31,20 @@ export async function generateMetadata({
 
   const lang: Locale = getLocaleForCountry(country)
   const isJa = lang === 'ja'
-  const brandSuffix = isJa ? 'やさしいニュース The Gentle Light' : 'Calm News — The Gentle Light'
+  const countrySuffix = getCountrySeoMeta(country).titleSuffix
+  // /[country] の layout は `%s | Calm News — The Gentle Light${countrySuffix}`（EN）を付与するため、
+  // generateMetadata 側ではコアを丸めて（目安70文字）過度な長さを避ける。
+  const layoutSuffix = isJa ? ` | やさしいニュース The Gentle Light${countrySuffix}` : ` | Calm News — The Gentle Light${countrySuffix}`
   const sep = ' | '
   const locale: 'ja' | 'en' = isJa ? 'ja' : 'en'
+
+  const clampTitle = (raw: string, maxCore: number) => {
+    const v = String(raw || '').replace(/\s+/g, ' ').trim()
+    if (!v) return ''
+    if (v.length <= maxCore) return v
+    return `${v.slice(0, Math.max(0, maxCore - 1)).trim()}…`
+  }
+  const MAX_CORE = Math.max(30, 70 - layoutSuffix.length)
 
   try {
     // トピックデータを取得（metadata生成用）
@@ -67,7 +78,7 @@ export async function generateMetadata({
     const keywords = uniq([...topicKeywords, categoryLabel, commonKeyword].filter(Boolean) as string[])
 
     const meta = generateSEOMetadata({
-      title: `${t.title || `${country.toUpperCase()} News`}${sep}${categoryLabel}${sep}${brandSuffix}`,
+      title: `${clampTitle(t.title || `${country.toUpperCase()} News`, MAX_CORE)}${sep}${categoryLabel}`,
       description: t.summary || undefined,
       keywords: keywords.length ? keywords : undefined,
       type: 'article',
@@ -89,7 +100,7 @@ export async function generateMetadata({
   } catch (error) {
     // エラー時は最小限のmetadataを返す
     const meta = generateSEOMetadata({
-      title: `${country.toUpperCase()} News${sep}${brandSuffix}`,
+      title: `${country.toUpperCase()} News`,
       canonical: canonicalUrl(`/${country}/news/n/${topicId}`),
     })
     // 不明確な状態は noindex,follow
