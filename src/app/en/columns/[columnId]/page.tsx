@@ -202,96 +202,104 @@ export default async function EnColumnDetailPage({ params }: { params: { columnI
   const html = c.body_md ? renderMarkdownToSafeishHtml(replaceCountryToken(c.body_md, preferred)) : ''
 
   return (
-    <main className={styles.page}>
+    <>
       {/* Ensure sidebar CSS override is applied immediately (before hydration) */}
       <script
         dangerouslySetInnerHTML={{
           __html: "document.documentElement.setAttribute('data-tgl-page','columns');",
         }}
       />
-      <div className={styles.pageHeader}>
-        <Link href={`/en/columns`} style={{ fontSize: '0.95rem', color: 'var(--muted)', textDecoration: 'none' }}>
-          ← Columns
-        </Link>
-        <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>Reading</span>
-      </div>
-
-      <EnglishEditionBanner
-        initialEdition={(preferred === 'uk' || preferred === 'ca' || preferred === 'us' ? preferred : 'us') as any}
-        kind="columns"
-        inferredCountry={pref.source === 'geo' ? pref.country : null}
-        inferredSource={pref.source}
-      />
-
-      <Card className={styles.topCard} style={{ ['--cat-color' as any]: '#d63384' } as any}>
-        <CardTitle as="h1" style={{ fontSize: '1.45rem', marginBottom: 10 }}>
-          <span className={styles.cardTitleAccent}>{c.title || '—'}</span>
-        </CardTitle>
-        <CardMeta className={styles.metaRow}>
-          <span className={styles.metaLeft}>
-            {c.writers?.length
-              ? c.writers.map((w) => {
-                  const label = w.writer_name_en || w.writer_name_jp
-                  if (!label || !w.writer_id) return null
-                  return (
-                    <Link key={w.writer_id} href={`/en/writers/${encodeURIComponent(w.writer_id)}`} className={styles.writerPill}>
-                      {label}
-                    </Link>
-                  )
-                })
-              : c.writer_name
-                ? <span className={styles.countPill}>{c.writer_name}</span>
-                : null}
-            {c.column_name?.name && seriesSlug ? (
-              <Link href={`/en/columns/series/${encodeURIComponent(seriesSlug)}`} className={styles.seriesLink}>
-                {`Series: ${c.column_name.name}`}
+      <main className={styles.page}>
+        <article>
+          <header>
+            <div className={styles.pageHeader}>
+              <Link href={`/en/columns`} style={{ fontSize: '0.95rem', color: 'var(--muted)', textDecoration: 'none' }}>
+                ← Columns
               </Link>
+              <span style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>Reading</span>
+            </div>
+
+            <EnglishEditionBanner
+              initialEdition={(preferred === 'uk' || preferred === 'ca' || preferred === 'us' ? preferred : 'us') as any}
+              kind="columns"
+              inferredCountry={pref.source === 'geo' ? pref.country : null}
+              inferredSource={pref.source}
+            />
+
+            <Card className={styles.topCard} style={{ ['--cat-color' as any]: '#d63384' } as any}>
+              <CardTitle as="h1" style={{ fontSize: '1.45rem', marginBottom: 10 }}>
+                <span className={styles.cardTitleAccent}>{c.title || '—'}</span>
+              </CardTitle>
+              <CardMeta className={styles.metaRow}>
+                <span className={styles.metaLeft}>
+                  {c.writers?.length
+                    ? c.writers.map((w) => {
+                        const label = w.writer_name_en || w.writer_name_jp
+                        if (!label || !w.writer_id) return null
+                        return (
+                          <Link key={w.writer_id} href={`/en/writers/${encodeURIComponent(w.writer_id)}`} className={styles.writerPill}>
+                            {label}
+                          </Link>
+                        )
+                      })
+                    : c.writer_name
+                      ? <span className={styles.countPill}>{c.writer_name}</span>
+                      : null}
+                  {c.column_name?.name && seriesSlug ? (
+                    <Link href={`/en/columns/series/${encodeURIComponent(seriesSlug)}`} className={styles.seriesLink}>
+                      {`Series: ${c.column_name.name}`}
+                    </Link>
+                  ) : null}
+                  {c.tags?.length
+                    ? c.tags.slice(0, 8).map((tag) => (
+                        <span key={tag} className={styles.categoryBadge}>
+                          {tag}
+                        </span>
+                      ))
+                    : null}
+                </span>
+                {c.published_at ? <span className={styles.metaRight}>{new Date(c.published_at).toLocaleString()}</span> : null}
+              </CardMeta>
+              {c.excerpt ? (
+                <CardContent style={{ marginTop: 8 }}>
+                  <div className={styles.bodyText}>{c.excerpt}</div>
+                </CardContent>
+              ) : null}
+            </Card>
+
+            {coverSrc ? (
+              <>
+                <div style={{ height: 12 }} />
+                <Card className={`${styles.topCard} ${styles.coverCard}`}>
+                  <img className={styles.cover} src={coverSrc} alt="" loading="lazy" />
+                </Card>
+              </>
             ) : null}
-            {c.tags?.length
-              ? c.tags.slice(0, 8).map((tag) => (
-                  <span key={tag} className={styles.categoryBadge}>
-                    {tag}
-                  </span>
-                ))
-              : null}
-          </span>
-          {c.published_at ? <span className={styles.metaRight}>{new Date(c.published_at).toLocaleString()}</span> : null}
-        </CardMeta>
-        {c.excerpt ? (
-          <CardContent style={{ marginTop: 8 }}>
-            <div className={styles.bodyText}>{c.excerpt}</div>
-          </CardContent>
-        ) : null}
-      </Card>
+          </header>
 
-      {coverSrc ? (
-        <>
           <div style={{ height: 12 }} />
-          <Card className={`${styles.topCard} ${styles.coverCard}`}>
-            <img className={styles.cover} src={coverSrc} alt="" loading="lazy" />
-          </Card>
-        </>
-      ) : null}
 
-      <div style={{ height: 12 }} />
+          <section aria-label="Body">
+            <Card className={styles.topCard}>
+              <CardContent>
+                {c.body_md ? (
+                  <section className={styles.markdown} dangerouslySetInnerHTML={{ __html: html }} />
+                ) : (
+                  <div className={styles.mutedText}>(No content.)</div>
+                )}
+              </CardContent>
+            </Card>
+          </section>
 
-      <Card className={styles.topCard}>
-        <CardContent>
-          {c.body_md ? (
-            <div className={styles.markdown} dangerouslySetInnerHTML={{ __html: html }} />
-          ) : (
-            <div className={styles.mutedText}>(No content.)</div>
-          )}
-        </CardContent>
-      </Card>
-
-      <div style={{ height: 12 }} />
-      <div className={styles.bottomNav}>
-        <Link href={`/${preferred}`} className={styles.bottomLink}>
-          ← Home
-        </Link>
-      </div>
-    </main>
+          <div style={{ height: 12 }} />
+          <footer className={styles.bottomNav}>
+            <Link href={`/${preferred}`} className={styles.bottomLink}>
+              ← Home
+            </Link>
+          </footer>
+        </article>
+      </main>
+    </>
   )
 }
 
