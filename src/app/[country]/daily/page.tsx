@@ -213,7 +213,9 @@ export default async function DailyIndex({
         }}
       />
       <main>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
+        <header
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}
+        >
           <div style={{ flex: '1 1 520px', minWidth: 0 }}>
             <h1 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: 6 }}>
               {country === 'jp' ? '朝刊一覧' : 'Daily Briefings'}
@@ -243,11 +245,11 @@ export default async function DailyIndex({
             </div>
           </div>
           {isPartial && <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>}
-        </div>
+        </header>
 
         <div style={{ height: 14 }} />
 
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <nav aria-label={country === 'jp' ? '主要導線' : 'Primary actions'} style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <Link
             href={latestDailyDate ? `/${country}/daily/${latestDailyDate}` : `/${country}/daily`}
             style={{
@@ -269,7 +271,7 @@ export default async function DailyIndex({
               ? `最新の朝刊（${latestDailyMonthDayLabel || '—'}）を見る`
               : `Latest briefing (${latestDailyMonthDayLabel || '—'})`}
           </Link>
-        </div>
+        </nav>
 
         <div style={{ height: 16 }} />
 
@@ -297,7 +299,7 @@ export default async function DailyIndex({
 
           {recentDailyItems.length ? (
             <section className={homeStyles.listSection} style={{ marginTop: 0, minWidth: 0 }}>
-              <div
+              <header
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -308,18 +310,26 @@ export default async function DailyIndex({
               >
                 <h2 style={{ fontSize: '1.1rem', margin: 0 }}>{country === 'jp' ? '直近5日分の朝刊' : 'Briefings: last 5 days'}</h2>
                 <span />
-              </div>
+              </header>
 
               <ul className={homeStyles.listItems}>
                 {recentDailyItems.map((it) => (
                   <li key={it.date} className={homeStyles.listItem}>
                     <Link className={homeStyles.listItemLink} href={`/${country}/daily/${it.date}`}>
-                      <div
+                      <h3
                         className={`${homeStyles.listTitle} ${homeStyles.listTitleAccent}`}
                         style={{ ['--cat-color' as any]: getBorderAccentForDate(it.date) }}
                       >
-                        {country === 'jp' ? `${it.monthDay}の朝刊` : `Briefing (${it.monthDay})`}
-                      </div>
+                        {country === 'jp' ? (
+                          <>
+                            <time dateTime={it.date}>{it.monthDay}</time>の朝刊
+                          </>
+                        ) : (
+                          <>
+                            Briefing (<time dateTime={it.date}>{it.monthDay}</time>)
+                          </>
+                        )}
+                      </h3>
                       <div className={styles.dailyRecentMeta}>
                         <span className={styles.dailyRecentMessage} style={{ opacity: 0.9 }}>
                           {it.message || (country === 'jp' ? '（まだ準備中です）' : '(Not ready yet)')}

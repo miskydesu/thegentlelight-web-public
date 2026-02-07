@@ -211,9 +211,9 @@ export default async function DailyDetailPage({
   if (date > todayYmd) {
     return (
       <main>
-        <div className="tglMuted" style={{ marginBottom: 10 }}>
+        <nav className="tglMuted" aria-label={country === 'jp' ? '戻る' : 'Back'} style={{ marginBottom: 10 }}>
           <Link href={`/${country}/daily/${todayYmd}`}>← {country === 'jp' ? '本日の朝刊へ' : "Go to today's briefing"}</Link>
-        </div>
+        </nav>
         <EmptyState
           title={country === 'jp' ? '未来日付の朝刊は閲覧できません。' : 'Future briefings are not available.'}
           description={country === 'jp' ? '当日の朝刊へ移動します。' : "Redirect to today's briefing."}
@@ -232,14 +232,16 @@ export default async function DailyDetailPage({
   } catch (e: any) {
     return (
       <main>
-        <div className="tglMuted" style={{ marginBottom: 10 }}>
+        <nav className="tglMuted" aria-label={country === 'jp' ? '戻る' : 'Back'} style={{ marginBottom: 10 }}>
           <Link href={`/${country}/daily`}>← {country === 'jp' ? '朝刊一覧' : 'Morning Briefing'}</Link>
-        </div>
-        <h1 style={{ fontSize: '1.45rem' }}>
-          {country === 'jp'
-            ? `${formatDailyTitleDateJa(date)}の朝刊`
-            : `Daily Briefing (${countryNameEn(country)}) — ${date}`}
-        </h1>
+        </nav>
+        <header>
+          <h1 style={{ fontSize: '1.45rem' }}>
+            {country === 'jp'
+              ? `${formatDailyTitleDateJa(date)}の朝刊`
+              : `Daily Briefing (${countryNameEn(country)}) — ${date}`}
+          </h1>
+        </header>
         <div style={{ height: 10 }} />
         <EmptyState
           title={country === 'jp' ? 'APIに接続できません' : 'Cannot reach API'}
@@ -295,17 +297,29 @@ export default async function DailyDetailPage({
               const roleBadgeClassName = x._roleBadgeClassName as string | undefined
               return (
                 <Card
+                  as="article"
                   clickable
                   className={`${styles.topCard}${isHeartwarming ? ` ${styles.topCardHeartwarming}` : ''}`}
                   style={{ ['--cat-color' as any]: theme.color } as any}
                 >
                   {dateLabel && datePosition === 'topRight' ? (
-                    <span className={`${styles.cardDate} ${styles.cardDateTopRight}`}>{dateLabel}</span>
+                    x.last_source_published_at ? (
+                      <time
+                        className={`${styles.cardDate} ${styles.cardDateTopRight}`}
+                        dateTime={String(x.last_source_published_at)}
+                      >
+                        {dateLabel}
+                      </time>
+                    ) : (
+                      <span className={`${styles.cardDate} ${styles.cardDateTopRight}`}>{dateLabel}</span>
+                    )
                   ) : null}
                   {roleBadgeLabel ? (
                     <span className={`${styles.roleBadge} ${roleBadgeClassName || ''}`}>{roleBadgeLabel}</span>
                   ) : null}
-                  <CardTitle className={styles.cardTitleAccent}>{x.title}</CardTitle>
+                  <CardTitle as="h3" className={styles.cardTitleAccent}>
+                    {x.title}
+                  </CardTitle>
                   {x.summary ? (
                     <CardContent style={{ marginTop: '0.25rem' }}>
                       <p className={styles.cardSummary}>{x.summary}</p>
@@ -325,7 +339,15 @@ export default async function DailyDetailPage({
                       ) : null}
                     </CardMeta>
                   ) : null}
-                  {dateLabel && datePosition === 'bottom' ? <span className={styles.cardDate}>{dateLabel}</span> : null}
+                  {dateLabel && datePosition === 'bottom' ? (
+                    x.last_source_published_at ? (
+                      <time className={styles.cardDate} dateTime={String(x.last_source_published_at)}>
+                        {dateLabel}
+                      </time>
+                    ) : (
+                      <span className={styles.cardDate}>{dateLabel}</span>
+                    )
+                  ) : null}
                 </Card>
               )
             })()}
@@ -372,7 +394,13 @@ export default async function DailyDetailPage({
                     sourceLabel || dateLabel ? (
                       <div className={styles.listMeta}>
                         {sourceLabel ? <span>{sourceLabel}</span> : null}
-                        {dateLabel ? <span>{dateLabel}</span> : null}
+                        {dateLabel ? (
+                          item.last_source_published_at ? (
+                            <time dateTime={String(item.last_source_published_at)}>{dateLabel}</time>
+                          ) : (
+                            <span>{dateLabel}</span>
+                          )
+                        ) : null}
                       </div>
                     ) : null
                   ) : options.kind === 'important' ? (
@@ -388,7 +416,13 @@ export default async function DailyDetailPage({
                           {getCategoryLabel(cat as any, locale)}
                         </span>
                         {sourceLabel ? <span>{sourceLabel}</span> : null}
-                        {dateLabel ? <span>{dateLabel}</span> : null}
+                        {dateLabel ? (
+                          item.last_source_published_at ? (
+                            <time dateTime={String(item.last_source_published_at)}>{dateLabel}</time>
+                          ) : (
+                            <span>{dateLabel}</span>
+                          )
+                        ) : null}
                       </div>
                     ) : (
                       <div className={styles.listMeta}>
@@ -413,7 +447,7 @@ export default async function DailyDetailPage({
     options: { divider?: 'top' | 'bottom' | 'none' } = {},
     rightSlot?: React.ReactNode
   ) => (
-    <div
+    <header
       style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -437,7 +471,7 @@ export default async function DailyDetailPage({
       ) : (
         <span />
       )}
-    </div>
+    </header>
   )
 
   const isTodayLocal = date === getLocalYmdForCountry(country)
@@ -490,7 +524,8 @@ export default async function DailyDetailPage({
   return (
     <main style={{ position: 'relative' }}>
       {showMeta ? (
-        <div
+        <aside
+          aria-label={locale === 'ja' ? '作成情報' : 'Creation info'}
           style={{
             position: 'absolute',
             top: 0,
@@ -500,14 +535,14 @@ export default async function DailyDetailPage({
           }}
         >
           {plannedMeta ?? meta.meta}
-        </div>
+        </aside>
       ) : null}
-      <div className="tglMuted" style={{ marginBottom: 10 }}>
+      <nav className="tglMuted" aria-label={locale === 'ja' ? '戻る' : 'Back'} style={{ marginBottom: 10 }}>
         <Link href={`/${country}/daily`}>← {country === 'jp' ? '朝刊一覧' : 'Morning Briefing'}</Link>
-      </div>
+      </nav>
 
       {fromToday ? (
-        <div style={{ marginBottom: 10 }}>
+        <aside aria-label={country === 'jp' ? 'お知らせ' : 'Notice'} style={{ marginBottom: 10 }}>
           <div
             style={{
               border: '1px solid rgba(0,0,0,0.08)',
@@ -557,16 +592,18 @@ export default async function DailyDetailPage({
             </div>
           </div>
           <div style={{ marginTop: 8, borderTop: '1px solid rgba(0,0,0,0.08)' }} />
-        </div>
+        </aside>
       ) : null}
 
-      <h1 style={{ fontSize: '1.45rem' }}>
-        {country === 'jp'
-          ? `${formatDailyTitleDateJa(date)}の朝刊`
-          : `Daily Briefing (${countryNameEn(country)}) — ${date}`}
-      </h1>
-      <div style={{ height: 6 }} />
-      <div style={{ fontSize: '0.98rem', lineHeight: 1.6, color: 'var(--text)', marginBottom: 10 }}>{meta.note}</div>
+      <header>
+        <h1 style={{ fontSize: '1.45rem' }}>
+          {country === 'jp'
+            ? `${formatDailyTitleDateJa(date)}の朝刊`
+            : `Daily Briefing (${countryNameEn(country)}) — ${date}`}
+        </h1>
+        <div style={{ height: 6 }} />
+        <p style={{ fontSize: '0.98rem', lineHeight: 1.6, color: 'var(--text)', marginBottom: 10 }}>{meta.note}</p>
+      </header>
 
       {data.daily.status === 'failed' ? (
         <>
@@ -579,8 +616,8 @@ export default async function DailyDetailPage({
       ) : data.daily.status === 'pending' || data.daily.status === 'missing' ? (
         <>
           <div style={{ height: 6 }} />
-          <Card>
-            <CardTitle>{country === 'jp' ? 'この日の朝刊は、まだ準備中です。' : 'This briefing is still being prepared.'}</CardTitle>
+          <Card as="section">
+            <CardTitle as="h2">{country === 'jp' ? 'この日の朝刊は、まだ準備中です。' : 'This briefing is still being prepared.'}</CardTitle>
             <CardContent style={{ marginTop: 8, color: 'var(--muted)', lineHeight: 1.6 }}>
               {country === 'jp'
                 ? '作成が完了し次第、ここに表示されます。よければ、次のいずれかをご利用ください。'

@@ -173,12 +173,14 @@ export default async function NewsPage({
 
   return (
     <main>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
+      <header
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}
+      >
         <h1 style={{ fontSize: '1.4rem' }}>{country === 'jp' ? 'ニュース一覧' : 'Browse News'}</h1>
         <div style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
-        {isPartial && <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>}
+          {isPartial && <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>部分取得（partial）</span>}
         </div>
-      </div>
+      </header>
 
       <div style={{ height: 12 }} />
 
@@ -186,7 +188,7 @@ export default async function NewsPage({
       {isDefaultView ? (
         <>
           {/* レイヤーA（静的・説明）：テキストだけ。導線/検索と同じ重要度に見せない */}
-          <div style={{ marginTop: 2, marginBottom: 14 }}>
+          <section style={{ marginTop: 2, marginBottom: 14 }} aria-label={locale === 'ja' ? 'このページについて' : 'About this page'}>
             <div style={{ color: 'var(--text)', fontWeight: 800, fontSize: '0.95rem', lineHeight: 1.65 }}>
               {locale === 'ja' ? (
                 <>
@@ -202,11 +204,13 @@ export default async function NewsPage({
                 </>
               )}
             </div>
-          </div>
+          </section>
         </>
       ) : null}
 
-      <NewsSearchForm country={country} initialQuery={query} initialCategory={category} />
+      <section aria-label={locale === 'ja' ? '検索' : 'Search'}>
+        <NewsSearchForm country={country} initialQuery={query} initialCategory={category} />
+      </section>
 
       <div style={{ height: 18 }} />
       {isDefaultView ? <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }} /> : null}
@@ -214,136 +218,145 @@ export default async function NewsPage({
 
       {/* /news の唯一の編集枠: 最近、動きがあった話（初期表示のみ / 3〜6件の上限固定） */}
       {isDefaultView && (recentUpdates.topics || []).length > 0 ? (
-        <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-            <div style={{ fontSize: '1.05rem', fontWeight: 900 }}>
+        <section aria-label={locale === 'ja' ? '今日の少し気になる動き' : 'Today’s calm updates'}>
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 900, margin: 0 }}>
               {locale === 'ja' ? '今日の少し気になる動き' : 'Today’s calm updates'}
-            </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--muted)', opacity: 0.75 }}>
-              {locale === 'ja' ? '今日' : 'Today'}
-            </div>
-          </div>
+            </h2>
+            <div style={{ fontSize: '0.78rem', color: 'var(--muted)', opacity: 0.75 }}>{locale === 'ja' ? '今日' : 'Today'}</div>
+          </header>
           <div style={{ height: 10 }} />
           <div style={{ display: 'grid', gap: 10 }}>
             {recentUpdates.topics.slice(0, 3).map((x) => {
               const updated = formatUpdatedAgo(x.last_source_published_at ?? x.last_seen_at)
               return (
-                <Link
-                  key={x.topic_id}
-                  href={`/${country}/news/n/${x.topic_id}`}
-                  style={{
-                    textDecoration: 'none',
-                    color: 'inherit',
-                    border: '1px solid var(--border)',
-                    background: '#fff',
-                    borderRadius: 14,
-                    padding: '12px 14px',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
-                    <div style={{ fontWeight: 800, lineHeight: 1.35 }}>{x.title}</div>
-                  </div>
-                  {x.excerpt ? (
-                    <div style={{ marginTop: 6 }}>
-                      <p
-                        className={styles.cardSummary}
-                        style={{ color: 'var(--muted)', opacity: 0.85, lineHeight: 1.45 }}
+                <article key={x.topic_id}>
+                  <Link
+                    href={`/${country}/news/n/${x.topic_id}`}
+                    style={{
+                      display: 'block',
+                      textDecoration: 'none',
+                      color: 'inherit',
+                      border: '1px solid var(--border)',
+                      background: '#fff',
+                      borderRadius: 14,
+                      padding: '12px 14px',
+                    }}
+                  >
+                    <div
+                      style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}
+                    >
+                      <div style={{ fontWeight: 800, lineHeight: 1.35 }}>{x.title}</div>
+                    </div>
+                    {x.excerpt ? (
+                      <div style={{ marginTop: 6 }}>
+                        <p
+                          className={styles.cardSummary}
+                          style={{ color: 'var(--muted)', opacity: 0.85, lineHeight: 1.45 }}
+                        >
+                          {x.excerpt}
+                        </p>
+                      </div>
+                    ) : null}
+                    {updated ? (
+                      <div
+                        style={{ marginTop: 6, textAlign: 'right', fontSize: '0.82rem', color: 'var(--text)', fontWeight: 700 }}
                       >
-                        {x.excerpt}
-                      </p>
-                    </div>
-                  ) : null}
-                  {updated ? (
-                    <div style={{ marginTop: 6, textAlign: 'right', fontSize: '0.82rem', color: 'var(--text)', fontWeight: 700 }}>
-                      {updated}
-                    </div>
-                  ) : null}
-                </Link>
+                        {updated}
+                      </div>
+                    ) : null}
+                  </Link>
+                </article>
               )
             })}
           </div>
           <div style={{ height: 14 }} />
           <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)' }} />
           <div style={{ height: 18 }} />
-        </>
+        </section>
       ) : null}
 
       {(query || category) && (
-        <div style={{ marginBottom: '1rem' }}>
+        <section style={{ marginBottom: '1rem' }} aria-label={locale === 'ja' ? '検索結果の概要' : 'Search results summary'}>
           <p style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>
             {t.pages.news.searchResults}:
             {query ? ` 「${query}」` : ''}
             {category ? ` / ${getCategoryLabel(category, locale)}` : ''}
             {start && end ? `（${start}-${end}）` : ''}
           </p>
-        </div>
+        </section>
       )}
 
       {isDefaultView && !(query || category) ? (
-        <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-            <div style={{ fontSize: '1.05rem', fontWeight: 900 }}>{locale === 'ja' ? '最新のニュース' : 'Latest news'}</div>
-            {start && end ? (
-              <div style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
-                {locale === 'ja' ? `表示：${start}-${end}` : `Showing: ${start}-${end}`}
-              </div>
-            ) : null}
-          </div>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+          <h2 style={{ fontSize: '1.05rem', fontWeight: 900, margin: 0 }}>{locale === 'ja' ? '最新のニュース' : 'Latest news'}</h2>
+          {start && end ? (
+            <div style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
+              {locale === 'ja' ? `表示：${start}-${end}` : `Showing: ${start}-${end}`}
+            </div>
+          ) : null}
           <div style={{ height: 10 }} />
-        </>
+        </header>
       ) : null}
 
       {topics.length > 0 ? (
         <>
-          <div className={styles.listGrid}>
-            {topics.map((x) => (
-              <Link key={x.topic_id} href={`/${country}/news/n/${x.topic_id}`}>
-                {(() => {
-                  const theme = getCategoryBadgeTheme(x.category)
-                  const isHeartwarming = x.category === 'heartwarming'
-                  return (
-                    <Card
-                      clickable
-                      className={`${styles.topCard} ${isHeartwarming ? styles.topCardHeartwarming : ''}`}
-                      style={{ ['--cat-color' as any]: theme.color } as any}
-                    >
-                      <CardTitle className={styles.cardTitleAccent}>{x.title}</CardTitle>
-                      {x.summary ? (
-                        <CardContent style={{ marginTop: '0.25rem' }}>
-                          <p className={styles.cardSummary}>{x.summary}</p>
-                        </CardContent>
-                      ) : null}
-                      <CardMeta style={{ marginTop: '0.5rem', columnGap: 0, rowGap: 0 }}>
-                        <span className={`${styles.categoryBadge} ${styles.metaItem}`} style={theme}>
-                          {getCategoryLabel(x.category, locale)}
-                        </span>
-                        {(() => {
-                          const distress = Number(x.distress_score ?? 0)
-                          return distress >= 60 || (Boolean(x.high_arousal) && distress >= 30)
-                        })() ? (
-                          <span className={`${styles.categoryBadge} ${styles.metaItem}`} style={{ opacity: 0.75 }}>
-                            {locale === 'ja' ? '心の負担に注意' : 'May be upsetting'}
-                          </span>
-                        ) : null}
-                        <span className={`${styles.sourceCountPill} ${styles.metaItem}`}>
-                          {locale === 'ja'
-                            ? `参照元 : ${x.source_count}記事`
-                            : `Sources: ${x.source_count} ${x.source_count === 1 ? 'article' : 'articles'}`}
-                        </span>
-                      </CardMeta>
-                      {formatTopicListDate(x.last_source_published_at, locale) ? (
-                        <span className={styles.cardDate}>
-                          {formatTopicListDate(x.last_source_published_at, locale)}
-                        </span>
-                      ) : null}
-                    </Card>
-                  )
-                })()}
-              </Link>
-            ))}
-          </div>
+          <section aria-label={locale === 'ja' ? 'ニュース一覧' : 'News list'}>
+            <div className={styles.listGrid}>
+              {topics.map((x) => (
+                <article key={x.topic_id}>
+                  <Link href={`/${country}/news/n/${x.topic_id}`} style={{ display: 'block' }}>
+                    {(() => {
+                      const theme = getCategoryBadgeTheme(x.category)
+                      const isHeartwarming = x.category === 'heartwarming'
+                      return (
+                        <Card
+                          as="article"
+                          clickable
+                          className={`${styles.topCard} ${isHeartwarming ? styles.topCardHeartwarming : ''}`}
+                          style={{ ['--cat-color' as any]: theme.color } as any}
+                        >
+                          <CardTitle as="h3" className={styles.cardTitleAccent}>
+                            {x.title}
+                          </CardTitle>
+                          {x.summary ? (
+                            <CardContent style={{ marginTop: '0.25rem' }}>
+                              <p className={styles.cardSummary}>{x.summary}</p>
+                            </CardContent>
+                          ) : null}
+                          <CardMeta style={{ marginTop: '0.5rem', columnGap: 0, rowGap: 0 }}>
+                            <span className={`${styles.categoryBadge} ${styles.metaItem}`} style={theme}>
+                              {getCategoryLabel(x.category, locale)}
+                            </span>
+                            {(() => {
+                              const distress = Number(x.distress_score ?? 0)
+                              return distress >= 60 || (Boolean(x.high_arousal) && distress >= 30)
+                            })() ? (
+                              <span className={`${styles.categoryBadge} ${styles.metaItem}`} style={{ opacity: 0.75 }}>
+                                {locale === 'ja' ? '心の負担に注意' : 'May be upsetting'}
+                              </span>
+                            ) : null}
+                            <span className={`${styles.sourceCountPill} ${styles.metaItem}`}>
+                              {locale === 'ja'
+                                ? `参照元 : ${x.source_count}記事`
+                                : `Sources: ${x.source_count} ${x.source_count === 1 ? 'article' : 'articles'}`}
+                            </span>
+                          </CardMeta>
+                          {formatTopicListDate(x.last_source_published_at, locale) ? (
+                            <span className={styles.cardDate}>
+                              {formatTopicListDate(x.last_source_published_at, locale)}
+                            </span>
+                          ) : null}
+                        </Card>
+                      )
+                    })()}
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </section>
 
-          <div className={styles.pagerRow}>
+          <nav className={styles.pagerRow} aria-label={locale === 'ja' ? 'ページ送り' : 'Pagination'}>
             <div className={styles.pagerInfo}>
               {start && end ? (locale === 'ja' ? `表示：${start}-${end}` : `Showing: ${start}-${end}`) : null}
             </div>
@@ -367,9 +380,9 @@ export default async function NewsPage({
                 </span>
               )}
             </div>
-          </div>
+          </nav>
 
-          <div style={{ marginTop: 18 }}>
+          <section style={{ marginTop: 18 }} aria-label={locale === 'ja' ? '次のおすすめ' : 'Next suggestions'}>
             <div style={{ fontSize: '0.85rem', color: 'var(--muted)', marginBottom: 10 }}>
               {locale === 'ja' ? '今の気分に近いものを選んでください' : 'Choose what fits your mood'}
             </div>
@@ -436,7 +449,7 @@ export default async function NewsPage({
                 </div>
               </Link>
             </div>
-          </div>
+          </section>
 
           {isPartial && <PartialNotice country={country} />}
         </>

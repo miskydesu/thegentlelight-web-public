@@ -129,11 +129,11 @@ export default async function EnQuoteDetailPage({ params }: { params: { quoteId:
 
   return (
     <main className={styles.page}>
-      <div className={styles.topNav}>
+      <nav className={styles.topNav} aria-label="Back">
         <Link href={`/en/quotes`} className={styles.backLink}>
           ← Quotes
         </Link>
-      </div>
+      </nav>
 
       <EnglishEditionBanner
         initialEdition={(preferred === 'uk' || preferred === 'ca' || preferred === 'us' ? preferred : 'us') as any}
@@ -142,7 +142,7 @@ export default async function EnQuoteDetailPage({ params }: { params: { quoteId:
         inferredSource={pref.source}
       />
 
-      <Card className={styles.headerCard}>
+      <Card className={styles.headerCard} as="article">
         <CardTitle as="h1" className={styles.title}>
           <span className={styles.cardTitleAccent}>Quote</span>
         </CardTitle>
@@ -156,11 +156,19 @@ export default async function EnQuoteDetailPage({ params }: { params: { quoteId:
             {q.author_name ? <span className={styles.authorName}>{q.author_name}</span> : null}
             {q.source_text ? <span className={styles.sourceText}>{q.source_text}</span> : null}
           </span>
-          {dateText ? <span className={styles.metaRight}>{dateText}</span> : null}
+          {dateText ? (
+            dateIso ? (
+              <time className={styles.metaRight} dateTime={dateIso}>
+                {dateText}
+              </time>
+            ) : (
+              <span className={styles.metaRight}>{dateText}</span>
+            )
+          ) : null}
         </CardMeta>
 
         {themeKey ? (
-          <div className={styles.tagsRow}>
+          <nav className={styles.tagsRow} aria-label="Theme">
             <Link
               key={themeKey}
               href={`/en/quotes/theme/${encodeURIComponent(themeKey)}`}
@@ -169,7 +177,7 @@ export default async function EnQuoteDetailPage({ params }: { params: { quoteId:
             >
               {themeLabel}
             </Link>
-          </div>
+          </nav>
         ) : null}
       </Card>
 
@@ -184,7 +192,7 @@ export default async function EnQuoteDetailPage({ params }: { params: { quoteId:
         </Card>
       ) : null}
 
-      <div className={styles.bottomNav}>
+      <nav className={styles.bottomNav} aria-label="More links">
         {authorName ? (
           <Link
             href={`/en/quotes?q=${encodeURIComponent(authorName)}`}
@@ -197,7 +205,7 @@ export default async function EnQuoteDetailPage({ params }: { params: { quoteId:
         <Link href={`/${preferred}`} className={styles.bottomLink}>
           ← Home
         </Link>
-      </div>
+      </nav>
     </main>
   )
 }
