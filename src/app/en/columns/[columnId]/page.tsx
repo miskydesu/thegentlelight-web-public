@@ -111,6 +111,16 @@ export async function generateMetadata({ params }: { params: { columnId: string 
   const canonical = canonicalUrl(`/en/columns/${encodeURIComponent(columnId)}`)
   const hreflang = generateHreflangSharedEn(`/columns/${encodeURIComponent(columnId)}`)
 
+  // /en/columns は layout 側で "%s | TGL" を付与する（6文字程度）。
+  // Semrush等の警告（70文字目安）を避けるため、%s 側は少し短めに丸める。
+  const clampTitle = (raw: string, maxCore: number) => {
+    const v = String(raw || '').replace(/\s+/g, ' ').trim()
+    if (!v) return ''
+    if (v.length <= maxCore) return v
+    return `${v.slice(0, Math.max(0, maxCore - 1)).trim()}…`
+  }
+  const MAX_CORE = 64
+
   const splitKeywords = (raw: string) =>
     String(raw || '')
       .split(/[,\n]/g)
@@ -146,7 +156,8 @@ export async function generateMetadata({ params }: { params: { columnId: string 
         : { next: { revalidate: CACHE_POLICY.frequent } }),
     })
     const c = data.column
-    const titleCore = String(c?.seo_title || c?.title || '').trim()
+    const titleCoreRaw = String(c?.seo_title || c?.title || '').trim()
+    const titleCore = clampTitle(titleCoreRaw, MAX_CORE)
     const desc = String(c?.seo_description || c?.excerpt || '').trim()
     const columnName = String(c?.column_name?.name || '').trim() || null
     const descWithColumnName = appendColumnNameToDescription(desc, columnName)

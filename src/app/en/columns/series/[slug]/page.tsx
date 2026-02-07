@@ -49,13 +49,23 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const canonical = canonicalUrl(`/en/columns/series/${encodeURIComponent(slug)}`)
   const hreflang = generateHreflangSharedEn(`/columns/series/${encodeURIComponent(slug)}`)
 
+  // /en/columns は layout 側で "%s | TGL" を付与する。
+  // Series名が長い場合に備えて title を軽く丸める（70文字目安）。
+  const clampTitle = (raw: string, maxCore: number) => {
+    const v = String(raw || '').replace(/\s+/g, ' ').trim()
+    if (!v) return ''
+    if (v.length <= maxCore) return v
+    return `${v.slice(0, Math.max(0, maxCore - 1)).trim()}…`
+  }
+  const MAX_CORE = 64
+
   try {
     const sourceCountry = 'ca'
     const data = await fetchJson<ColumnsResponse>(`/v1/${sourceCountry}/columns?limit=200`, {
       next: { revalidate: CACHE_POLICY.stable },
     })
     const series = data.columns.find((c) => matchSeriesSlug(slug, c))?.column_name
-    const titleCore = series?.name || 'Columns'
+    const titleCore = clampTitle(series?.name || 'Columns', MAX_CORE)
     const desc = series?.description || undefined
     return generateSEOMetadata({
       title: titleCore,

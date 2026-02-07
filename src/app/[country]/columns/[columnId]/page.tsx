@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { isCountry, fetchJson, type ApiMeta } from '@/lib/tglApi'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { CACHE_POLICY } from '@/lib/cache-policy'
-import { canonicalUrl } from '@/lib/seo'
+import { canonicalUrl, getCountrySeoMeta } from '@/lib/seo'
 import { generateSEOMetadata } from '@/lib/seo-helpers'
 import { marked } from 'marked'
 import styles from './columnDetail.module.css'
@@ -126,6 +126,18 @@ export async function generateMetadata({ params }: { params: { country: string; 
   const lang: Locale = getLocaleForCountry(country)
   const isJa = lang === 'ja'
 
+  // columns配下は layout 側で " | TGL..." が付与される。
+  // 国別suffix（例: " (US)"）を考慮して、%s側を少し短めに丸める。
+  const clampTitle = (raw: string, maxCore: number) => {
+    const v = String(raw || '').replace(/\s+/g, ' ').trim()
+    if (!v) return ''
+    if (v.length <= maxCore) return v
+    return `${v.slice(0, Math.max(0, maxCore - 1)).trim()}…`
+  }
+  const countrySuffix = getCountrySeoMeta(country).titleSuffix
+  const templateExtra = (isJa ? ` | やさしいニュース TGL${countrySuffix}` : ` | TGL${countrySuffix}`).length
+  const MAX_CORE = Math.max(30, 70 - templateExtra)
+
   const splitKeywords = (raw: string) =>
     String(raw || '')
       .split(/[,\n]/g)
@@ -164,7 +176,8 @@ export async function generateMetadata({ params }: { params: { country: string; 
         : { next: { revalidate: CACHE_POLICY.frequent } }),
     })
     const c = data.column
-    const titleCore = String(c?.seo_title || c?.title || '').trim()
+    const titleCoreRaw = String(c?.seo_title || c?.title || '').trim()
+    const titleCore = clampTitle(titleCoreRaw, MAX_CORE)
     const desc = String(c?.seo_description || c?.excerpt || '').trim()
     const columnName = String(c?.column_name?.name || '').trim() || null
     const descWithColumnName = appendColumnNameToDescription(desc, columnName)

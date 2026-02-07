@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { isCountry, fetchJson, type ApiMeta } from '@/lib/tglApi'
 import { getTranslationsForCountry, getLocaleForCountry, type Locale } from '@/lib/i18n'
 import { CACHE_POLICY } from '@/lib/cache-policy'
-import { canonicalUrl } from '@/lib/seo'
+import { canonicalUrl, getCountrySeoMeta } from '@/lib/seo'
 import { generateSEOMetadata } from '@/lib/seo-helpers'
 import styles from '../../columns.module.css'
 import { Card, CardContent, CardTitle } from '@/components/ui/Card'
@@ -52,12 +52,22 @@ export async function generateMetadata({ params }: { params: { country: string; 
   const isJa = lang === 'ja'
   const canonical = canonicalUrl(`/${country}/columns/series/${encodeURIComponent(slug)}`)
 
+  const clampTitle = (raw: string, maxCore: number) => {
+    const v = String(raw || '').replace(/\s+/g, ' ').trim()
+    if (!v) return ''
+    if (v.length <= maxCore) return v
+    return `${v.slice(0, Math.max(0, maxCore - 1)).trim()}…`
+  }
+  const countrySuffix = getCountrySeoMeta(country).titleSuffix
+  const templateExtra = (isJa ? ` | やさしいニュース TGL${countrySuffix}` : ` | TGL${countrySuffix}`).length
+  const MAX_CORE = Math.max(30, 70 - templateExtra)
+
   try {
     const data = await fetchJson<ColumnsResponse>(`/v1/${country}/columns?limit=200`, {
       next: { revalidate: CACHE_POLICY.stable },
     })
     const series = data.columns.find((c) => matchSeriesSlug(slug, c))?.column_name
-    const titleCore = series?.name || (isJa ? 'コラム' : 'Columns')
+    const titleCore = clampTitle(series?.name || (isJa ? 'コラム' : 'Columns'), MAX_CORE)
     const desc = series?.description || undefined
     return generateSEOMetadata({
       title: titleCore,
