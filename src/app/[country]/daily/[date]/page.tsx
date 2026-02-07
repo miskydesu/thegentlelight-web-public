@@ -13,6 +13,13 @@ import { getCategoryBadgeTheme, getCategoryLabel } from '@/lib/categories'
 import { formatTopicListDate } from '@/lib/topicDate'
 import { CACHE_POLICY } from '@/lib/cache-policy'
 
+function countryNameEn(country: 'us' | 'ca' | 'uk' | 'jp'): string {
+  if (country === 'us') return 'United States'
+  if (country === 'ca') return 'Canada'
+  if (country === 'uk') return 'United Kingdom'
+  return 'Japan'
+}
+
 export async function generateMetadata({ params }: { params: { country: string; date: string } }) {
   const { country, date } = params
   const canonical = canonicalUrl(`/${country}/daily/${date}`)
@@ -23,7 +30,9 @@ export async function generateMetadata({ params }: { params: { country: string; 
     return { title: { absolute: 'The Gentle Light' }, alternates: { canonical } }
   }
 
-  const baseTitle = isJa ? `${date}の朝刊｜やさしいニュース The Gentle Light` : `Daily Briefing - ${date} | Calm News — The Gentle Light`
+  const baseTitle = isJa
+    ? `${date}の朝刊｜やさしいニュース The Gentle Light`
+    : `Daily Briefing (${countryNameEn(country)}) — ${date} | Calm News — The Gentle Light`
   const baseDesc = isJa
     ? `${date}の主要ニュースを静かな言葉でまとめた朝刊。不安を感じずに世界を知る。`
     : `Daily news briefing for ${date}. Calm, fact-based summary of world events without sensationalism or anxiety.`
@@ -227,7 +236,9 @@ export default async function DailyDetailPage({
           <Link href={`/${country}/daily`}>← {country === 'jp' ? '朝刊一覧' : 'Morning Briefing'}</Link>
         </div>
         <h1 style={{ fontSize: '1.45rem' }}>
-          {country === 'jp' ? `${formatDailyTitleDateJa(date)}の朝刊` : `Morning Briefing ${date}`}
+          {country === 'jp'
+            ? `${formatDailyTitleDateJa(date)}の朝刊`
+            : `Daily Briefing (${countryNameEn(country)}) — ${date}`}
         </h1>
         <div style={{ height: 10 }} />
         <EmptyState
@@ -550,7 +561,9 @@ export default async function DailyDetailPage({
       ) : null}
 
       <h1 style={{ fontSize: '1.45rem' }}>
-        {country === 'jp' ? `${formatDailyTitleDateJa(date)}の朝刊` : `Morning Briefing ${date}`}
+        {country === 'jp'
+          ? `${formatDailyTitleDateJa(date)}の朝刊`
+          : `Daily Briefing (${countryNameEn(country)}) — ${date}`}
       </h1>
       <div style={{ height: 6 }} />
       <div style={{ fontSize: '0.98rem', lineHeight: 1.6, color: 'var(--text)', marginBottom: 10 }}>{meta.note}</div>
