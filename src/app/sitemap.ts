@@ -296,7 +296,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // NOTE: /saved はユーザー個人の保存リスト（クローラ非対象）なので sitemap から除外する
   // NOTE: /legal は /jp/legal へリダイレクト（互換）なので、sitemap には国別URLを載せる
   // NOTE: `/` は Global Editorial Home として indexable にする（x-default、常緑の入口）
-  const fixedRoutes: string[] = ['/', '/about', '/en/about']
+  // NOTE: /about is a legacy redirect-only route (language selection) so we don't list it in sitemap.
+  const fixedRoutes: string[] = ['/', '/en/about']
   for (const c of COUNTRIES) {
     fixedRoutes.push(`/${c.code}`)
     fixedRoutes.push(`/${c.code}/news`)
@@ -338,10 +339,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified = now
       changeFrequency = 'weekly'
       priority = 0.8
-    } else if (path === '/about') {
-      lastModified = now
-      changeFrequency = 'yearly'
-      priority = 0.3
     } else if (path === '/en/about') {
       lastModified = now
       changeFrequency = 'yearly'

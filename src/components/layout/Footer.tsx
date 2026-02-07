@@ -48,9 +48,13 @@ export function Footer() {
   }, [country, isJa, pathname])
 
   const secondaryLinks = useMemo(() => {
-    const legalHref = country ? `/${country}/legal` : '/legal'
+    // Avoid linking to redirect-only legacy routes (/about, /legal).
+    // Link directly to the canonical pages so crawlers/users don't hit 307/302.
+    const aboutHref = country === 'jp' ? '/jp/about' : '/en/about'
+    // When country is unknown (global pages), prefer the English-first default.
+    const legalHref = country ? `/${country}/legal` : '/us/legal'
     return [
-      { label: isJa ? 'サイトについて' : 'About', href: '/about' },
+      { label: isJa ? 'サイトについて' : 'About', href: aboutHref },
       { label: isJa ? '利用規約・プライバシー' : 'Legal', href: legalHref },
     ]
   }, [country, isJa])

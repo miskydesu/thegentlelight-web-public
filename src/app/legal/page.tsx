@@ -3,9 +3,9 @@ export const metadata = {
   title: { absolute: '利用規約・プライバシーポリシー - The Gentle Light' },
 }
 
-import { redirect } from 'next/navigation'
+import { permanentRedirect } from 'next/navigation'
 
 export default function LegalRedirect() {
-  redirect('/jp/legal')
+  permanentRedirect('/jp/legal')
 }
 

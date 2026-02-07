@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { permanentRedirect } from 'next/navigation'
 import { cookies, headers } from 'next/headers'
 
 export const metadata = {
@@ -35,6 +35,6 @@ export default function AboutRedirect() {
   // - EN (US/CA/UK) → /en/about
   const picked = (validSaved ? (savedCountry as 'us' | 'ca' | 'uk' | 'jp') : detected) || 'us'
   const target = picked === 'jp' ? '/jp/about' : '/en/about'
-  redirect(target)
+  permanentRedirect(target)
 }
 
