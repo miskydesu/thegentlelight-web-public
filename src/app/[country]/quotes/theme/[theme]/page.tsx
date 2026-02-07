@@ -53,8 +53,27 @@ export async function generateMetadata({
   const canonical = canonicalUrl(`/${country}/quotes/theme/${encodeURIComponent(theme)}`)
   const hreflang = generateHreflang(`/quotes/theme/${theme}`)
 
+  // Semrush等の「メタディスクリプション重複」を避けるため、
+  // テーマごとにユニークな description を付与する。
+  // - 可能なら themes API の theme_name（表示名）を使う
+  const themeLabel = await (async () => {
+    try {
+      const themesData = await fetchJson<QuoteThemesResponse>(`/v1/${country}/quotes/themes`, {
+        next: { revalidate: CACHE_POLICY.stable },
+      })
+      const hit = (themesData.themes || []).find((x) => String(x.theme || '').trim() === theme)
+      return String(hit?.theme_name || hit?.theme || theme).trim() || theme
+    } catch {
+      return theme
+    }
+  })()
+  const description = isJa
+    ? `テーマ「${themeLabel}」の名言を一覧で。心を落ち着かせる言葉を集めました。`
+    : `Quotes about ${themeLabel}. Calming words to help you reflect.`
+
   const meta: any = {
     title: isJa ? `${theme}の名言` : `${theme} Quotes`,
+    description,
     alternates: {
       canonical,
       languages: Object.fromEntries(hreflang.map((h) => [h.lang, h.url])),

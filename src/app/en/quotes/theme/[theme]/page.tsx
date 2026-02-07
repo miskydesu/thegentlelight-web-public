@@ -39,8 +39,24 @@ export async function generateMetadata({ params, searchParams }: { params: { the
   const q = typeof searchParams?.q === 'string' ? searchParams.q.trim() : ''
   const cursor = Number.isFinite(Number(searchParams?.cursor)) ? Math.max(0, Math.trunc(Number(searchParams?.cursor))) : 0
   const canonical = canonicalUrl(`/en/quotes/theme/${encodeURIComponent(theme)}`)
+
+  // Semrush等の「メタディスクリプション重複」を避けるため、
+  // テーマごとにユニークな description を付与する（可能なら theme_name を使う）。
+  const themeLabel = await (async () => {
+    try {
+      const sourceCountry = 'ca'
+      const themesData = await fetchJson<QuoteThemesResponse>(`/v1/${sourceCountry}/quotes/themes`, { next: { revalidate: CACHE_POLICY.stable } })
+      const hit = (themesData.themes || []).find((x) => String(x.theme || '').trim() === theme)
+      return String(hit?.theme_name || hit?.theme || theme).trim() || theme
+    } catch {
+      return theme
+    }
+  })()
+  const description = `Quotes about ${themeLabel}. Calming words to help you reflect.`
+
   const meta: any = {
     title: `${theme} Quotes`,
+    description,
     alternates: {
       canonical,
       languages: Object.fromEntries(generateHreflangSharedEn(`/quotes/theme/${encodeURIComponent(theme)}`).map((h) => [h.lang, h.url])),
