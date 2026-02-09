@@ -69,10 +69,11 @@ export default async function QuoteAuthorsPage({ params }: { params: { country: 
           <div className={styles.authorShelfGrid}>
             {authors.map((a) => {
               const label = a.name
+              const key = String(a.canonical_key || label).trim() || label
               return (
               <Link
-                key={label}
-                href={`/${country}/quotes/author/${encodeURIComponent(label)}`}
+                key={a.canonical_key || label}
+                href={`/${country}/quotes/author/${encodeURIComponent(key)}`}
                 className={styles.themeItem}
                 title={lang === 'ja' ? `著者「${label}」の名言` : `Quotes by ${label}`}
               >

@@ -62,10 +62,11 @@ export default async function EnQuoteAuthorsPage() {
           <div className={styles.authorShelfGrid}>
             {authors.map((a) => {
               const label = a.name
+              const key = String(a.canonical_key || label).trim() || label
               return (
               <Link
-                key={label}
-                href={`/en/quotes/author/${encodeURIComponent(label)}`}
+                key={a.canonical_key || label}
+                href={`/en/quotes/author/${encodeURIComponent(key)}`}
                 className={styles.themeItem}
                 title={`Quotes by ${label}`}
               >

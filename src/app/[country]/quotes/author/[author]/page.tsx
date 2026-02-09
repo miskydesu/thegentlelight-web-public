@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import { isCountry, fetchJson, type QuoteAuthorQuotesResponse, type QuoteAuthorResolveResponse } from '@/lib/tglApi'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -95,11 +95,29 @@ export default async function QuoteAuthorPage({
   const t = getTranslationsForCountry(country, lang)
   const isJa = lang === 'ja'
 
-  const authorKey = String(decodeURIComponent(params.author || '')).trim()
+  const rawAuthor = String(decodeURIComponent(params.author || ''))
+  const authorKey = rawAuthor.trim()
   if (!authorKey) return notFound()
 
+  // 正規化: 表記揺れURL（表示名など）→ canonical_key URLへ恒久集約（308）
+  // - canonicalタグだけでは重複URLが残りやすいため、入口URL自体を統一する
+  const resolved = await fetchJson<QuoteAuthorResolveResponse>(
+    `/v1/${country}/quote-authors/resolve?name=${encodeURIComponent(authorKey)}`,
+    { next: { revalidate: CACHE_POLICY.stable } },
+  ).catch(() => null)
+  const canonicalKey = String(resolved?.author?.canonical_key || '').trim() || authorKey
+  // NOTE: authorKey は trim 済みなので、「末尾スペース付きURL」等も rawAuthor と比較して集約する
+  if (canonicalKey && canonicalKey !== rawAuthor) {
+    const cursor = Number.isFinite(Number(searchParams?.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
+    const sp = new URLSearchParams()
+    if (cursor > 0) sp.set('cursor', String(cursor))
+    const qs = sp.toString()
+    permanentRedirect(`/${country}/quotes/author/${encodeURIComponent(canonicalKey)}${qs ? `?${qs}` : ''}`)
+  }
+  const effectiveKey = canonicalKey
+
   const data = await fetchJson<QuoteAuthorQuotesResponse>(
-    `/v1/${country}/quote-authors/${encodeURIComponent(authorKey)}/quotes?limit=20&cursor=${
+    `/v1/${country}/quote-authors/${encodeURIComponent(effectiveKey)}/quotes?limit=20&cursor=${
       Number.isFinite(Number(searchParams.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
     }`,
     { next: { revalidate: CACHE_POLICY.stable } },
@@ -107,7 +125,7 @@ export default async function QuoteAuthorPage({
   if (!data) return notFound()
   const author = data.author
   const quotes = data.quotes || []
-  const displayName = author?.display_name || authorKey
+  const displayName = author?.display_name || effectiveKey
   const detailPreview = author?.detail_md ? buildDetailPreview(author.detail_md) : ''
   const cursor = Number.isFinite(Number(searchParams.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
   const limit = 20
@@ -121,7 +139,7 @@ export default async function QuoteAuthorPage({
     const sp = new URLSearchParams()
     if (nextC > 0) sp.set('cursor', String(nextC))
     const qs = sp.toString()
-    return `/${country}/quotes/author/${encodeURIComponent(authorKey)}${qs ? `?${qs}` : ''}`
+    return `/${country}/quotes/author/${encodeURIComponent(effectiveKey)}${qs ? `?${qs}` : ''}`
   }
 
   return (

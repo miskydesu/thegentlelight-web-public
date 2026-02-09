@@ -74,7 +74,7 @@ export type QuoteAuthorsResponse = {
 }
 
 export type QuoteAuthorsFromQuotesResponse = {
-  authors: Array<{ name: string; count: number; has_detail: boolean }>
+  authors: Array<{ name: string; canonical_key?: string | null; author_id?: string | null; count: number; has_detail: boolean }>
   meta: ApiMeta
 }
 

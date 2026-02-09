@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import { fetchJson, type QuoteAuthorQuotesResponse, type QuoteAuthorResolveResponse } from '@/lib/tglApi'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -84,19 +84,36 @@ export default async function EnQuoteAuthorPage({
   const sourceCountry = 'ca'
   const pref = getCountryPreferenceHint()
   const preferred = pref.country
-  const authorKey = String(decodeURIComponent(params.author || '')).trim()
+  const rawAuthor = String(decodeURIComponent(params.author || ''))
+  const authorKey = rawAuthor.trim()
   if (!authorKey) return notFound()
+
+  // 正規化: 表記揺れURL（表示名など）→ canonical_key URLへ恒久集約（308）
+  const resolved = await fetchJson<QuoteAuthorResolveResponse>(
+    `/v1/${sourceCountry}/quote-authors/resolve?name=${encodeURIComponent(authorKey)}`,
+    { next: { revalidate: CACHE_POLICY.stable } },
+  ).catch(() => null)
+  const canonicalKey = String(resolved?.author?.canonical_key || '').trim() || authorKey
+  // NOTE: authorKey は trim 済みなので、「末尾スペース付きURL」等も rawAuthor と比較して集約する
+  if (canonicalKey && canonicalKey !== rawAuthor) {
+    const cursor = Number.isFinite(Number(searchParams?.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
+    const sp = new URLSearchParams()
+    if (cursor > 0) sp.set('cursor', String(cursor))
+    const qs = sp.toString()
+    permanentRedirect(`/en/quotes/author/${encodeURIComponent(canonicalKey)}${qs ? `?${qs}` : ''}`)
+  }
+  const effectiveKey = canonicalKey
 
   const cursor = Number.isFinite(Number(searchParams.cursor)) ? Math.max(0, Math.trunc(Number(searchParams.cursor))) : 0
   const limit = 20
   const data = await fetchJson<QuoteAuthorQuotesResponse>(
-    `/v1/${sourceCountry}/quote-authors/${encodeURIComponent(authorKey)}/quotes?limit=${limit}&cursor=${cursor}`,
+    `/v1/${sourceCountry}/quote-authors/${encodeURIComponent(effectiveKey)}/quotes?limit=${limit}&cursor=${cursor}`,
     { next: { revalidate: CACHE_POLICY.stable } },
   ).catch(() => null)
   if (!data) return notFound()
   const author = data.author
   const quotes = data.quotes || []
-  const displayName = author?.display_name || authorKey
+  const displayName = author?.display_name || effectiveKey
   const detailPreview = author?.detail_md ? buildDetailPreview(author.detail_md) : ''
   const hasPrev = cursor > 0
   const nextCursorFromMeta = Number.isFinite(Number(data.meta?.next_cursor)) ? Number(data.meta?.next_cursor) : null
@@ -108,7 +125,7 @@ export default async function EnQuoteAuthorPage({
     const sp = new URLSearchParams()
     if (nextC > 0) sp.set('cursor', String(nextC))
     const qs = sp.toString()
-    return `/en/quotes/author/${encodeURIComponent(authorKey)}${qs ? `?${qs}` : ''}`
+    return `/en/quotes/author/${encodeURIComponent(effectiveKey)}${qs ? `?${qs}` : ''}`
   }
 
   return (
