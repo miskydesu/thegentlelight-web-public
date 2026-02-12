@@ -22,10 +22,22 @@ export function generateMetadata({
   const suffix = isJa ? 'やさしいニュース The Gentle Light' : 'Calm News — The Gentle Light'
   const country = isCountry(params.country) ? params.country : null
   const countrySuffix = country ? getCountrySeoMeta(country).titleSuffix : ''
+  // Root layout の openGraph/twitter description が日本語なので、
+  // 国別layoutで言語に合ったデフォルトdescriptionを上書きしておく（ページ側で個別に上書き可能）
+  const description = isJa
+    ? '優しく、静かに、世界のニュースを届けます'
+    : 'Calm, non-sensational news at a gentle pace.'
   return {
     title: {
       default: 'The Gentle Light',
       template: `%s | ${suffix}${countrySuffix}`,
+    },
+    description,
+    openGraph: {
+      description,
+    },
+    twitter: {
+      description,
     },
   }
 }

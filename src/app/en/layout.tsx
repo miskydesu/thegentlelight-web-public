@@ -9,10 +9,19 @@ export const runtime = 'edge'
 
 export function generateMetadata(): Metadata {
   // /en は言語ページ（US/CA/UK の差分を持たない）
+  // Root layout の openGraph/twitter description が日本語なので、/en で英語に上書きしておく
+  const description = 'Calm, non-sensational news at a gentle pace.'
   return {
     title: {
       default: 'The Gentle Light',
       template: `%s | Calm News — The Gentle Light`,
+    },
+    description,
+    openGraph: {
+      description,
+    },
+    twitter: {
+      description,
     },
   }
 }
