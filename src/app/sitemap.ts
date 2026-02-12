@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { COUNTRIES, fetchJson } from '../lib/tglApi'
+import { COUNTRIES, fetchJson, type QuoteAuthorsFromQuotesResponse } from '../lib/tglApi'
 import { getSiteBaseUrl, isIndexableTopic } from '../lib/seo'
 import { CACHE_POLICY } from '../lib/cache-policy'
 
@@ -181,10 +181,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { next: { revalidate: CACHE_POLICY.meta } } // キャッシュ（メタ系）
       )
 
-      const authors = new Set<string>()
       for (const quote of quotesResponse.quotes) {
-        const author = String((quote as any)?.author_name || '').trim()
-        if (author) authors.add(author)
         // JPは試験運用：名言詳細は noindex 対象なので sitemap から外す
         if (c.code !== 'jp') {
           const urlPrefix = c.code === 'ca' ? `${base}/en/quotes` : `${base}/${c.code}/quotes`
@@ -201,15 +198,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // 著者別名言一覧（人物名検索のハブ → その先のまとめ役）
       // JPは最低限の狙いのため除外（CA/US/UKを優先）
       if (c.code !== 'jp') {
-      const urlPrefix = c.code === 'ca' ? `${base}/en/quotes/author` : `${base}/${c.code}/quotes/author`
-      for (const author of Array.from(authors)) {
-          // 末尾スラッシュを削除（SEO対策：リダイレクトエラーを防ぐ）
-        entries.push({
-            url: `${urlPrefix}/${encodeURIComponent(author)}`.replace(/\/$/, ''),
-          lastModified: now,
-          changeFrequency: 'weekly' as const,
-          priority: 0.6,
-        })
+        const urlPrefix = c.code === 'ca' ? `${base}/en/quotes/author` : `${base}/${c.code}/quotes/author`
+
+        // NOTE:
+        // 旧実装は「quotes一覧から author_name をSetで集めてURL化」していたため、
+        // sitemap に表示名URL（スペース等）を載せてしまい、著者ページ側の正規化（308）で Semrush が警告する。
+        // ここでは authors API（/quotes/authors）から canonical_key を優先して取得し、最終URLのみを載せる。
+        const authorList = await fetchJson<QuoteAuthorsFromQuotesResponse>(`/v1/${c.code}/quotes/authors?limit=500`, {
+          next: { revalidate: CACHE_POLICY.meta },
+        }).catch(() => null)
+
+        const seen = new Set<string>()
+        for (const a of authorList?.authors || []) {
+          const name = String(a?.name || '').trim()
+          if (!name) continue
+          const key = String((a as any)?.canonical_key || '').trim() || name
+          const url = `${urlPrefix}/${encodeURIComponent(key)}`.replace(/\/$/, '')
+          if (seen.has(url)) continue
+          seen.add(url)
+          entries.push({
+            url,
+            lastModified: now,
+            changeFrequency: 'weekly' as const,
+            priority: 0.6,
+          })
         }
       }
 
