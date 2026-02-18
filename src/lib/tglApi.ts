@@ -101,51 +101,23 @@ export type QuoteAuthorQuotesResponse = {
   meta: ApiMeta
 }
 
-/** path を fixture ファイル名に変換（クエリは無視）。例: /v1/ca/columns?limit=6 → v1-ca-columns */
-function pathToFixtureKey(path: string): string {
-  const p = path.replace(/^\//, '').split('?')[0].replace(/\/$/, '') || 'index'
+/** path を fixture キーに変換（クエリは無視）。例: /v1/ca/columns?limit=6 → v1-ca-columns */
+function pathToFixtureKey(pathStr: string): string {
+  const p = pathStr.replace(/^\//, '').split('?')[0].replace(/\/$/, '') || 'index'
   return p.split('/').join('-')
 }
 
-/** Node のみ: USE_MOCK_DATA=1 のとき fixtures/*.json から読む（ビルド時などサーバーが無いとき用）。 */
-async function readMockJsonFromFs<T>(path: string): Promise<T | null> {
-  if (typeof process === 'undefined') return null
-  try {
-    const fs = await import('fs')
-    const pathMod = await import('path')
-    const key = pathToFixtureKey(path)
-    const base = pathMod.join(process.cwd(), 'fixtures')
-    const candidates = [
-      pathMod.join(base, `${key}.json`),
-      pathMod.join(base, 'v1-home.json'),
-      pathMod.join(base, 'v1-us-latest.json'),
-    ]
-    for (const file of candidates) {
-      if (fs.existsSync(file)) {
-        const raw = fs.readFileSync(file, 'utf-8')
-        return JSON.parse(raw) as T
-      }
-    }
-  } catch {
-    // ignore
-  }
-  return null
+/** USE_MOCK_DATA=1 時のフォールバック: サーバーが無い（ビルド時など）や fetch 失敗時に空構造を返す */
+function mockFallbackJson<T>(pathStr: string): T {
+  const key = pathToFixtureKey(pathStr)
+  if (key.includes('columns')) return { columns: [], meta: {} } as T
+  if (key.includes('quotes')) return { quotes: [], meta: {} } as T
+  if (key.includes('latest') || key.includes('home')) return { topics: [], daily_latest: null, updatedAt: new Date().toISOString(), meta: {} } as T
+  if (key.includes('daily')) return { days: [], meta: {} } as T
+  return { meta: {} } as T
 }
 
 export async function fetchJson<T>(path: string, init?: RequestInit & { next?: { revalidate?: number } }): Promise<T> {
-  // 公開用: USE_MOCK_DATA=1 かつ Node（SSR/ビルド）のときは fixtures を直接読む
-  if (isMockDataEnabled() && typeof process !== 'undefined') {
-    const mock = await readMockJsonFromFs<T>(path)
-    if (mock !== null) return mock
-    // フォールバック: 空の構造を返して UI が落ちないようにする
-    const key = pathToFixtureKey(path)
-    if (key.includes('columns')) return { columns: [], meta: {} } as T
-    if (key.includes('quotes')) return { quotes: [], meta: {} } as T
-    if (key.includes('latest') || key.includes('home')) return { topics: [], daily_latest: null, updatedAt: new Date().toISOString(), meta: {} } as T
-    if (key.includes('daily')) return { days: [], meta: {} } as T
-    return { meta: {} } as T
-  }
-
   const base = getApiBaseUrl().replace(/\/$/, '')
   const url = `${base}${path.startsWith('/') ? path : `/${path}`}`
   let res: Response
@@ -155,12 +127,15 @@ export async function fetchJson<T>(path: string, init?: RequestInit & { next?: {
       headers: { accept: 'application/json', ...(init?.headers || {}) },
     })
   } catch (e: any) {
+    // 公開用: USE_MOCK_DATA=1 で fetch 失敗（ビルド時などサーバーが無い）なら空データで通過
+    if (isMockDataEnabled()) return mockFallbackJson<T>(path)
     const penv = typeof process !== 'undefined' ? (process.env as any) : undefined
     const env = penv?.NEXT_PUBLIC_API_BASE_URL ? 'NEXT_PUBLIC_API_BASE_URL=SET' : 'NEXT_PUBLIC_API_BASE_URL=EMPTY'
     const env2 = penv?.API_BASE_URL ? 'API_BASE_URL=SET' : penv?.TGL_API_BASE_URL ? 'TGL_API_BASE_URL=SET' : 'API_BASE_URL/TGL_API_BASE_URL=EMPTY'
     throw new Error(`API fetch failed: ${url}\n(${env}, ${env2})\n${e?.message || String(e)}`)
   }
   if (!res.ok) {
+    if (isMockDataEnabled()) return mockFallbackJson<T>(path)
     const body = await res.text().catch(() => '')
     throw new Error(`API ${res.status} ${res.statusText}: ${url}${body ? `\n${body}` : ''}`)
   }

@@ -1,7 +1,9 @@
 /**
  * 公開用: USE_MOCK_DATA=1 のとき、クライアントからの API 相当リクエストを
  * fixtures/*.json で返す。第三者が API なしで UI を動かすためのルート。
+ * fs 利用のため Node ランタイムを指定（Edge では fs 不可）。
  */
+export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'

@@ -106,6 +106,18 @@ npm run dev
 3. **`.env*` はコミットしない** — `.gitignore` で除外済み。含めるのは `env.example` のみ
 4. 公開後は `package.json` の `"private": true` を外して npm 公開するかは任意
 
+### 公開前チェックリスト（漏れない・壊れない）
+
+公開前に手元で一発まわすことを推奨。検出が出たら**必ず潰してから**公開する。
+
+| 項目 | 内容 |
+|------|------|
+| **1. Gitleaks** | ローカルで一度実行。`brew install gitleaks` のあと `./scripts/pre-publish-check.sh` または `gitleaks detect --config-path .gitleaks.toml --no-git false` |
+| **2. 過去履歴** | 「過去に .env をコミットしたことが一度もない」「トークンを貼ったことが一度もない」に自信がなければ、履歴スキャン（`git log -p --all` で `sntryu_` / `ghp_` 等を検索）または `./scripts/pre-publish-check.sh` の履歴チェックを実行。心当たりがあれば **公開前に** `git filter-repo` / BFG で履歴書き換え |
+| **3. 公開ビルド** | `env.example` を `.env.local` にコピーし `USE_MOCK_DATA=1` のみ設定 → `pnpm build`（または `npm run build`）成功 → 起動して `/api/mock/v1/us/latest` が 200 で返ることを確認。README の手順通りに第三者が動かせる状態であること |
+
+一括実行: `./scripts/pre-publish-check.sh`（gitleaks 未インストール時はスキップし、履歴スキャン + lint + build を実行）
+
 ## 貢献・脆弱性報告
 
 - **コントリビューション**: [CONTRIBUTING.md](CONTRIBUTING.md) を参照
