@@ -2,6 +2,10 @@
 
 **Calm news for your mental health.** This repository is the **front-end** of [The Gentle Light](https://thegentlelight.org): a multi-edition (US / UK / Canada / Japan) news site that reduces doomscrolling and information overload through gentle framing and editorial structure.
 
+- **Production site:** [thegentlelight.org](https://thegentlelight.org)
+- **What this project is:** Open-source UI for calm, topic-based news (see below).
+- **What this project is NOT:** Backend API, data pipeline, or internal admin services (see below).
+
 ---
 
 ## これは何か / What this is
