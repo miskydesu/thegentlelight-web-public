@@ -39,8 +39,8 @@
 第三者がフォークしてすぐビルド・表示できるように、**API を叩かずに UI だけ動かすモード**を用意しています。
 
 ```bash
-git clone https://github.com/your-org/thegentlelight-web.git
-cd thegentlelight-web
+git clone https://github.com/miskydesu/thegentlelight-web-public.git
+cd thegentlelight-web-public
 cp env.example .env.local
 ```
 
@@ -51,8 +51,8 @@ USE_MOCK_DATA=1
 ```
 
 ```bash
-npm install
-npm run dev
+pnpm install   # または npm install
+pnpm run dev   # または npm run dev
 ```
 
 ブラウザで http://localhost:3000 を開くと、`fixtures/*.json` のサンプルデータで UI が表示されます。本番 API のキーは不要です。
