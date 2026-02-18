@@ -1,0 +1,68 @@
+# push 時に「漏れない / 壊れない」を自動化
+# - シークレットスキャン（最低限のルール）
+# - pnpm install && pnpm lint && pnpm build
+# - 依存パッケージの脆弱性チェック
+
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop, public-release]
+  pull_request:
+    branches: [main, master, develop, public-release]
+
+jobs:
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        with:
+          config-path: .gitleaks.toml
+          no-git: false
+
+  build-and-audit:
+    name: Install, lint, build & audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        continue-on-error: true
+
+      - name: Install dependencies (no lockfile)
+        if: failure()
+        run: pnpm install
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Build
+        env:
+          USE_MOCK_DATA: "1"
+          CF_PAGES: "1"
+        run: pnpm run build
+
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=high
+        continue-on-error: true

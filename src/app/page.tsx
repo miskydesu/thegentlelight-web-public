@@ -16,7 +16,7 @@ export function generateMetadata(): Metadata {
       'A calm editorial home for living with the news: reduce doomscrolling, ease information overload, and practice gentle news through digital minimalism, digital detox, and healthy tech boundaries. Start with guides, then choose your news edition (US / Canada / UK).',
     keywords: ['doomscrolling', 'how to stop scrolling', 'information overload', 'digital minimalism'],
     canonical,
-    // / はグローバル入口だが、検索エンジンへ「どの国版へ分岐できるか」を明示する
+    // / はグローバル入口。index（検索対象）。国版への分岐を hreflang で明示
     // - /us, /uk, /ca, /jp は国別トップとして明確に運用
     // - x-default は /（国選択の入口）
     hreflang: [

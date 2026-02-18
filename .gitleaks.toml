@@ -1,0 +1,19 @@
+# 最低限のルールでシークレット検出（CI 用）
+# 除外: ドキュメント・サンプル・fixtures・許可された例のみのファイル
+
+title = "thegentlelight-web secret scan"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlist for docs, examples, fixtures"
+paths = [
+  "env.example",
+  "README.md",
+  "LICENSE",
+  "SECURITY.md",
+  "CONTRIBUTING.md",
+  "fixtures/",
+  ".github/",
+]

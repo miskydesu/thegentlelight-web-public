@@ -11,6 +11,12 @@ export function isCountry(s: string): s is Country {
   return s === 'us' || s === 'uk' || s === 'ca' || s === 'jp'
 }
 
+/** USE_MOCK_DATA=1 かつ API URL 未設定のとき、fixtures/*.json で UI を動かす（公開 repo 用・フォーク用）。 */
+export function isMockDataEnabled(): boolean {
+  if (typeof process === 'undefined') return false
+  return (process.env as any)?.USE_MOCK_DATA === '1'
+}
+
 export function getApiBaseUrl(): string {
   const env = typeof process !== 'undefined' ? (process.env as any) : (undefined as any)
   // 環境変数: NEXT_PUBLIC_API_BASE_URL（prod/stg/devで設定）
@@ -20,6 +26,12 @@ export function getApiBaseUrl(): string {
   // サーバーサイド用（公開しない環境変数でも設定できるように）
   const s = env?.API_BASE_URL || env?.TGL_API_BASE_URL
   if (s) return s
+
+  // 公開用: API なしで UI だけ動かすモード（env.example 参照）
+  if (isMockDataEnabled()) {
+    if (typeof window !== 'undefined') return `${window.location.origin}/api/mock`
+    return `${env?.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/mock`
+  }
 
   // フォールバック（ローカル開発）
   // クライアント側のみ: ホスト名から推測（互換性のため）
@@ -89,7 +101,51 @@ export type QuoteAuthorQuotesResponse = {
   meta: ApiMeta
 }
 
+/** path を fixture ファイル名に変換（クエリは無視）。例: /v1/ca/columns?limit=6 → v1-ca-columns */
+function pathToFixtureKey(path: string): string {
+  const p = path.replace(/^\//, '').split('?')[0].replace(/\/$/, '') || 'index'
+  return p.split('/').join('-')
+}
+
+/** Node のみ: USE_MOCK_DATA=1 のとき fixtures/*.json から読む（ビルド時などサーバーが無いとき用）。 */
+async function readMockJsonFromFs<T>(path: string): Promise<T | null> {
+  if (typeof process === 'undefined') return null
+  try {
+    const fs = await import('fs')
+    const pathMod = await import('path')
+    const key = pathToFixtureKey(path)
+    const base = pathMod.join(process.cwd(), 'fixtures')
+    const candidates = [
+      pathMod.join(base, `${key}.json`),
+      pathMod.join(base, 'v1-home.json'),
+      pathMod.join(base, 'v1-us-latest.json'),
+    ]
+    for (const file of candidates) {
+      if (fs.existsSync(file)) {
+        const raw = fs.readFileSync(file, 'utf-8')
+        return JSON.parse(raw) as T
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return null
+}
+
 export async function fetchJson<T>(path: string, init?: RequestInit & { next?: { revalidate?: number } }): Promise<T> {
+  // 公開用: USE_MOCK_DATA=1 かつ Node（SSR/ビルド）のときは fixtures を直接読む
+  if (isMockDataEnabled() && typeof process !== 'undefined') {
+    const mock = await readMockJsonFromFs<T>(path)
+    if (mock !== null) return mock
+    // フォールバック: 空の構造を返して UI が落ちないようにする
+    const key = pathToFixtureKey(path)
+    if (key.includes('columns')) return { columns: [], meta: {} } as T
+    if (key.includes('quotes')) return { quotes: [], meta: {} } as T
+    if (key.includes('latest') || key.includes('home')) return { topics: [], daily_latest: null, updatedAt: new Date().toISOString(), meta: {} } as T
+    if (key.includes('daily')) return { days: [], meta: {} } as T
+    return { meta: {} } as T
+  }
+
   const base = getApiBaseUrl().replace(/\/$/, '')
   const url = `${base}${path.startsWith('/') ? path : `/${path}`}`
   let res: Response

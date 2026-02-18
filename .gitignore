@@ -24,9 +24,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
+# local env files（秘密情報を含むため必ず除外。公開するのは env.example のみ）
 .env*.local
 .env
+.env.*
+!.env.example
 
 # vercel
 .vercel

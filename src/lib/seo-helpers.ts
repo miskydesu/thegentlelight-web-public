@@ -23,6 +23,8 @@ export type SEOConfig = {
   canonical?: string
   hreflang?: Array<{ lang: string; url: string }>
   noindex?: boolean
+  /** When true with noindex: index is false but follow is true (e.g. root / for SEO consolidation to country tops) */
+  noindexFollow?: boolean
 }
 
 /**
@@ -45,6 +47,13 @@ export function generateSEOMetadata(config: SEOConfig): Metadata {
   const hasImage = Boolean(config.image)
   const twitterCard: 'summary' | 'summary_large_image' = hasImage ? 'summary_large_image' : 'summary'
 
+  const robotsValue =
+    isNoindex && config.noindexFollow
+      ? { index: false as const, follow: true as const, googleBot: { index: false as const, follow: true as const } }
+      : isNoindex
+        ? { index: false as const, follow: false as const, googleBot: { index: false as const, follow: false as const } }
+        : undefined
+
   const metadata: Metadata = {
     title,
     description: config.description,
@@ -52,9 +61,7 @@ export function generateSEOMetadata(config: SEOConfig): Metadata {
     alternates: {
       canonical,
     },
-    robots: isNoindex
-      ? { index: false, follow: false, googleBot: { index: false, follow: false } }
-      : undefined,
+    robots: robotsValue,
     openGraph: {
       title: rawTitle,
       description: config.description,
