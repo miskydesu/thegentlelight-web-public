@@ -7,9 +7,10 @@ title = "thegentlelight-web secret scan"
 useDefault = true
 
 [allowlist]
-description = "Allowlist for docs, examples, fixtures"
+description = "Allowlist for docs, examples, fixtures. .env.local は手元のみ（git 追跡外）なので検出対象外にする"
 paths = [
   "env.example",
+  ".env.local",
   "README.md",
   "LICENSE",
   "SECURITY.md",
