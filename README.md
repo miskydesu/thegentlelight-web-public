@@ -13,7 +13,6 @@
 - **The Gentle Light の公式 Web フロントエンド**（Next.js 14, React）
 - 国別エディション（US / UK / CA / JP）、Gentle モード、デイリーブリーフ、コラム・名言などの UI
 - 本番は Cloudflare Pages を想定（Vercel も利用可能）
-- **オープンにすることで得られるもの**: 信頼・E-E-A-T の補強、被リンク・引用・採用・コミュニティの資産化、プロダクト説明コストの削減
 
 ## これは何ではないか / What this is NOT
 
@@ -99,28 +98,9 @@ pnpm run dev   # または npm run dev
 
 ## ライセンス
 
-[Apache-2.0](LICENSE) — 商用利用・改変・配布を許諾。表示条項を満たせば利用可能です。
+[GPLv3](LICENSE) — 利用・改変・配布は自由です。**本コードを流用して配布する場合、そのプロジェクトも GPL でソース公開が義務づけられます。** サーバー上で動かすだけの SaaS 利用の場合は公開義務はありません（「クローンを公開するなら公開させたい」場合向きのライセンスです）。
 
 ---
-
-## 公開リポジトリとしてリリースするとき
-
-1. **公開用ブランチで掃除** — 本番開発と混ぜず、`public-release` などのブランチで秘密情報の最終確認をすることを推奨
-2. **秘密情報のスキャン** — リポジトリ全体で `API_KEY` / `SECRET` / `TOKEN` / `PASSWORD` / `BEGIN PRIVATE KEY` 等を検索し、コメントアウトや過去コミットに残っていないか確認
-3. **`.env*` はコミットしない** — `.gitignore` で除外済み。含めるのは `env.example` のみ
-4. 公開後は `package.json` の `"private": true` を外して npm 公開するかは任意
-
-### 公開前チェックリスト（漏れない・壊れない）
-
-公開前に手元で一発まわすことを推奨。検出が出たら**必ず潰してから**公開する。
-
-| 項目 | 内容 |
-|------|------|
-| **1. Gitleaks** | ローカルで一度実行。`brew install gitleaks` のあと `./scripts/pre-publish-check.sh` または `gitleaks detect --config-path .gitleaks.toml --no-git false` |
-| **2. 過去履歴** | 「過去に .env をコミットしたことが一度もない」「トークンを貼ったことが一度もない」に自信がなければ、履歴スキャン（`git log -p --all` で `sntryu_` / `ghp_` 等を検索）または `./scripts/pre-publish-check.sh` の履歴チェックを実行。心当たりがあれば **公開前に** `git filter-repo` / BFG で履歴書き換え |
-| **3. 公開ビルド** | `env.example` を `.env.local` にコピーし `USE_MOCK_DATA=1` のみ設定 → `pnpm build`（または `npm run build`）成功 → 起動して `/api/mock/v1/us/latest` が 200 で返ることを確認。README の手順通りに第三者が動かせる状態であること |
-
-一括実行: `./scripts/pre-publish-check.sh`（gitleaks 未インストール時はスキップし、履歴スキャン + lint + build を実行）
 
 ## 貢献・脆弱性報告
 
