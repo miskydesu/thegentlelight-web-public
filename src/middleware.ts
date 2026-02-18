@@ -105,7 +105,7 @@ export async function middleware(req: NextRequest) {
     const mDailyToday = p.match(/^\/(us|uk|ca|jp)\/daily\/today\/?$/)
     if (mDailyToday) {
       const country = mDailyToday[1] as 'us' | 'uk' | 'ca' | 'jp'
-      // 公開用: USE_MOCK_DATA=1 のときは API を叩かず一覧へ
+      // Public repo: when USE_MOCK_DATA=1 skip API and redirect to list
       if (process.env.USE_MOCK_DATA === '1') {
         const target = new URL(`/${country}/daily`, req.url)
         target.search = ''

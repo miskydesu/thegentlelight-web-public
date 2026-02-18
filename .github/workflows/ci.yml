@@ -1,7 +1,7 @@
-# push 時に「漏れない / 壊れない」を自動化
-# - シークレットスキャン（最低限のルール）
+# On push: ensure no secrets leak and nothing is broken
+# - Secret scan (minimal rules)
 # - pnpm install && pnpm lint && pnpm build
-# - 依存パッケージの脆弱性チェック
+# - Dependency vulnerability audit
 
 name: CI
 

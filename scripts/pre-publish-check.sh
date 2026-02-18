@@ -1,44 +1,42 @@
 #!/usr/bin/env bash
-# 公開前に手元で一発まわすチェック
-# 検出が出たら公開前に必ず潰す（例外なし）
+# Pre-publish check: run locally before pushing to the public repo.
+# If anything is reported, fix it before publishing (no exceptions).
 set -e
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
-echo "=== 1. Gitleaks（現在のツリー + 履歴） ==="
+echo "=== 1. Gitleaks (working tree + history) ==="
 if command -v gitleaks >/dev/null 2>&1; then
   gitleaks detect --config-path .gitleaks.toml --verbose --no-git false 2>&1 || {
-    echo "FAIL: gitleaks がシークレットを検出しました。公開前に必ず修正してください。"
+    echo "FAIL: Gitleaks found secrets. Fix them before publishing."
     exit 1
   }
-  echo "OK: gitleaks 検出なし"
+  echo "OK: No gitleaks findings"
 else
-  echo "SKIP: gitleaks がインストールされていません。"
-  echo "      推奨: brew install gitleaks のあと再度実行"
-  echo "      代替: 履歴スキャンのみ実行します"
+  echo "SKIP: Gitleaks not installed."
+  echo "      Recommended: brew install gitleaks, then run again"
+  echo "      Continuing with history scan only."
 fi
 
 echo ""
-echo "=== 2. 過去履歴スキャン（.env / トークン漏れ） ==="
-# 履歴全体の diff に「トークンらしき値」が含まれていないか（値のみ検索し、README の変数名は除外）
+echo "=== 2. History scan (.env / token leaks) ==="
 if git log -p --all -- . 2>/dev/null | grep -qE '^\+.*sntryu_[a-zA-Z0-9]{30,}' 2>/dev/null; then
-  echo "FAIL: 履歴に Sentry トークン値（sntryu_...）が含まれています。git filter-repo / BFG で履歴書き換えを検討してください。"
+  echo "FAIL: History contains Sentry token value (sntryu_...). Consider git filter-repo or BFG."
   exit 1
 fi
 if git log -p --all -- . 2>/dev/null | grep -qE '^\+.*(ghp_|gho_)[a-zA-Z0-9]{30,}' 2>/dev/null; then
-  echo "FAIL: 履歴に GitHub トークン値が含まれています。"
+  echo "FAIL: History contains GitHub token value."
   exit 1
 fi
-# 過去に .env や .env.local が追加されたコミットがないか
 if git log --all --diff-filter=A --name-only -- .env .env.local '.env.*' 2>/dev/null | grep -qE '^\.env'; then
-  echo "WARN: 履歴で .env 系ファイルが追加されたコミットがあります。内容を確認してください。"
+  echo "WARN: History has commits that added .env files. Review their contents."
   git log --all --oneline --diff-filter=A -- .env .env.local '.env.*' 2>/dev/null || true
 fi
-echo "OK: 履歴にトークン値は見つかりませんでした"
+echo "OK: No token values found in history"
 
 echo ""
-echo "=== 3. 公開ビルド動作確認（USE_MOCK_DATA=1, CF_PAGES=1） ==="
+echo "=== 3. Public build (USE_MOCK_DATA=1, CF_PAGES=1) ==="
 RUNNER="npm run"
 if command -v pnpm >/dev/null 2>&1; then
   RUNNER="pnpm run"
@@ -46,13 +44,13 @@ if command -v pnpm >/dev/null 2>&1; then
 else
   npm ci 2>/dev/null || npm install 2>/dev/null || true
 fi
-echo "  使用: $RUNNER (lint → build)"
+echo "  Using: $RUNNER (lint → build)"
 USE_MOCK_DATA=1 CF_PAGES=1 $RUNNER lint 2>&1
 USE_MOCK_DATA=1 CF_PAGES=1 $RUNNER build 2>&1
-echo "OK: ビルド成功"
+echo "OK: Build succeeded"
 
 echo ""
-echo "=== 公開前チェック完了 ==="
-echo "  - env.example を .env.local にコピーして USE_MOCK_DATA=1 で起動"
-echo "  - ブラウザで /api/mock/v1/us/latest が 200 で返ることを確認"
-echo "  - README の手順通りに第三者が動かせる状態であることを確認"
+echo "=== Pre-publish check done ==="
+echo "  - Copy env.example to .env.local, set USE_MOCK_DATA=1, then run the app"
+echo "  - Confirm /api/mock/v1/us/latest returns 200"
+echo "  - Confirm README instructions work for a third party"

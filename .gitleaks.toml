@@ -1,5 +1,5 @@
-# 最低限のルールでシークレット検出（CI 用）
-# 除外: ドキュメント・サンプル・fixtures・許可された例のみのファイル
+# Minimal rules for secret detection (CI).
+# Excluded: docs, examples, fixtures, and allowed sample files.
 
 title = "thegentlelight-web secret scan"
 
@@ -7,7 +7,7 @@ title = "thegentlelight-web secret scan"
 useDefault = true
 
 [allowlist]
-description = "Allowlist for docs, examples, fixtures. .env.local は手元のみ（git 追跡外）なので検出対象外にする"
+description = "Allowlist for docs, examples, fixtures. .env.local is local-only (untracked) so exclude from detection"
 paths = [
   "env.example",
   ".env.local",

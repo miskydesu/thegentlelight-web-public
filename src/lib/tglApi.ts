@@ -11,7 +11,7 @@ export function isCountry(s: string): s is Country {
   return s === 'us' || s === 'uk' || s === 'ca' || s === 'jp'
 }
 
-/** USE_MOCK_DATA=1 かつ API URL 未設定のとき、fixtures/*.json で UI を動かす（公開 repo 用・フォーク用）。 */
+/** When USE_MOCK_DATA=1 and no API URL is set, UI runs from fixtures/*.json (for public repo / forks). */
 export function isMockDataEnabled(): boolean {
   if (typeof process === 'undefined') return false
   return (process.env as any)?.USE_MOCK_DATA === '1'
@@ -19,22 +19,21 @@ export function isMockDataEnabled(): boolean {
 
 export function getApiBaseUrl(): string {
   const env = typeof process !== 'undefined' ? (process.env as any) : (undefined as any)
-  // 環境変数: NEXT_PUBLIC_API_BASE_URL（prod/stg/devで設定）
+  // NEXT_PUBLIC_API_BASE_URL (set in prod/stg/dev)
   const v = env?.NEXT_PUBLIC_API_BASE_URL
   if (v) return v
 
-  // サーバーサイド用（公開しない環境変数でも設定できるように）
+  // Server-side only (non-public env vars)
   const s = env?.API_BASE_URL || env?.TGL_API_BASE_URL
   if (s) return s
 
-  // 公開用: API なしで UI だけ動かすモード（env.example 参照）
+  // Public repo: run UI without API (see env.example)
   if (isMockDataEnabled()) {
     if (typeof window !== 'undefined') return `${window.location.origin}/api/mock`
     return `${env?.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/mock`
   }
 
-  // フォールバック（ローカル開発）
-  // クライアント側のみ: ホスト名から推測（互換性のため）
+  // Fallback (local dev): infer from hostname on client
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname
     if (hostname === 'localhost' || hostname === '127.0.0.1') return 'http://localhost:8080'
@@ -101,13 +100,13 @@ export type QuoteAuthorQuotesResponse = {
   meta: ApiMeta
 }
 
-/** path を fixture キーに変換（クエリは無視）。例: /v1/ca/columns?limit=6 → v1-ca-columns */
+/** Turn path into fixture key (query ignored). E.g. /v1/ca/columns?limit=6 → v1-ca-columns */
 function pathToFixtureKey(pathStr: string): string {
   const p = pathStr.replace(/^\//, '').split('?')[0].replace(/\/$/, '') || 'index'
   return p.split('/').join('-')
 }
 
-/** USE_MOCK_DATA=1 時のフォールバック: サーバーが無い（ビルド時など）や fetch 失敗時に空構造を返す */
+/** Fallback when USE_MOCK_DATA=1 and fetch fails (e.g. no server at build time): return empty shape */
 function mockFallbackJson<T>(pathStr: string): T {
   const key = pathToFixtureKey(pathStr)
   if (key.includes('columns')) return { columns: [], meta: {} } as T
@@ -127,7 +126,7 @@ export async function fetchJson<T>(path: string, init?: RequestInit & { next?: {
       headers: { accept: 'application/json', ...(init?.headers || {}) },
     })
   } catch (e: any) {
-    // 公開用: USE_MOCK_DATA=1 で fetch 失敗（ビルド時などサーバーが無い）なら空データで通過
+    // Public repo: when USE_MOCK_DATA=1 and fetch fails (e.g. build), return empty data
     if (isMockDataEnabled()) return mockFallbackJson<T>(path)
     const penv = typeof process !== 'undefined' ? (process.env as any) : undefined
     const env = penv?.NEXT_PUBLIC_API_BASE_URL ? 'NEXT_PUBLIC_API_BASE_URL=SET' : 'NEXT_PUBLIC_API_BASE_URL=EMPTY'

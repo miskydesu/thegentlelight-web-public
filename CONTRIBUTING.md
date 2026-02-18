@@ -1,39 +1,39 @@
-# コントリビューション / Contributing
+# Contributing
 
-The Gentle Light — Web へプルリクエストや Issue で参加していただけることを歓迎します。
+Contributions via pull requests and issues are welcome.
 
-## 歓迎する貢献 / Welcome
+## Welcome
 
-- **バグ修正** — 再現手順と期待動作を Issue または PR に記載
-- **ドキュメント** — README・env.example・コメントの改善、誤字脱字
-- **アクセシビリティ** — キーボード操作・スクリーンリーダー・コントラストの改善
-- **パフォーマンス** — ビルド・表示速度の改善（破壊的変更でない範囲）
-- **型・テスト** — TypeScript の型強化、ユニット/統合テストの追加
-- **モック・fixtures** — `USE_MOCK_DATA=1` で動かすための `fixtures/*.json` の充実
+- **Bug fixes** — Include steps to reproduce and expected behavior in the Issue or PR
+- **Documentation** — Improvements to README, env.example, and code comments
+- **Accessibility** — Keyboard support, screen readers, contrast
+- **Performance** — Build or runtime improvements (without breaking changes)
+- **Types & tests** — Stronger TypeScript types, unit/integration tests
+- **Mock & fixtures** — More or better `fixtures/*.json` for `USE_MOCK_DATA=1`
 
-## 歓迎しない・要相談の貢献 / Out of scope or please ask first
+## Out of scope or please ask first
 
-- **バックエンド API の URL・認証方式の変更** — 本番は非公開 API に依存するため、デフォルト挙動の変更は要相談
-- **管理者機能の追加** — 認証・権限は別システムと連携しているため、Issue で方針を確認してください
-- **大規模な UI の差し替え** — デザイン方針がプロダクトと一致するか、事前に Issue で議論することを推奨
-- **新規の大きな依存関係** — ライセンス・バンドルサイズ・メンテナンス性の観点で要相談
+- **Changing backend API URL or auth** — Production relies on a private API; changing default behavior needs discussion
+- **New admin features** — Auth and permissions are tied to external systems; confirm approach in an Issue first
+- **Large UI overhauls** — Discuss in an Issue so design aligns with the product
+- **New heavy dependencies** — Consider license, bundle size, and maintainability; ask first
 
-## 手順 / How to contribute
+## How to contribute
 
-1. **Issue を確認する** — 既に同様の Issue や PR がないか検索
-2. **フォーク** — リポジトリをフォークし、トピックブランチで作業（例: `fix/typo-readme`）
-3. **変更** — 小さく分割した PR がレビューしやすいです
-4. **PR を開く** — タイトルと説明で「何を変えたか・なぜか」を書く。関連 Issue があればリンク
-5. **レビュー** — メンテナのフィードバックに応じて修正
+1. **Check existing work** — Search for similar Issues or PRs
+2. **Fork** — Fork the repo and work on a topic branch (e.g. `fix/typo-readme`)
+3. **Keep changes small** — Smaller PRs are easier to review
+4. **Open a PR** — Describe what changed and why; link related Issues
+5. **Review** — Address maintainer feedback
 
-## 開発環境
+## Development setup
 
-- Node.js 20 推奨
-- `cp env.example .env.local` のあと、`USE_MOCK_DATA=1` で API なしで動作確認可能
-- `npm run lint` で ESLint を実行してください
+- Node.js 20 recommended
+- After `cp env.example .env.local`, set `USE_MOCK_DATA=1` to run without the API
+- Run `npm run lint` (or `pnpm run lint`) before submitting
 
-## 行動規範
+## Code of conduct
 
-建設的で尊重し合えるコミュニケーションを心がけてください。差別的・ハラスメント的な発言は禁止します。
+Be constructive and respectful. Discriminatory or harassing behavior is not acceptable.
 
 Thank you for contributing.

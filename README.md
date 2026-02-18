@@ -8,34 +8,34 @@
 
 ---
 
-## これは何か / What this is
+## What this is
 
-- **The Gentle Light の公式 Web フロントエンド**（Next.js 14, React）
-- 国別エディション（US / UK / CA / JP）、Gentle モード、デイリーブリーフ、コラム・名言などの UI
-- 本番は Cloudflare Pages を想定（Vercel も利用可能）
+- **Official web front-end for The Gentle Light** (Next.js 14, React)
+- Country editions (US / UK / CA / JP), Gentle mode, daily briefings, columns, quotes
+- Production deploy targets: Cloudflare Pages (Vercel also supported)
 
-## これは何ではないか / What this is NOT
+## What this is NOT
 
-- **バックエンド API ではない** — ニュース・トピック・ユーザー認証は別サービス（非公開）が提供
-- **データパイプライン・編集ツールではない** — 記事・トピックの収集・編集は別システム
-- **管理者画面の認証ロジックそのものではない** — 管理用 API の URL・認証は非公開で運用
+- **Not the backend API** — News, topics, and user auth are provided by a separate (private) service
+- **Not a data pipeline or editorial tool** — Content collection and editing are handled by other systems
+- **Not the admin auth logic itself** — Admin API URL and credentials are private
 
-つまり「見えている部分」を公開し、**データ・運用・ブランド・プロダクト体験・継続の編集**は別レイヤーで守る設計です。
+In short: we open-source the **visible UI**; **data, operations, brand, product experience, and ongoing editorial** stay in other layers.
 
 ---
 
-## 技術スタック
+## Tech stack
 
 - **Next.js 14** (App Router)
 - **React 18**, TypeScript
-- **Cloudflare Pages** 本番デプロイ（`@cloudflare/next-on-pages`）
-- オプション: Sentry, Google Analytics, Google ログイン
+- **Cloudflare Pages** for production (`@cloudflare/next-on-pages`)
+- Optional: Sentry, Google Analytics, Google Sign-in
 
 ---
 
-## クイックスタート（API なしで動かす）
+## Quick start (no API required)
 
-第三者がフォークしてすぐビルド・表示できるように、**API を叩かずに UI だけ動かすモード**を用意しています。
+So that anyone can fork and run the UI without a backend, we provide a **mock mode** that uses local fixtures instead of the API.
 
 ```bash
 git clone https://github.com/miskydesu/thegentlelight-web-public.git
@@ -43,66 +43,66 @@ cd thegentlelight-web-public
 cp env.example .env.local
 ```
 
-`.env.local` に以下だけ書く:
+Add this to `.env.local`:
 
 ```env
 USE_MOCK_DATA=1
 ```
 
 ```bash
-pnpm install   # または npm install
-pnpm run dev   # または npm run dev
+pnpm install   # or npm install
+pnpm run dev   # or npm run dev
 ```
 
-ブラウザで http://localhost:3000 を開くと、`fixtures/*.json` のサンプルデータで UI が表示されます。本番 API のキーは不要です。
+Open http://localhost:3000 — the UI will use sample data from `fixtures/*.json`. No production API keys needed.
 
-- モック時は `fixtures/` 内の JSON が使われ、不足分は空配列などで補われます
-- 実 API を繋ぐ場合は `NEXT_PUBLIC_API_BASE_URL` を設定し、`USE_MOCK_DATA` は外す
-
----
-
-## 環境変数
-
-| 変数 | 説明 | 公開ビルドで必須？ |
-|------|------|---------------------|
-| `NEXT_PUBLIC_API_BASE_URL` | バックエンド API のベース URL | 本番のみ（未設定かつ `USE_MOCK_DATA=1` でモック） |
-| `NEXT_PUBLIC_SITE_URL` | サイトの正規 URL（canonical・OG 用） | 本番で推奨 |
-| `USE_MOCK_DATA` | `1` で fixtures を使用（API なしで UI 動作） | フォーク・デモ用 |
-| `NEXT_PUBLIC_IMAGE_BASE_URL` | 画像配信のベース URL | 任意 |
-| `ROBOTS_NOINDEX` | `true` で noindex（ステージング用） | 任意 |
-
-その他（GA・Sentry・Google ログイン等）は `env.example` を参照してください。**API キー・トークン・DB 接続情報はリポジトリに含めません。**
+- In mock mode, `fixtures/` JSON is used; missing endpoints return empty arrays or similar
+- To use the real API, set `NEXT_PUBLIC_API_BASE_URL` and leave `USE_MOCK_DATA` unset
 
 ---
 
-## スクリプト
+## Environment variables
 
-- `npm run dev` — 開発サーバー
-- `npm run build` — Next.js ビルド
-- `npm run build:cf` — Cloudflare Pages 用ビルド（next-on-pages + オプションで Sentry ソースマップ）
-- `npm run start` — 本番モード起動
+| Variable | Description | Required for public build? |
+|----------|-------------|----------------------------|
+| `NEXT_PUBLIC_API_BASE_URL` | Backend API base URL | Only for production (omit with `USE_MOCK_DATA=1` for mock) |
+| `NEXT_PUBLIC_SITE_URL` | Canonical site URL (canonical, OG, hreflang) | Recommended for production |
+| `USE_MOCK_DATA` | Set to `1` to use fixtures (UI works without API) | For forks / demos |
+| `NEXT_PUBLIC_IMAGE_BASE_URL` | Base URL for images (covers, authors) | Optional |
+| `ROBOTS_NOINDEX` | Set to `true` for noindex (e.g. staging) | Optional |
+
+See `env.example` for GA, Sentry, Google Sign-in, etc. **Do not put API keys, tokens, or DB credentials in the repo.**
+
+---
+
+## Scripts
+
+- `npm run dev` — Development server
+- `npm run build` — Next.js build
+- `npm run build:cf` — Cloudflare Pages build (next-on-pages + optional Sentry sourcemaps)
+- `npm run start` — Production server
 - `npm run lint` — ESLint
 
 ---
 
-## アーキテクチャ概要
+## Architecture overview
 
-- **ルート `/`** — 国選択のランディング
-- **`/[country]`** — 国別トップ（US/UK/CA/JP）
-- **`/en/*`** — 英語圏のコラム・名言を共通化（308 で集約）
-- **`/[country]/daily/*`** — デイリーブリーフ
-- **`/[country]/news`**, **`/category/*`** — ニュース・カテゴリ
-- API 呼び出しは `src/lib/tglApi.ts` の `fetchJson` に集約。モック時は `fixtures/` または `/api/mock/` を利用
-
----
-
-## ライセンス
-
-[GPLv3](LICENSE) — 利用・改変・配布は自由です。**本コードを流用して配布する場合、そのプロジェクトも GPL でソース公開が義務づけられます。** サーバー上で動かすだけの SaaS 利用の場合は公開義務はありません（「クローンを公開するなら公開させたい」場合向きのライセンスです）。
+- **Root `/`** — Country selector landing
+- **`/[country]`** — Country home (US/UK/CA/JP)
+- **`/en/*`** — Shared English columns & quotes (308 redirects)
+- **`/[country]/daily/*`** — Daily briefings
+- **`/[country]/news`**, **`/category/*`** — News and categories
+- API calls are centralized in `src/lib/tglApi.ts` (`fetchJson`). Mock mode uses `fixtures/` or `/api/mock/`
 
 ---
 
-## 貢献・脆弱性報告
+## License
 
-- **コントリビューション**: [CONTRIBUTING.md](CONTRIBUTING.md) を参照
-- **脆弱性報告**: [SECURITY.md](SECURITY.md) の手順に従って非公開で報告してください
+[GPLv3](LICENSE) — You may use, modify, and distribute the code. **If you distribute a derivative that uses this code, that project must also be under GPL and its source must be made available.** Using it only as a service on your own server (SaaS) does not trigger the source-release obligation. This license is for those who want derivatives that are distributed to also be open.
+
+---
+
+## Contributing & security
+
+- **Contributing:** See [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Security issues:** Report privately as described in [SECURITY.md](SECURITY.md)
